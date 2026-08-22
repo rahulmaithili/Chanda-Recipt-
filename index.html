@@ -2181,6 +2181,7 @@
       const [villageFilter, setVillageFilter] = useState('All');
       const [modeFilter, setModeFilter] = useState('All');
       const [searchLocal, setSearchLocal] = useState('');
+      const [viewMode, setViewMode] = useState(localStorage.getItem('donations_view_mode') || 'table');
       
       const donations = systemData.donations || [];
 
@@ -2276,53 +2277,102 @@
           </div>
 
           {/* Export & Action Buttons */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-            <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> {t('csv')}</button>
-            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
-          </div>
-
-          <div className="card">
-            <div className="table-responsive">
-              <table id="donations-data-table">
-                <thead>
-                  <tr>
-                    <th>{t('receipt_no')}</th>
-                    <th>{t('date')}</th>
-                    <th>{t('donor_name')}</th>
-                    <th>{t('village')}</th>
-                    <th>{t('amount')}</th>
-                    <th>{t('remaining')}</th>
-                    <th>{t('mode')}</th>
-                    <th>{t('actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(d => {
-                    const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
-                    return (
-                      <tr key={d.receipt_no}>
-                        <td>#{d.receipt_no}</td>
-                        <td>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
-                        <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
-                        <td>{d.village}</td>
-                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
-                        <td style={{ color: remaining > 0 ? 'red' : 'inherit' }}>₹{remaining.toFixed(2)}</td>
-                        <td>{d.mode}</td>
-                        <td>
-                          <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
-                          <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
-                          <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {filtered.length === 0 && (
-                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No data available.</td></tr>
-                  )}
-                </tbody>
-              </table>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> {t('csv')}</button>
+              <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
+            </div>
+            
+            {/* View Mode Toggle Picker */}
+            <div style={{ display: 'flex', gap: '5px', background: 'rgba(0,0,0,0.05)', padding: '3px', borderRadius: '6px' }}>
+              <button 
+                onClick={() => { setViewMode('table'); localStorage.setItem('donations_view_mode', 'table'); }} 
+                style={{ border: 'none', background: viewMode === 'table' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'table' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+              >
+                <i className="fas fa-list"></i> List
+              </button>
+              <button 
+                onClick={() => { setViewMode('grid'); localStorage.setItem('donations_view_mode', 'grid'); }} 
+                style={{ border: 'none', background: viewMode === 'grid' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'grid' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+              >
+                <i className="fas fa-th-large"></i> Grid
+              </button>
             </div>
           </div>
+
+          {viewMode === 'table' ? (
+            <div className="card">
+              <div className="table-responsive">
+                <table id="donations-data-table">
+                  <thead>
+                    <tr>
+                      <th>{t('receipt_no')}</th>
+                      <th>{t('date')}</th>
+                      <th>{t('donor_name')}</th>
+                      <th>{t('village')}</th>
+                      <th>{t('amount')}</th>
+                      <th>{t('remaining')}</th>
+                      <th>{t('mode')}</th>
+                      <th>{t('actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(d => {
+                      const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
+                      return (
+                        <tr key={d.receipt_no}>
+                          <td>#{d.receipt_no}</td>
+                          <td>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
+                          <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
+                          <td>{d.village}</td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                          <td style={{ color: remaining > 0 ? 'red' : 'inherit' }}>₹{remaining.toFixed(2)}</td>
+                          <td>{d.mode}</td>
+                          <td>
+                            <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
+                            <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
+                            <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filtered.length === 0 && (
+                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No data available.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="records-grid">
+              {filtered.map(d => {
+                const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
+                return (
+                  <div key={d.receipt_no} className="record-card">
+                    <div className="record-card-header">
+                      <span>Receipt: #{d.receipt_no}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</span>
+                    </div>
+                    <div className="record-card-body">
+                      <p><strong>{t('donor_name')}:</strong> {d.donor_name}</p>
+                      <p><strong>{t('mobile')}:</strong> {d.donor_mobile || 'N/A'}</p>
+                      <p><strong>{t('village')}:</strong> {d.village}</p>
+                      <p><strong>{t('amount')}:</strong> <span style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(d.amount).toFixed(2)}</span> ({d.mode})</p>
+                      {remaining > 0 && <p style={{ color: 'red' }}><strong>{t('remaining')}:</strong> ₹{remaining.toFixed(2)}</p>}
+                    </div>
+                    <div className="record-card-footer">
+                      <button className="btn btn-secondary btn-sm" onClick={() => onEdit(d)} style={{ padding: '4px 8px', fontSize: '11px', background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
+                      <button className="btn btn-success btn-sm" onClick={() => onPrint(d)} style={{ padding: '4px 8px', fontSize: '11px' }}><i className="fas fa-print"></i> {t('print')}</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ padding: '4px 8px', fontSize: '11px' }}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: '#fff', borderRadius: '8px' }}>No records found.</div>
+              )}
+            </div>
+          )}
         </div>
       );
     }
@@ -2391,6 +2441,7 @@
     function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, t }) {
       const [categoryFilter, setCategoryFilter] = useState('All');
       const [searchLocal, setSearchLocal] = useState('');
+      const [viewMode, setViewMode] = useState(localStorage.getItem('expenses_view_mode') || 'table');
       
       const expenses = systemData.expenses || [];
       const filtered = expenses.filter(e => {
@@ -2457,54 +2508,105 @@
             </div>
           </div>
 
-          {/* Print Options */}
-          <div style={{ marginBottom: '15px' }}>
-            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
-          </div>
-
-          <div className="card">
-            <div className="table-responsive">
-              <table id="expenses-data-table">
-                <thead>
-                  <tr>
-                    <th>{t('voucher_no')}</th>
-                    <th>{t('date')}</th>
-                    <th>{t('title')}</th>
-                    <th>{t('category_name')}</th>
-                    <th>{t('amount')}</th>
-                    <th>{t('account_source')}</th>
-                    <th>{t('status')}</th>
-                    <th>{t('actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(ex => (
-                    <tr key={ex.expense_no}>
-                      <td>#{ex.expense_no}</td>
-                      <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
-                      <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{ex.note}</small></td>
-                      <td>{ex.category}</td>
-                      <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
-                      <td>{ex.mode}</td>
-                      <td>
-                        <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                          {ex.status === 'Approved' ? t('approved') : t('pending')}
-                        </span>
-                      </td>
-                      <td>
-                        <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filtered.length === 0 && (
-                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No expenses found.</td></tr>
-                  )}
-                </tbody>
-              </table>
+          {/* Export & Action Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
+            </div>
+            
+            {/* View Mode Toggle Picker */}
+            <div style={{ display: 'flex', gap: '5px', background: 'rgba(0,0,0,0.05)', padding: '3px', borderRadius: '6px' }}>
+              <button 
+                onClick={() => { setViewMode('table'); localStorage.setItem('expenses_view_mode', 'table'); }} 
+                style={{ border: 'none', background: viewMode === 'table' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'table' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+              >
+                <i className="fas fa-list"></i> List
+              </button>
+              <button 
+                onClick={() => { setViewMode('grid'); localStorage.setItem('expenses_view_mode', 'grid'); }} 
+                style={{ border: 'none', background: viewMode === 'grid' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'grid' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+              >
+                <i className="fas fa-th-large"></i> Grid
+              </button>
             </div>
           </div>
+
+          {viewMode === 'table' ? (
+            <div className="card">
+              <div className="table-responsive">
+                <table id="expenses-data-table">
+                  <thead>
+                    <tr>
+                      <th>{t('voucher_no')}</th>
+                      <th>{t('date')}</th>
+                      <th>{t('title')}</th>
+                      <th>{t('category_name')}</th>
+                      <th>{t('amount')}</th>
+                      <th>{t('account_source')}</th>
+                      <th>{t('status')}</th>
+                      <th>{t('actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(ex => (
+                      <tr key={ex.expense_no}>
+                        <td>#{ex.expense_no}</td>
+                        <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
+                        <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{ex.note}</small></td>
+                        <td>{ex.category}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
+                        <td>{ex.mode}</td>
+                        <td>
+                          <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                            {ex.status === 'Approved' ? t('approved') : t('pending')}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
+                          <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No expenses found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="records-grid">
+              {filtered.map(ex => (
+                <div key={ex.expense_no} className="record-card">
+                  <div className="record-card-header">
+                    <span>Voucher: #{ex.expense_no}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</span>
+                  </div>
+                  <div className="record-card-body">
+                    <p><strong>{t('title')}:</strong> {ex.title}</p>
+                    <p><strong>{t('category_name')}:</strong> {ex.category}</p>
+                    <p><strong>{t('amount')}:</strong> <span style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</span></p>
+                    <p><strong>{t('account_source')}:</strong> {ex.mode}</p>
+                    <p><strong>{t('status')}:</strong> &nbsp;
+                      <span style={{ padding: '2px 6px', borderRadius: '10px', fontSize: '10.5px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                        {ex.status === 'Approved' ? t('approved') : t('pending')}
+                      </span>
+                    </p>
+                    {ex.note && <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}><strong>Note:</strong> {ex.note}</p>}
+                  </div>
+                  <div className="record-card-footer">
+                    <button className="btn btn-secondary btn-sm" onClick={() => onEdit(ex)} style={{ padding: '4px 8px', fontSize: '11px', background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
+                    <button className="btn btn-success btn-sm" onClick={() => onPrint(ex)} style={{ padding: '4px 8px', fontSize: '11px' }}><i className="fas fa-print"></i> {t('print')}</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ padding: '4px 8px', fontSize: '11px' }}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
+                  </div>
+                </div>
+              ))}
+              {filtered.length === 0 && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: '#fff', borderRadius: '8px' }}>No records found.</div>
+              )}
+            </div>
+          )}
         </div>
       );
     }
