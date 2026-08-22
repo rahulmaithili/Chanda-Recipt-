@@ -1508,8 +1508,8 @@
         root.style.setProperty('--navy-hover', theme.hover);
       };
 
-      const fetchInitData = async () => {
-        setLoading(true);
+      const fetchInitData = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
           const res = await fetch(`${API_URL}?action=getInitData&festival_id=${getViewingFestivalId()}`);
           const data = await res.json();
@@ -1522,7 +1522,7 @@
         } catch(e) {
           showToast("Connection Error: " + e.message, "error");
         } finally {
-          setLoading(false);
+          if (!silent) setLoading(false);
         }
       };
 
@@ -1560,8 +1560,126 @@
         setSystemData(null);
       };
 
+      const applyOptimisticUpdate = (action, payload) => {
+        if (!systemData) return null;
+        const backup = JSON.parse(JSON.stringify(systemData));
+        const updatedData = { ...systemData };
+
+        try {
+          if (action === "addDonation") {
+            const record = {
+              ...payload.donation,
+              id: "temp-" + Date.now(),
+              receipt_no: payload.donation.receipt_no || (Math.max(0, ...updatedData.donations.map(d => parseInt(d.receipt_no) || 0)) + 1).toString(),
+              timestamp: new Date().toISOString()
+            };
+            updatedData.donations = [record, ...updatedData.donations];
+          }
+          else if (action === "updateDonation") {
+            updatedData.donations = updatedData.donations.map(d => 
+              d.id === payload.donation.id || (d.receipt_no && d.receipt_no === payload.donation.receipt_no)
+                ? { ...d, ...payload.donation } 
+                : d
+            );
+          }
+          else if (action === "addExpense") {
+            const record = {
+              ...payload.expense,
+              id: "temp-" + Date.now(),
+              expense_no: payload.expense.expense_no || (Math.max(0, ...updatedData.expenses.map(e => parseInt(e.expense_no) || 0)) + 1).toString(),
+              timestamp: new Date().toISOString(),
+              status: payload.expense.status || "Pending"
+            };
+            updatedData.expenses = [record, ...updatedData.expenses];
+          }
+          else if (action === "updateExpense") {
+            updatedData.expenses = updatedData.expenses.map(e => 
+              e.id === payload.expense.id || (e.expense_no && e.expense_no === payload.expense.expense_no)
+                ? { ...e, ...payload.expense } 
+                : e
+            );
+          }
+          else if (action === "saveUser") {
+            const userObj = payload.user;
+            if (userObj.id) {
+              updatedData.users = updatedData.users.map(u => u.id === userObj.id ? { ...u, ...userObj } : u);
+            } else {
+              const record = { ...userObj, id: "temp-" + Date.now(), status: userObj.status || "active" };
+              updatedData.users = [...updatedData.users, record];
+            }
+          }
+          else if (action === "saveVillage") {
+            const vil = payload.village;
+            if (vil.id) {
+              updatedData.villages = updatedData.villages.map(v => v.id === vil.id ? { ...v, ...vil } : v);
+            } else {
+              const record = { ...vil, id: "temp-" + Date.now() };
+              updatedData.villages = [...updatedData.villages, record];
+            }
+          }
+          else if (action === "saveCategory") {
+            const cat = payload.category;
+            if (cat.id) {
+              updatedData.categories = updatedData.categories.map(c => c.id === cat.id ? { ...c, ...cat } : c);
+            } else {
+              const record = { ...cat, id: "temp-" + Date.now() };
+              updatedData.categories = [...updatedData.categories, record];
+            }
+          }
+          else if (action === "saveAccount") {
+            const acc = payload.account;
+            if (acc.id) {
+              updatedData.accounts = updatedData.accounts.map(a => a.id === acc.id ? { ...a, ...acc } : a);
+            } else {
+              const record = { ...acc, id: "temp-" + Date.now() };
+              updatedData.accounts = [...updatedData.accounts, record];
+            }
+          }
+          else if (action === "saveSettings") {
+            updatedData.settings = { ...updatedData.settings, ...payload.settings };
+          }
+          else if (action === "submitHandover") {
+            const record = {
+              ...payload.handover,
+              id: "temp-" + Date.now(),
+              status: "Pending",
+              timestamp: new Date().toISOString()
+            };
+            updatedData.handovers = [record, ...updatedData.handovers];
+          }
+          else if (action === "approveHandover") {
+            updatedData.handovers = updatedData.handovers.map(h => 
+              h.id === payload.id ? { ...h, status: "Approved", approved_by_name: currentUser.name } : h
+            );
+          }
+          
+          setSystemData(updatedData);
+        } catch (e) {
+          console.error("Optimistic state error", e);
+        }
+        return backup;
+      };
+
+      const applyOptimisticDelete = (table, keyColumn, value) => {
+        if (!systemData) return null;
+        const backup = JSON.parse(JSON.stringify(systemData));
+        const updatedData = { ...systemData };
+
+        try {
+          if (updatedData[table]) {
+            updatedData[table] = updatedData[table].filter(row => row[keyColumn] !== value);
+          }
+          setSystemData(updatedData);
+        } catch(e) {
+          console.error("Optimistic delete error", e);
+        }
+        return backup;
+      };
+
       const handleSaveRecord = async (action, payload) => {
-        setLoading(true);
+        const backup = applyOptimisticUpdate(action, payload);
+        showToast("Saving...");
+
         try {
           const res = await fetch(API_URL, {
             method: "POST",
@@ -1575,17 +1693,17 @@
           const data = await res.json();
           if (data.success) {
             showToast("Saved successfully!");
-            fetchInitData();
+            fetchInitData(true); // Silent background refresh
             return true;
           } else {
+            if (backup) setSystemData(backup);
             Swal.fire({ text: "Error: " + data.message, icon: 'error', confirmButtonColor: '#ff851b' });
             return false;
           }
         } catch (e) {
+          if (backup) setSystemData(backup);
           Swal.fire({ text: "Network Error: " + e.message, icon: 'error', confirmButtonColor: '#ff851b' });
           return false;
-        } finally {
-          setLoading(false);
         }
       };
 
@@ -1594,7 +1712,9 @@
           "Are you sure?",
           "This data will be permanently removed.",
           async () => {
-            setLoading(true);
+            const backup = applyOptimisticDelete(table, keyColumn, value);
+            showToast("Deleting...");
+
             try {
               const res = await fetch(API_URL, {
                 method: "POST",
@@ -1610,14 +1730,14 @@
               const data = await res.json();
               if (data.success) {
                 showToast("Deleted successfully!");
-                fetchInitData();
+                fetchInitData(true); // Silent background refresh
               } else {
+                if (backup) setSystemData(backup);
                 Swal.fire({ text: "Failed to delete: " + data.message, icon: 'error' });
               }
             } catch(e) {
+              if (backup) setSystemData(backup);
               Swal.fire({ text: "Network Error: " + e.message, icon: 'error' });
-            } finally {
-              setLoading(false);
             }
           }
         );
