@@ -3642,21 +3642,32 @@
 
     function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, onPayInstallment, hasPermission, t }) {
       const [categoryFilter, setCategoryFilter] = useState('All');
-      const [searchLocal, setSearchLocal] = useState('');
+      const [titleFilter, setTitleFilter] = useState('');
+      const [modeFilter, setModeFilter] = useState('All');
+      const [statusFilter, setStatusFilter] = useState('All');
       const [viewMode, setViewMode] = useState(localStorage.getItem('expenses_view_mode') || 'table');
       const [subTab, setSubTab] = useState('list'); // 'list' or 'dues'
       
       const expenses = systemData.expenses || [];
       const filtered = expenses.filter(e => {
-        const query = (globalSearch || searchLocal).toLowerCase();
-        const matchesSearch = e.title.toLowerCase().includes(query) || e.expense_no.includes(query);
+        const matchesGlobal = !globalSearch || 
+          e.title.toLowerCase().includes(globalSearch.toLowerCase()) || 
+          e.expense_no.toLowerCase().includes(globalSearch.toLowerCase()) || 
+          (e.category || '').toLowerCase().includes(globalSearch.toLowerCase());
+
+        const matchesTitle = !titleFilter || e.title.toLowerCase().includes(titleFilter.toLowerCase());
         const matchesCategory = categoryFilter === 'All' || e.category === categoryFilter;
-        return matchesSearch && matchesCategory;
+        const matchesMode = modeFilter === 'All' || e.mode === modeFilter;
+        const matchesStatus = statusFilter === 'All' || e.status === statusFilter;
+        
+        return matchesGlobal && matchesTitle && matchesCategory && matchesMode && matchesStatus;
       });
 
       const handleClear = () => {
-        setSearchLocal('');
+        setTitleFilter('');
         setCategoryFilter('All');
+        setModeFilter('All');
+        setStatusFilter('All');
       };
 
       const handlePrintTable = () => {
@@ -3765,24 +3776,40 @@
                   <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> {t('filters')}</span>
                   <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> {t('clear')}</button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '15px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: '11px' }}>{t('search').toUpperCase()}</label>
+                    <label style={{ fontSize: '11px' }}>TITLE FILTER</label>
                     <input 
                       type="text" 
-                      placeholder={t('search')} 
-                      value={searchLocal} 
-                      onChange={e => setSearchLocal(e.target.value)} 
+                      placeholder="Filter by title..." 
+                      value={titleFilter} 
+                      onChange={e => setTitleFilter(e.target.value)} 
                       style={{ padding: '8px', fontSize: '13px' }}
                     />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: '11px' }}>{t('category_name').toUpperCase()}</label>
+                    <label style={{ fontSize: '11px' }}>CATEGORY FILTER</label>
                     <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
-                      <option value="All">All {t('categories')}</option>
+                      <option value="All">All Categories</option>
                       {systemData.categories && systemData.categories.map(c => (
                         <option key={c.id} value={c.name}>{c.name}</option>
                       ))}
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '11px' }}>PAYMENT MODE</label>
+                    <select value={modeFilter} onChange={e => setModeFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                      <option value="All">All Modes</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Online">Online</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '11px' }}>STATUS FILTER (CUSTOM)</label>
+                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                      <option value="All">All Statuses</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Approved">Approved</option>
                     </select>
                   </div>
                 </div>
