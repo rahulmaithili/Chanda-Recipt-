@@ -61,7 +61,6 @@ document.write(`
       bottom: 0;
       left: 0;
       z-index: 100;
-      transition: 0.3s ease;
       overflow-y: auto;
       padding: 20px 15px;
     }
@@ -171,7 +170,6 @@ document.write(`
       box-sizing: border-box;
       padding: 25px;
       width: calc(100% - var(--sidebar-width));
-      transition: 0.3s ease;
       overflow-x: hidden;
     }
     
@@ -773,6 +771,10 @@ function toggleSidebar() {
   const sb = document.getElementById("app-sidebar");
   const main = document.querySelector(".main-content");
   if (sb) {
+    // Dynamically apply transition style before toggling to prevent layout shifting on initial load!
+    sb.style.transition = "0.3s ease";
+    if (main) main.style.transition = "0.3s ease";
+
     const isCollapsed = sb.classList.toggle("collapsed");
     localStorage.setItem("sidebar_collapsed", isCollapsed ? "true" : "false");
     if (main) {
