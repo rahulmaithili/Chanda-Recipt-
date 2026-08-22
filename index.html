@@ -966,7 +966,7 @@
     /* Grid & Cards View for Collections and Expenses */
     .records-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
       margin-top: 15px;
     }
@@ -1031,17 +1031,23 @@
 
     .record-card-footer {
       display: flex;
-      justify-content: flex-end;
-      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 6px;
       border-top: 1px solid rgba(0,0,0,0.05);
       padding-top: 12px;
       margin-top: 15px;
     }
 
     .record-card-footer .btn {
-      padding: 6px 12px;
-      font-size: 12px;
+      padding: 5px 10px;
+      font-size: 11.5px;
       border-radius: 4px;
+      flex: 1 1 auto;
+      min-width: 70px;
+      max-width: 120px;
+      text-align: center;
+      justify-content: center;
     }
 
     /* Responsive adjustments */
