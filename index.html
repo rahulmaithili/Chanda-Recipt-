@@ -1955,11 +1955,12 @@
 
       const hasPermission = (pageKey, permissionType) => {
         if (!currentUser) return false;
-        if (currentUser.role === "Super Admin" || currentUser.role === "admin") {
+        const currentRoleLower = (currentUser.role || "").toLowerCase();
+        if (currentRoleLower === "super admin" || currentRoleLower === "admin") {
           return true;
         }
         const roles = systemData?.roles || [];
-        const userRole = roles.find(r => r.role_key === currentUser.role);
+        const userRole = roles.find(r => (r.role_key || "").toLowerCase() === currentRoleLower);
         if (!userRole) return false;
         try {
           const perms = JSON.parse(userRole.permissions || '{}');
@@ -3418,7 +3419,10 @@
       const sortedDonations = [...donations].sort((a, b) => parseFloat(b.amount || 0) - parseFloat(a.amount || 0));
 
       // Calculate member performance KPIs & collections
-      const memberReport = users.filter(u => u.role === 'Collector' || u.role === 'Admin' || u.role === 'Super Admin').map(u => {
+      const memberReport = users.filter(u => {
+        const roleLower = (u.role || '').toLowerCase();
+        return roleLower === 'collector' || roleLower === 'admin' || roleLower === 'super admin';
+      }).map(u => {
         const slips = donations.filter(d => d.collected_by_mobile === u.mobile);
         const totalCollected = slips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
         const approvedHandovers = handovers.filter(h => h.collector_mobile === u.mobile && h.status === 'Approved');
@@ -3610,7 +3614,7 @@
       const [amount, setAmount] = useState('');
       const [accountId, setAccountId] = useState('1');
       const [remark, setRemark] = useState('');
-      const isSuper = user.role === "Super Admin" || user.role === "admin";
+      const isSuper = (user.role || "").toLowerCase() === "super admin" || (user.role || "").toLowerCase() === "admin";
 
       const handovers = systemData.handovers || [];
       const accounts = systemData.accounts || [];
@@ -4112,7 +4116,7 @@
 
       const filtered = users.filter(u => {
         const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.mobile.includes(search);
-        const matchesRole = roleFilter === 'All' || u.role === roleFilter;
+        const matchesRole = roleFilter === 'All' || (u.role || '').toLowerCase() === roleFilter.toLowerCase();
         const matchesStatus = statusFilter === 'All' || u.status === statusFilter;
         return matchesSearch && matchesRole && matchesStatus;
       });
