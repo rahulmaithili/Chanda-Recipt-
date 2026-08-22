@@ -2955,7 +2955,10 @@
     function VillagesView({ systemData, onAction, onDelete, t }) {
       const [name, setName] = useState('');
       const [editId, setEditId] = useState(null);
+      const [selectedVillage, setSelectedVillage] = useState(null);
+
       const villages = systemData.villages || [];
+      const donations = systemData.donations || [];
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -2965,6 +2968,32 @@
           setName('');
           setEditId(null);
         }
+      };
+
+      const handlePrintVillageDonors = (vInfo) => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Print Village Donors</title>');
+        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(`<h2>Village Donor List - ${vInfo.name}</h2>`);
+        printWindow.document.write(`<p><strong>Total Slips:</strong> ${vInfo.slips.length} | <strong>Total Collected:</strong> ₹${vInfo.totalAmount.toFixed(2)}</p>`);
+        printWindow.document.write(document.getElementById('village-donors-print-table').outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+      };
+
+      const handleExportVillageCSV = (vInfo) => {
+        let headers = ["Receipt No", "Date", "Donor Name", "Mobile", "Amount", "Payment Mode"];
+        let rows = vInfo.slips.map(s => [s.receipt_no, s.date || s.timestamp, s.donor_name, s.donor_mobile, s.amount, s.mode]);
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `donors_${vInfo.name}_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
 
       return (
@@ -2988,24 +3017,88 @@
                   <tr>
                     <th>#</th>
                     <th>{t('village')}</th>
+                    <th>Total Collection</th>
                     <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {villages.map((v, idx) => (
-                    <tr key={v.id}>
-                      <td>#{idx + 1}</td>
-                      <td><strong>{v.name}</strong></td>
-                      <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(v.id); setName(v.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("villages", "id", v.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
-                      </td>
-                    </tr>
-                  ))}
+                  {villages.map((v, idx) => {
+                    const slips = donations.filter(d => d.village === v.name);
+                    const totalAmount = slips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
+                    return (
+                      <tr key={v.id}>
+                        <td>#{idx + 1}</td>
+                        <td><strong>{v.name}</strong></td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>
+                          ₹{totalAmount.toFixed(2)}
+                        </td>
+                        <td>
+                          <button className="action-icon view-icon" onClick={() => setSelectedVillage({ name: v.name, slips, totalAmount })} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-eye"></i></button>
+                          <button className="action-icon edit-icon" onClick={() => { setEditId(v.id); setName(v.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          <button className="action-icon delete-icon" onClick={() => onDelete("villages", "id", v.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
+
+          {/* Modal overlay showing contributors in a village */}
+          {selectedVillage && (
+            <div className="modal-slideover-overlay" onClick={() => setSelectedVillage(null)}>
+              <div className="modal-slideover" style={{ width: '700px' }} onClick={(e) => e.stopPropagation()}>
+                <div className="slideover-header">
+                  <h3><i className="fas fa-map-marked-alt"></i> Donors in {selectedVillage.name}</h3>
+                  <button className="hamburger-btn" onClick={() => setSelectedVillage(null)} style={{ fontSize: '24px' }}>&times;</button>
+                </div>
+                <div className="slideover-body">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ fontSize: '13px' }}>
+                      <strong>Total Slips:</strong> {selectedVillage.slips.length} | <strong>Total Collected:</strong> <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>₹{selectedVillage.totalAmount.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handlePrintVillageDonors(selectedVillage)} style={{ padding: '5px 12px', fontSize: '12px' }}><i className="fas fa-print"></i> Print</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleExportVillageCSV(selectedVillage)} style={{ padding: '5px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> Excel/CSV</button>
+                    </div>
+                  </div>
+                  <div className="table-responsive">
+                    <table id="village-donors-print-table">
+                      <thead>
+                        <tr>
+                          <th>Receipt No</th>
+                          <th>Donor Name</th>
+                          <th>Mobile</th>
+                          <th>Amount</th>
+                          <th>Date</th>
+                          <th>Mode</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedVillage.slips.map(s => (
+                          <tr key={s.receipt_no}>
+                            <td>#{s.receipt_no}</td>
+                            <td><strong>{s.donor_name}</strong></td>
+                            <td>{s.donor_mobile || 'N/A'}</td>
+                            <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(s.amount).toFixed(2)}</td>
+                            <td>{new Date(s.date || s.timestamp).toLocaleDateString('en-IN')}</td>
+                            <td>{s.mode}</td>
+                          </tr>
+                        ))}
+                        {selectedVillage.slips.length === 0 && (
+                          <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No contributions in this village.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="slideover-footer">
+                  <button className="btn btn-secondary" onClick={() => setSelectedVillage(null)}>Close</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
