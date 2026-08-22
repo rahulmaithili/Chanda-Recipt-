@@ -1674,6 +1674,28 @@
       }, 500);
     };
 
+    const getRoleDisplayName = (roleVal) => {
+      if (!roleVal) return '';
+      const lower = roleVal.toLowerCase();
+      const lang = typeof getSelectedLanguage === 'function' ? getSelectedLanguage() : 'en';
+      if (lower === 'super admin') {
+        if (lang === 'hi') return 'अध्यक्ष (President)';
+        if (lang === 'hinglish' || lang === 'hl') return 'President (Super Admin)';
+        return 'President';
+      }
+      if (lower === 'admin') {
+        if (lang === 'hi') return 'कोषाध्यक्ष (Treasurer)';
+        if (lang === 'hinglish' || lang === 'hl') return 'Treasurer (Admin)';
+        return 'Treasurer';
+      }
+      if (lower === 'collector') {
+        if (lang === 'hi') return 'प्राप्तकर्ता / सदस्य (Collector)';
+        if (lang === 'hinglish' || lang === 'hl') return 'Collector (Sadasya)';
+        return 'Collector';
+      }
+      return roleVal;
+    };
+
     function ChandaApp() {
       const [currentUser, setCurrentUser] = useState(getCurrentUser());
       const [activeTab, setActiveTab] = useState('dashboard');
@@ -2010,28 +2032,7 @@
       const translate = (key) => {
         return APP_TRANSLATIONS[language]?.[key] || APP_TRANSLATIONS['en']?.[key] || key;
       };
-
-      const getRoleDisplayName = (roleVal) => {
-        if (!roleVal) return '';
-        const lower = roleVal.toLowerCase();
-        if (lower === 'super admin') {
-          if (language === 'hi') return 'अध्यक्ष (President)';
-          if (language === 'hinglish') return 'President (Super Admin)';
-          return 'President';
-        }
-        if (lower === 'admin') {
-          if (language === 'hi') return 'कोषाध्यक्ष (Treasurer)';
-          if (language === 'hinglish') return 'Treasurer (Admin)';
-          return 'Treasurer';
-        }
-        if (lower === 'collector') {
-          if (language === 'hi') return 'प्राप्तकर्ता / सदस्य (Collector)';
-          if (language === 'hinglish') return 'Collector (Sadasya)';
-          return 'Collector';
-        }
-        return roleVal;
-      };
-      const hasPermission = (pageKey, permissionType) => {
+       const hasPermission = (pageKey, permissionType) => {
         if (!currentUser) return false;
         const currentRoleLower = (currentUser.role || "").toLowerCase();
         if (currentRoleLower === "super admin" || currentRoleLower === "admin") {
