@@ -1513,6 +1513,10 @@
           });
           const data = await res.json();
           if (data.success) {
+            if (data.user.allow_login === 0 || data.user.allow_login === "0" || data.user.allow_login === false) {
+              Swal.fire({ text: "Access Blocked: Web login is disabled for your account.", icon: 'error', confirmButtonColor: '#ff851b' });
+              return;
+            }
             localStorage.setItem("currentUser", JSON.stringify(data.user));
             setCurrentUser(data.user);
             showToast("Login Successful!");
@@ -1741,6 +1745,7 @@
                 const ok = await handleSaveRecord(currentRecord ? "updateDonation" : "addDonation", { donation: payload });
                 if (ok) setShowDonationForm(false);
               }}
+              settings={systemData.settings}
               t={translate}
             />
           )}
@@ -1801,10 +1806,10 @@
           {showMobileFabMenu && (
             <div className="mobile-fab-menu">
               <button onClick={() => { setShowMobileFabMenu(false); setInstallmentParent(null); setCurrentRecord(null); setShowDonationForm(true); }}>
-                <i className="fas fa-hand-holding-usd" style={{ color: 'var(--success)' }}></i> {t('add_donation')}
+                <i className="fas fa-hand-holding-usd" style={{ color: 'var(--success)' }}></i> {translate('add_donation')}
               </button>
               <button onClick={() => { setShowMobileFabMenu(false); setCurrentRecord(null); setShowExpenseForm(true); }}>
-                <i className="fas fa-tags" style={{ color: 'var(--danger)' }}></i> {t('add_expense')}
+                <i className="fas fa-tags" style={{ color: 'var(--danger)' }}></i> {translate('add_expense')}
               </button>
             </div>
           )}
@@ -1819,34 +1824,34 @@
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <button className={`btn btn-secondary ${activeTab === 'dues' ? 'active' : ''}`} onClick={() => { setActiveTab('dues'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-search-dollar"></i> {t('dues_tracker')}
+                    <i className="fas fa-search-dollar"></i> {translate('dues_tracker')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'handovers' ? 'active' : ''}`} onClick={() => { setActiveTab('handovers'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-wallet"></i> {t('handovers')}
+                    <i className="fas fa-wallet"></i> {translate('handovers')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'villages' ? 'active' : ''}`} onClick={() => { setActiveTab('villages'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-map-marker-alt"></i> {t('villages')}
+                    <i className="fas fa-map-marker-alt"></i> {translate('villages')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-list-ul"></i> {t('categories')}
+                    <i className="fas fa-list-ul"></i> {translate('categories')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-piggy-bank"></i> {t('accounts')}
+                    <i className="fas fa-piggy-bank"></i> {translate('accounts')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-users-cog"></i> {t('users')}
+                    <i className="fas fa-users-cog"></i> {translate('users')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-key"></i> {t('roles')}
+                    <i className="fas fa-key"></i> {translate('roles')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'festivals' ? 'active' : ''}`} onClick={() => { setActiveTab('festivals'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-calendar-alt"></i> {t('festivals')}
+                    <i className="fas fa-calendar-alt"></i> {translate('festivals')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-sliders-h"></i> {t('settings')}
+                    <i className="fas fa-sliders-h"></i> {translate('settings')}
                   </button>
                   <button className={`btn btn-secondary ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => { setActiveTab('profile'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-user-cog"></i> {t('profile')}
+                    <i className="fas fa-user-cog"></i> {translate('profile')}
                   </button>
                 </div>
                 <button className="btn btn-danger" onClick={() => { handleLogout(); setShowMobileMenu(false); }} style={{ width: '100%', marginTop: '15px' }}>
@@ -2003,7 +2008,13 @@
           </div>
 
           <div className="sidebar-user">
-            <div className="sidebar-avatar">{user.name.charAt(0).toUpperCase()}</div>
+            <div className="sidebar-avatar">
+              {user.profile_pic ? (
+                <img src={user.profile_pic} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
+            </div>
             {!collapsed && (
               <div style={{ marginTop: '5px' }}>
                 <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{user.name}</div>
@@ -2765,10 +2776,11 @@
       );
     }
 
-    // Modernized ReportsView Component (Resolves village slips & high-to-low printing requirements!)
     function ReportsView({ systemData, t }) {
       const donations = systemData.donations || [];
       const villages = systemData.villages || [];
+      const users = systemData.users || [];
+      const handovers = systemData.handovers || [];
 
       // Calculate village slip counts and collector details
       const villageReport = villages.map(v => {
@@ -2785,6 +2797,29 @@
       // Sort contributions from highest to lowest amount
       const sortedDonations = [...donations].sort((a, b) => parseFloat(b.amount || 0) - parseFloat(a.amount || 0));
 
+      // Calculate member performance KPIs & collections
+      const memberReport = users.filter(u => u.role === 'Collector' || u.role === 'Admin' || u.role === 'Super Admin').map(u => {
+        const slips = donations.filter(d => d.collected_by_mobile === u.mobile);
+        const totalCollected = slips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
+        const approvedHandovers = handovers.filter(h => h.collector_mobile === u.mobile && h.status === 'Approved');
+        const totalHandedOver = approvedHandovers.reduce((sum, h) => sum + parseFloat(h.amount || 0), 0);
+        const pendingAmount = totalCollected - totalHandedOver;
+        const target = parseFloat(u.target_donation || 0);
+        const remainingDues = target > totalCollected ? target - totalCollected : 0;
+
+        return {
+          id: u.id,
+          name: u.name,
+          mobile: u.mobile,
+          village: u.village || 'All Villages',
+          target: target,
+          collected: totalCollected,
+          handedOver: totalHandedOver,
+          pending: pendingAmount,
+          dues: remainingDues
+        };
+      });
+
       const handlePrintReport = (elementId, title) => {
         const printWindow = window.open('', '_blank');
         printWindow.document.write('<html><head><title>Print Report</title>');
@@ -2795,6 +2830,19 @@
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         printWindow.print();
+      };
+
+      const handleExportMemberCSV = () => {
+        let headers = ["Member Name", "Assigned Village", "Target", "Collected", "Handed Over", "Pending", "Remaining Dues"];
+        let rows = memberReport.map(mr => [mr.name, mr.village, mr.target, mr.collected, mr.handedOver, mr.pending, mr.dues]);
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `member_performance_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
 
       return (
@@ -2808,6 +2856,49 @@
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '25px' }}>
+            {/* Member Collection KPIs Performance Report */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                <h3><i className="fas fa-users-cog"></i> सदस्य संग्रह प्रदर्शन रिपोर्ट (Member Collections Report)</h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('member-report-table', 'Member Performance & Collection Report')}>
+                    <i className="fas fa-print"></i> {t('print')}
+                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportMemberCSV} style={{ background: '#2c3e50' }}>
+                    <i className="fas fa-file-csv"></i> Excel/CSV
+                  </button>
+                </div>
+              </div>
+              <div className="table-responsive">
+                <table id="member-report-table">
+                  <thead>
+                    <tr>
+                      <th>सदस्य का नाम (Member Name)</th>
+                      <th>गाँव (Village)</th>
+                      <th>चंदा लक्ष्य (Target)</th>
+                      <th>कुल जमा चंदा (Collected)</th>
+                      <th>जमा राशि (Handed Over)</th>
+                      <th>शेष पास में (Pending)</th>
+                      <th>लक्ष्य शेष (Remaining Dues)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {memberReport.map(mr => (
+                      <tr key={mr.id}>
+                        <td><strong>{mr.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{mr.mobile}</small></td>
+                        <td>{mr.village}</td>
+                        <td style={{ fontWeight: 'bold' }}>₹{mr.target.toFixed(2)}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{mr.collected.toFixed(2)}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{mr.handedOver.toFixed(2)}</td>
+                        <td style={{ fontWeight: 'bold', color: mr.pending > 0 ? '#d35400' : '#27ae60' }}>₹{mr.pending.toFixed(2)}</td>
+                        <td style={{ fontWeight: 'bold', color: mr.dues > 0 ? '#c0392b' : '#7f8c8d' }}>₹{mr.dues.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* Village summary list */}
             <div className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -3144,7 +3235,10 @@
     function CategoriesView({ systemData, onAction, onDelete, t }) {
       const [name, setName] = useState('');
       const [editId, setEditId] = useState(null);
+      const [selectedCategory, setSelectedCategory] = useState(null);
+
       const categories = systemData.categories || [];
+      const expenses = systemData.expenses || [];
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -3154,6 +3248,32 @@
           setName('');
           setEditId(null);
         }
+      };
+
+      const handlePrintCategoryExpenses = (cInfo) => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Print Category Expenses</title>');
+        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(`<h2>Category Expenses List - ${cInfo.name}</h2>`);
+        printWindow.document.write(`<p><strong>Total Items:</strong> ${cInfo.items.length} | <strong>Total Spent:</strong> ₹${cInfo.totalAmount.toFixed(2)}</p>`);
+        printWindow.document.write(document.getElementById('category-expenses-print-table').outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+      };
+
+      const handleExportCategoryCSV = (cInfo) => {
+        let headers = ["Voucher No", "Date", "Title", "Amount", "Account Mode", "Status", "Note"];
+        let rows = cInfo.items.map(ex => [ex.expense_no, ex.date || ex.timestamp, ex.title, ex.amount, ex.mode, ex.status, ex.note || ""]);
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `expenses_${cInfo.name}_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
 
       return (
@@ -3177,24 +3297,95 @@
                   <tr>
                     <th>#</th>
                     <th>{t('category_name')}</th>
+                    <th>Total Expenses</th>
                     <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map((c, idx) => (
-                    <tr key={c.id}>
-                      <td>#{idx + 1}</td>
-                      <td><strong>{c.name}</strong></td>
-                      <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(c.id); setName(c.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("categories", "id", c.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
-                      </td>
-                    </tr>
-                  ))}
+                  {categories.map((c, idx) => {
+                    const items = expenses.filter(e => e.category === c.name);
+                    const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+                    return (
+                      <tr key={c.id}>
+                        <td>#{idx + 1}</td>
+                        <td><strong>{c.name}</strong></td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>
+                          ₹{totalAmount.toFixed(2)}
+                        </td>
+                        <td>
+                          <button className="action-icon view-icon" onClick={() => setSelectedCategory({ name: c.name, items, totalAmount })} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-eye"></i></button>
+                          <button className="action-icon edit-icon" onClick={() => { setEditId(c.id); setName(c.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          <button className="action-icon delete-icon" onClick={() => onDelete("categories", "id", c.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
+
+          {/* Modal overlay showing expenses under selected category */}
+          {selectedCategory && (
+            <div className="modal-slideover-overlay" onClick={() => setSelectedCategory(null)}>
+              <div className="modal-slideover" style={{ width: '750px' }} onClick={(e) => e.stopPropagation()}>
+                <div className="slideover-header">
+                  <h3><i className="fas fa-folder-open"></i> Expenses in {selectedCategory.name}</h3>
+                  <button className="hamburger-btn" onClick={() => setSelectedCategory(null)} style={{ fontSize: '24px' }}>&times;</button>
+                </div>
+                <div className="slideover-body">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ fontSize: '13px' }}>
+                      <strong>Total Items:</strong> {selectedCategory.items.length} | <strong>Total Spent:</strong> <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>₹{selectedCategory.totalAmount.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handlePrintCategoryExpenses(selectedCategory)} style={{ padding: '5px 12px', fontSize: '12px' }}><i className="fas fa-print"></i> Print</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleExportCategoryCSV(selectedCategory)} style={{ padding: '5px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> Excel/CSV</button>
+                    </div>
+                  </div>
+                  <div className="table-responsive">
+                    <table id="category-expenses-print-table">
+                      <thead>
+                        <tr>
+                          <th>Voucher No</th>
+                          <th>Title</th>
+                          <th>Amount</th>
+                          <th>Date</th>
+                          <th>Account</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedCategory.items.map(ex => (
+                          <tr key={ex.expense_no}>
+                            <td>#{ex.expense_no}</td>
+                            <td>
+                              <strong>{ex.title}</strong>
+                              {ex.note && <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>{ex.note}</div>}
+                            </td>
+                            <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
+                            <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
+                            <td>{ex.mode}</td>
+                            <td>
+                              <span style={{ padding: '2px 6px', borderRadius: '10px', fontSize: '10.5px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                                {ex.status === 'Approved' ? t('approved') : t('pending')}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                        {selectedCategory.items.length === 0 && (
+                          <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No expense records found.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="slideover-footer">
+                  <button className="btn btn-secondary" onClick={() => setSelectedCategory(null)}>Close</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -3366,10 +3557,12 @@
               <table>
                 <thead>
                   <tr>
+                    <th>Avatar</th>
                     <th>{t('username')}</th>
                     <th>{t('mobile')} (Login ID)</th>
                     <th>{t('role')}</th>
                     <th>{t('status')}</th>
+                    <th>Login Access</th>
                     <th>{t('village_assigned')}</th>
                     <th>{t('actions')}</th>
                   </tr>
@@ -3377,12 +3570,26 @@
                 <tbody>
                   {filtered.map(u => (
                     <tr key={u.id}>
+                      <td>
+                        {u.profile_pic ? (
+                          <img src={u.profile_pic} alt={u.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(0,0,0,0.1)' }} />
+                        ) : (
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', fontWeight: 'bold' }}>
+                            {u.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </td>
                       <td><strong>{u.name}</strong></td>
                       <td>{u.mobile}</td>
                       <td>{u.role}</td>
                       <td>
                         <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: u.status === 'active' ? '#d2f4ea' : '#f8d7da', color: u.status === 'active' ? '#0f766e' : '#721c24' }}>
                           {u.status === 'active' ? t('active') : t('inactive')}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: (u.allow_login == 1 || u.allow_login === true) ? '#d2f4ea' : '#f8d7da', color: (u.allow_login == 1 || u.allow_login === true) ? '#0f766e' : '#721c24' }}>
+                          {(u.allow_login == 1 || u.allow_login === true) ? 'Allowed' : 'Blocked'}
                         </span>
                       </td>
                       <td>{u.village || 'N/A'}</td>
@@ -3630,6 +3837,8 @@
       const [smsKey, setSmsKey] = useState('');
       const [smsSender, setSmsSender] = useState('');
       const [smsAuto, setSmsAuto] = useState(false);
+      const [logoBase64, setLogoBase64] = useState(null);
+      const [logoPreview, setLogoPreview] = useState('');
 
       const settings = systemData.settings || {};
 
@@ -3639,19 +3848,36 @@
         setSmsKey(settings.sms_api_key || '');
         setSmsSender(settings.sms_sender_id || '');
         setSmsAuto(settings.sms_auto_send === 'true');
+        setLogoPreview(settings.lord_photo || '');
       }, [settings]);
+
+      const handleLogoFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setLogoBase64(reader.result);
+          setLogoPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      };
 
       const handleSubmit = async (e) => {
         e.preventDefault();
-        onAction("saveSettings", {
-          settings: {
-            committee_name: name.trim(),
-            committee_address: address.trim(),
-            sms_api_key: smsKey.trim(),
-            sms_sender_id: smsSender.trim(),
-            sms_auto_send: smsAuto ? 'true' : 'false'
-          }
-        });
+        const payload = {
+          committee_name: name.trim(),
+          committee_address: address.trim(),
+          sms_api_key: smsKey.trim(),
+          sms_sender_id: smsSender.trim(),
+          sms_auto_send: smsAuto ? 'true' : 'false'
+        };
+        if (logoBase64) {
+          payload.lord_photo_base64 = logoBase64;
+        }
+        const ok = await onAction("saveSettings", { settings: payload });
+        if (ok) {
+          onRefresh();
+        }
       };
 
       return (
@@ -3666,6 +3892,15 @@
               <div className="form-group">
                 <label>Address</label>
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Slip Logo / Deity Photo</label>
+                <input type="file" accept="image/*" onChange={handleLogoFileChange} style={{ padding: '5px' }} />
+                {logoPreview && (
+                  <div style={{ marginTop: '10px' }}>
+                    <img src={logoPreview} alt="Logo Preview" style={{ maxHeight: '60px', borderRadius: '4px', objectFit: 'contain' }} />
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>WhatsApp API Token (UltraMsg Token)</label>
@@ -3711,12 +3946,34 @@
     function ProfileView({ user, onAction, onLogout, activeThemeId, onChangeTheme, t }) {
       const [name, setName] = useState(user.name);
       const [password, setPassword] = useState('');
+      const [picBase64, setPicBase64] = useState(null);
+      const [picPreview, setPicPreview] = useState(user.profile_pic || '');
+
+      const handlePicChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPicBase64(reader.result);
+          setPicPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      };
 
       const handleSubmit = async (e) => {
         e.preventDefault();
-        const payload = { name: name.trim() };
+        const payload = {
+          id: user.id,
+          name: name.trim(),
+          mobile: user.mobile,
+          role: user.role,
+          status: user.status,
+          allow_login: user.allow_login === undefined ? 1 : user.allow_login
+        };
         if (password.trim()) payload.password = password.trim();
-        const ok = await onAction("updateMyProfile", { profile: payload });
+        if (picBase64) payload.profile_pic_base64 = picBase64;
+
+        const ok = await onAction("saveUser", { user: payload });
         if (ok) {
           setPassword('');
           Swal.fire({ text: "Profile updated! Please log in again.", icon: 'success' }).then(() => onLogout());
@@ -3728,6 +3985,21 @@
           <div className="card">
             <h3><i className="fas fa-user-cog"></i> {t('profile_settings')}</h3>
             <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
+                <div style={{ position: 'relative', width: '90px', height: '90px' }}>
+                  {picPreview ? (
+                    <img src={picPreview} alt="Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--navy-accent)' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '28px', color: 'var(--text-muted)' }}>
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <label htmlFor="profile-avatar-file" style={{ position: 'absolute', bottom: '0', right: '0', background: 'var(--navy-accent)', color: '#fff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
+                    <i className="fas fa-camera" style={{ fontSize: '12px' }}></i>
+                  </label>
+                  <input id="profile-avatar-file" type="file" accept="image/*" onChange={handlePicChange} style={{ display: 'none' }} />
+                </div>
+              </div>
               <div className="form-group">
                 <label>{t('username')}</label>
                 <input type="text" value={name} onChange={e => setName(e.target.value)} required />
@@ -3775,7 +4047,7 @@
     // MODAL DIALOGS WITH HORIZONTAL SPLIT VIEW (Matches Screenshot 4 layout style!)
     // ==========================================
 
-    function DonationFormModal({ record, parentRecord, villages, donations, onClose, onSave, t }) {
+    function DonationFormModal({ record, parentRecord, villages, donations, onClose, onSave, settings, t }) {
       const [donorName, setDonorName] = useState(record?.donor_name || parentRecord?.donor_name || '');
       const [donorMobile, setDonorMobile] = useState(record?.donor_mobile || parentRecord?.donor_mobile || '');
       const [village, setVillage] = useState(record?.village || parentRecord?.village || (villages[0]?.name || ''));
@@ -3885,7 +4157,7 @@
                   }}>
                     {/* Header */}
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                      <img src="https://img.icons8.com/color/96/ganesh.png" alt="Ganesha" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+                      <img src={settings?.lord_photo || "https://img.icons8.com/color/96/ganesh.png"} alt="Ganesha" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
                       <div style={{ flex: 1, textAlign: 'center' }}>
                         <h4 style={{ fontSize: '12.5px', color: '#c0392b', fontWeight: 'bold', margin: 0 }}>युवा गणेश उत्सव समिति</h4>
                         <p style={{ fontSize: '9px', color: '#2980b9', margin: 0 }}>ग्राम-केशोपुर, जिला-मधुबनी</p>
@@ -4049,10 +4321,24 @@
       const [village, setVillage] = useState(record?.village || '');
       const [targetDonation, setTargetDonation] = useState(record?.target_donation || '');
       const [status, setStatus] = useState(record?.status || 'active');
+      const [allowLogin, setAllowLogin] = useState(record?.allow_login !== undefined ? (record.allow_login == 1 || record.allow_login === true) : true);
+      const [picBase64, setPicBase64] = useState(null);
+      const [picPreview, setPicPreview] = useState(record?.profile_pic || '');
+
+      const handlePicChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPicBase64(reader.result);
+          setPicPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      };
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({
+        const payload = {
           id: record?.id,
           name: name.trim(),
           mobile: mobile.trim(),
@@ -4061,8 +4347,12 @@
           village: village,
           target_donation: targetDonation ? parseFloat(targetDonation) : 0,
           status: status,
-          allow_login: 1
-        });
+          allow_login: allowLogin ? 1 : 0
+        };
+        if (picBase64) {
+          payload.profile_pic_base64 = picBase64;
+        }
+        onSave(payload);
       };
 
       return (
@@ -4074,6 +4364,23 @@
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <div className="slideover-body">
+                {/* Profile Pic Upload Section */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                  <div style={{ position: 'relative', width: '80px', height: '80px' }}>
+                    {picPreview ? (
+                      <img src={picPreview} alt="Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--navy-accent)' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '24px', color: 'var(--text-muted)' }}>
+                        <i className="fas fa-user"></i>
+                      </div>
+                    )}
+                    <label htmlFor="user-avatar-file" style={{ position: 'absolute', bottom: '0', right: '0', background: 'var(--navy-accent)', color: '#fff', width: '26px', height: '26px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
+                      <i className="fas fa-camera" style={{ fontSize: '10px' }}></i>
+                    </label>
+                    <input id="user-avatar-file" type="file" accept="image/*" onChange={handlePicChange} style={{ display: 'none' }} />
+                  </div>
+                </div>
+
                 {/* Two Column Grid Layout */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                   <div className="form-group">
@@ -4116,6 +4423,10 @@
                     <label>{t('target_collection')}</label>
                     <input type="number" placeholder="₹" value={targetDonation} onChange={e => setTargetDonation(e.target.value)} />
                   </div>
+                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '20px' }}>
+                    <input type="checkbox" id="user_allow_login" checked={allowLogin} onChange={e => setAllowLogin(e.target.checked)} style={{ width: 'auto' }} />
+                    <label htmlFor="user_allow_login" style={{ margin: 0, cursor: 'pointer', fontWeight: '600' }}>Allow Website Login</label>
+                  </div>
                 </div>
               </div>
               <div className="slideover-footer">
@@ -4153,7 +4464,7 @@
           {/* Top header Ganesha + Title */}
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
             <div style={{ flex: '0 0 80px', textAlign: 'left' }}>
-              <img src="https://img.icons8.com/color/96/ganesh.png" alt="Ganesha" style={{ width: '65px', height: '65px', objectFit: 'contain' }} />
+              <img src={settings.lord_photo || "https://img.icons8.com/color/96/ganesh.png"} alt="Ganesha" style={{ width: '65px', height: '65px', objectFit: 'contain' }} />
             </div>
             <div style={{ flex: 1, textAlign: 'center', marginRight: '80px' }}>
               <h2 style={{ fontSize: '26px', color: '#c0392b', fontWeight: 'bold', margin: 0, letterSpacing: '1px' }}>
@@ -4238,34 +4549,123 @@
     }
 
     function PrintVoucher({ slip, settings }) {
+      const amountInWords = numberToHindiWords(Math.round(parseFloat(slip.amount)));
+
       return (
-        <div style={{ maxWidth: '280px', margin: '0 auto', padding: '15px', border: '1px solid #000', background: '#fff', fontSize: '11.5px', lineHeight: '1.45', color: '#000', fontFamily: 'monospace' }}>
-          <div style={{ textAlign: 'center', borderBottom: '1.5px solid #000', paddingBottom: '8px', marginBottom: '8px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
-            <p style={{ margin: '2px 0 0', fontSize: '9.5px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
+        <div style={{
+          width: '650px',
+          margin: '20px auto',
+          padding: '25px',
+          border: '4px double #e67e22', // Orange double border
+          borderRadius: '10px',
+          background: '#fff',
+          fontFamily: 'serif',
+          color: '#333',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+          position: 'relative'
+        }}>
+          {/* Top header Ganesha + Title */}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+            <div style={{ flex: '0 0 80px', textAlign: 'left' }}>
+              <img src={settings.lord_photo || "https://img.icons8.com/color/96/ganesh.png"} alt="Logo" style={{ width: '65px', height: '65px', objectFit: 'contain' }} />
+            </div>
+            <div style={{ flex: 1, textAlign: 'center', marginRight: '80px' }}>
+              <h2 style={{ fontSize: '26px', color: '#c0392b', fontWeight: 'bold', margin: 0, letterSpacing: '1px' }}>
+                {settings.committee_name || 'युवा गणेश उत्सव समिति'}
+              </h2>
+              <p style={{ fontSize: '13px', color: '#2980b9', fontWeight: 'bold', margin: '4px 0 0' }}>
+                {settings.committee_address || 'ग्राम-केशोपुर, जिला-मधुबनी (बिहार)'}
+              </p>
+            </div>
           </div>
-          <div style={{ textAlign: 'center', margin: '8px 0' }}>
-            <span style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 'bold', fontSize: '10px' }}>व्यय भुगतान वाउचर</span>
+
+          {/* Divider line */}
+          <hr style={{ border: 0, borderTop: '2px solid #e67e22', margin: '10px 0' }} />
+
+          {/* Pill Badge */}
+          <div style={{ textAlign: 'center', margin: '15px 0' }}>
+            <span style={{ background: '#e67e22', color: '#fff', padding: '5px 25px', borderRadius: '20px', fontWeight: 'bold', fontSize: '14px', letterSpacing: '1px', boxShadow: '0 2px 5px rgba(230,126,34,0.3)' }}>
+              व्यय भुगतान वाउचर
+            </span>
           </div>
-          <div style={{ margin: '8px 0' }}>
-            <p>वाउचर क्र: #{slip.expense_no}</p>
-            <p>दिनांक: {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
-            <p>व्यय शीर्षक: {slip.title}</p>
-            <p>श्रेणी: {slip.category}</p>
-            <p>विवरण: {slip.note || 'N/A'}</p>
+
+          {/* Info grid */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', margin: '15px 0' }}>
+            <div>
+              <strong>वाउचर क्रमांक:</strong> <span style={{ borderBottom: '1px dotted #333', paddingBottom: '2px', minWidth: '100px', display: 'inline-block' }}>{slip.expense_no}</span>
+            </div>
+            <div>
+              <strong>दिनांक:</strong> <span style={{ borderBottom: '1px dotted #333', paddingBottom: '2px', minWidth: '100px', display: 'inline-block' }}>{new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</span>
+            </div>
           </div>
-          <table style={{ width: '100%', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', margin: '8px 0' }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: '4px 0' }}>भुगतान राशि (Paid)</td>
-                <td style={{ textAlign: 'right', padding: '4px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p style={{ fontSize: '9px', textAlign: 'center' }}>माध्यम: {slip.mode} | स्थिति: {slip.status}</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px' }}>
-            <span>हस्ताक्षर (प्राप्तकर्ता)</span>
-            <span>हस्ताक्षर (अध्यक्ष)</span>
+
+          {/* Text rows */}
+          <div style={{ fontSize: '14px', lineHeight: '2', margin: '20px 0' }}>
+            <div style={{ marginBottom: '10px' }}>
+              भुगतान पाने वाला श्री/श्रीमती &nbsp;
+              <span style={{ borderBottom: '1px dotted #333', fontWeight: 'bold', color: '#2980b9', padding: '0 10px', display: 'inline-block', minWidth: '350px' }}>
+                {slip.added_by_name || 'समिति सदस्य'}
+              </span>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              व्यय शीर्षक (Title) &nbsp;
+              <span style={{ borderBottom: '1px dotted #333', fontWeight: 'bold', color: '#2980b9', padding: '0 10px', display: 'inline-block', minWidth: '400px' }}>
+                {slip.title}
+              </span>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              व्यय श्रेणी &nbsp;
+              <span style={{ borderBottom: '1px dotted #333', fontWeight: 'bold', color: '#2980b9', padding: '0 10px', display: 'inline-block', minWidth: '150px' }}>
+                {slip.category}
+              </span>
+              &nbsp; भुगतान अक्षरी रु. &nbsp;
+              <span style={{ borderBottom: '1px dotted #333', fontWeight: 'bold', color: '#2980b9', padding: '0 10px', display: 'inline-block', minWidth: '200px' }}>
+                {amountInWords}
+              </span>
+            </div>
+            {slip.note && (
+              <div style={{ marginBottom: '10px' }}>
+                विवरण (Note) &nbsp;
+                <span style={{ borderBottom: '1px dotted #333', color: '#555', padding: '0 10px', display: 'inline-block', minWidth: '400px' }}>
+                  {slip.note}
+                </span>
+              </div>
+            )}
+            <div style={{ textAlign: 'center', fontWeight: 'bold', marginTop: '15px', color: '#2c3e50' }}>
+              उक्त व्यय राशि का भुगतान समिति कोष से सधन्यवाद स्वीकृत किया गया।
+            </div>
+          </div>
+
+          {/* Bottom section */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '25px' }}>
+            <div style={{ background: '#e67e22', color: '#fff', padding: '8px 25px', borderRadius: '30px', fontSize: '18px', fontWeight: 'bold', boxShadow: '0 3px 6px rgba(0,0,0,0.1)' }}>
+              ₹ {parseFloat(slip.amount).toFixed(2)}/-
+            </div>
+            <div style={{ display: 'flex', gap: '30px', textAlign: 'center', fontSize: '12px', color: '#555' }}>
+              <div>
+                <br /><br />
+                <span style={{ borderTop: '1px solid #777', paddingTop: '5px', display: 'inline-block', width: '120px' }}>हस्ताक्षर (प्राप्तकर्ता)</span>
+              </div>
+              <div>
+                <br /><br />
+                <span style={{ borderTop: '1px solid #777', paddingTop: '5px', display: 'inline-block', width: '120px' }}>हस्ताक्षर (अध्यक्ष)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer stripe */}
+          <div style={{
+            background: 'linear-gradient(90deg, #d35400, #e67e22)',
+            color: '#fff',
+            textAlign: 'center',
+            padding: '6px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            marginTop: '25px',
+            letterSpacing: '0.5px'
+          }}>
+            स्वीकृतकर्ता:- {settings.committee_name || 'युवा गणेश उत्सव समिति'}
           </div>
         </div>
       );
