@@ -268,7 +268,8 @@
             <div id="receipt_print_area" class="receipt-body">
                 <!-- Dynamic Content built like printer slip -->
             </div>
-            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn" style="background:#25d366;" onclick="shareWhatsApp()"><i class="fab fa-whatsapp"></i> Share WhatsApp</button>
                 <button class="btn" onclick="printReceipt()"><i class="fas fa-print"></i> Print</button>
                 <button class="btn btn-dark" onclick="downloadReceiptPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
                 <button class="btn btn-secondary" onclick="closeReceipt()">Close</button>
@@ -432,11 +433,13 @@
     }
 
     let activeReceiptNo = null;
+    let activeReceiptData = null;
 
     function openReceipt(receiptNo) {
         activeReceiptNo = receiptNo;
         const d = rawDonations.find(don => don.receipt_no === receiptNo);
         if (!d) return;
+        activeReceiptData = d;
 
         const logoHtml = lordPhoto ? `<img src="${lordPhoto}" style="width:50px; height:50px; object-fit:contain; display:block; margin:0 auto 10px auto;">` : '';
 
@@ -508,6 +511,12 @@
                         
         const url = `https://api.whatsapp.com/send?phone=91${d.donor_mobile || ''}&text=${encodeURIComponent(message)}`;
         window.open(url, "_blank");
+    }
+
+    function shareWhatsApp() {
+        if (activeReceiptNo) {
+            whatsappReceipt(activeReceiptNo);
+        }
     }
 
     async function deleteReceipt(receiptNo) {
