@@ -2412,14 +2412,14 @@
 
     function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, language, setLanguage, globalSearch, setGlobalSearch, systemData, changeThemePreset, t }) {
       const settings = systemData.settings || {};
-      const [showThemePanel, setShowThemePanel] = useState(false);
-      const [showNotifPanel, setShowNotifPanel] = useState(false);
+      const [showThemePanel, setShowThemePanel] = React.useState(false);
+      const [showNotifPanel, setShowNotifPanel] = React.useState(false);
 
       const userThemeKey = user ? `app_theme_id_${user.mobile}` : "app_theme_id";
       const initialTheme = localStorage.getItem(userThemeKey) || localStorage.getItem("app_theme_id") || "navy";
-      const [activeTheme, setActiveTheme] = useState(initialTheme);
+      const [activeTheme, setActiveTheme] = React.useState(initialTheme);
 
-      useEffect(() => {
+      React.useEffect(() => {
         setActiveTheme(initialTheme);
       }, [initialTheme]);
 
