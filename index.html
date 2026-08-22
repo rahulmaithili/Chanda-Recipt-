@@ -1829,6 +1829,27 @@
               h.id === payload.id ? { ...h, status: "Approved", approved_by_name: currentUser.name } : h
             );
           }
+          else if (action === "toggleRbac") {
+            const { roleKey, pageKey, permKey, value } = payload;
+            updatedData.roles = updatedData.roles.map(r => {
+              if (r.role_key === roleKey) {
+                let perms = {};
+                try { perms = JSON.parse(r.permissions || '{}'); } catch(e) {}
+                if (!perms[pageKey]) perms[pageKey] = { v: 0, a: 0, e: 0, d: 0 };
+                perms[pageKey][permKey] = value ? 1 : 0;
+                
+                // Implied permissions logic mirroring backend
+                if (permKey === 'v' && !value) {
+                  perms[pageKey].a = 0; perms[pageKey].e = 0; perms[pageKey].d = 0;
+                }
+                if (permKey !== 'v' && value) {
+                  perms[pageKey].v = 1;
+                }
+                return { ...r, permissions: JSON.stringify(perms) };
+              }
+              return r;
+            });
+          }
           
           setSystemData(updatedData);
         } catch (e) {
