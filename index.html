@@ -549,7 +549,7 @@
       display: none;
     }
     @media print {
-      body * { display: none !important; }
+      .app-container, .modal-slideover-overlay, .modal-backdrop, .sweet-alert, .swal2-container { display: none !important; }
       .print-box, .print-box * { display: block !important; visibility: visible !important; }
       .print-box { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
     }
@@ -1622,7 +1622,8 @@
       }
 
       return (
-        <div className="app-container">
+        <>
+          <div className="app-container">
           <Sidebar 
             collapsed={sidebarCollapsed} 
             setCollapsed={setSidebarCollapsed} 
@@ -1771,16 +1772,7 @@
             />
           )}
 
-          {/* Hidden print render container overlays */}
-          {printRecord && (
-            <div className="print-box">
-              {printType === 'receipt' ? (
-                <PrintReceipt slip={printRecord} settings={systemData.settings} />
-              ) : (
-                <PrintVoucher slip={printRecord} settings={systemData.settings} />
-              )}
-            </div>
-          )}
+
 
           {/* Mobile Bottom Navigation Bar */}
           <div className="mobile-bottom-nav">
@@ -1863,7 +1855,18 @@
               </div>
             </div>
           )}
-        </div>
+          </div>
+          {/* Hidden print render container overlays */}
+          {printRecord && (
+            <div className="print-box">
+              {printType === 'receipt' ? (
+                <PrintReceipt slip={printRecord} settings={systemData.settings} />
+              ) : (
+                <PrintVoucher slip={printRecord} settings={systemData.settings} />
+              )}
+            </div>
+          )}
+        </>
       );
     }
 
