@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#001f3f">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
   <title>Ganesh Utsav - Chanda ERP</title>
 
   <!-- CDN Dependencies -->
@@ -1258,6 +1261,7 @@
         'reports': 'Reports & Analytics',
         'village_report': 'Village Slip Summary',
         'top_donations': 'Top Contributions (High to Low)',
+        'donors': 'Donor Ledger',
         
         'total_donation': 'Total Donations',
         'total_expense': 'Total Expenses',
@@ -1367,6 +1371,7 @@
         'reports': 'रिपोर्ट और विश्लेषण',
         'village_report': 'गाँव अनुसार रसीदें',
         'top_donations': 'उच्चतम चंदा संग्रह (अधिक से कम)',
+        'donors': 'दाता बही खाता (Ledger)',
         
         'total_donation': 'कुल चंदा संग्रह',
         'total_expense': 'कुल स्वीकृत खर्चे',
@@ -1604,6 +1609,28 @@
                    `*राशि (Amount):* ₹${parseFloat(d.amount).toFixed(2)}\n` +
                    `*भुगतान माध्यम (Mode):* ${d.mode}\n` +
                    `*प्राप्तकर्ता (Received By):* ${d.collected_by_name || 'कमिटी सदस्य'}\n` +
+                   `-----------------------------\n` +
+                   `*गणपति बाप्पा मोरया! मंगल मूर्ति मोरया!*`;
+                   
+      const encodedText = encodeURIComponent(text);
+      let phone = String(d.donor_mobile || '').replace(/\D/g, '');
+      if (phone.length === 10) {
+        phone = '91' + phone;
+      }
+      const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedText}`;
+      window.open(url, '_blank');
+    };
+
+    const sendWhatsAppCertificate = (d, settings) => {
+      const committeeName = settings?.committee_name || "श्री गणेश उत्सव समिति";
+      const text = `*📜 ${committeeName} 📜*\n` +
+                   `-----------------------------\n` +
+                   `*चंदा दाता सम्मान पत्र (Certificate of Appreciation)*\n\n` +
+                   `हम अत्यंत हर्ष के साथ श्री/श्रीमती *${d.donor_name}* (ग्राम/मोहल्ला: *${d.village}*) को यह सम्मान पत्र सह धन्यवाद पत्र भेंट करते हैं।\n\n` +
+                   `आपने गणेश उत्सव हेतु उदारतापूर्वक *₹${parseFloat(d.amount).toFixed(2)}* का चंदा योगदान देकर धर्म कार्य में हमारी सहायता की है।\n\n` +
+                   `समिति आपके इस अमूल्य सहयोग की सराहना करती है और मंगलमूर्ति श्री गणेश जी से आपके परिवार की सुख, समृद्धि और उत्तम स्वास्थ्य की प्रार्थना करती है।\n\n` +
+                   `*सादर धन्यवाद,*\n` +
+                   `*${committeeName}*\n` +
                    `-----------------------------\n` +
                    `*गणपति बाप्पा मोरया! मंगल मूर्ति मोरया!*`;
                    
@@ -2151,6 +2178,7 @@
                   onAdd={() => { setCurrentRecord(null); setInstallmentParent(null); setShowDonationForm(true); }}
                   onPrint={(rec) => { setPrintRecord(rec); setPrintType('receipt'); setTimeout(() => window.print(), 100); }}
                   sendWhatsAppReceipt={sendWhatsAppReceipt}
+                  sendWhatsAppCertificate={sendWhatsAppCertificate}
                   hasPermission={hasPermission}
                   t={translate}
                 />
@@ -2186,6 +2214,12 @@
               {activeTab === 'reports' && (
                 <ReportsView 
                   systemData={systemData} 
+                  t={translate}
+                />
+              )}
+              {activeTab === 'donors' && (
+                <DonorsView
+                  systemData={systemData}
                   t={translate}
                 />
               )}
@@ -2353,6 +2387,11 @@
                   {hasPermission('dues', 'v') && (
                     <button className={`btn btn-secondary ${activeTab === 'dues' ? 'active' : ''}`} onClick={() => { setActiveTab('dues'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
                       <i className="fas fa-search-dollar"></i> {translate('dues_tracker')}
+                    </button>
+                  )}
+                  {hasPermission('donations', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'donors' ? 'active' : ''}`} onClick={() => { setActiveTab('donors'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-address-book"></i> {translate('donors')}
                     </button>
                   )}
                   {hasPermission('handovers', 'v') && (
@@ -2596,6 +2635,14 @@
                 <button className={activeTab === 'dues' ? 'active' : ''} onClick={() => setActiveTab('dues')}>
                   <i className="fas fa-search-dollar sidebar-icon"></i>
                   <span>{t('dues_tracker')}</span>
+                </button>
+              </li>
+            )}
+            {hasPermission('donations', 'v') && (
+              <li>
+                <button className={activeTab === 'donors' ? 'active' : ''} onClick={() => setActiveTab('donors')}>
+                  <i className="fas fa-address-book sidebar-icon"></i>
+                  <span>{t('donors')}</span>
                 </button>
               </li>
             )}
@@ -2927,7 +2974,11 @@
     function DashboardView({ systemData, user, setActiveTab, globalSearch, t }) {
       const donations = systemData.donations || [];
       const expenses = systemData.expenses || [];
-      
+      const handovers = systemData.handovers || [];
+      const villages = systemData.villages || [];
+      const users = systemData.users || [];
+      const settings = systemData.settings || {};
+
       let totalDonations = 0;
       donations.forEach(d => totalDonations += parseFloat(d.amount || 0));
 
@@ -2945,8 +2996,43 @@
         if (dues > 0 && !d.parent_receipt_no) outstandingDues += dues;
       });
 
+      const pendingHandoversCount = handovers.filter(h => h.status === 'Pending').length;
+      const isAdmin = (user.role || '').toLowerCase() === 'super admin' || (user.role || '').toLowerCase() === 'admin';
+
+      // Festival Countdown
+      const festivalDate = settings.festival_date ? new Date(settings.festival_date) : null;
+      const daysLeft = festivalDate ? Math.ceil((festivalDate - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
+      // Village-wise collections & targets
+      const villageStats = React.useMemo(() => {
+        const stats = {};
+        villages.forEach(v => {
+          stats[v.name] = { name: v.name, target: parseFloat(v.target || 0), collected: 0 };
+        });
+        donations.forEach(d => {
+          if (stats[d.village]) stats[d.village].collected += parseFloat(d.amount || 0);
+          else stats[d.village] = { name: d.village, target: 0, collected: parseFloat(d.amount || 0) };
+        });
+        return Object.values(stats).sort((a, b) => b.collected - a.collected);
+      }, [donations, villages]);
+
+      // Collector Leaderboard
+      const collectorLeaderboard = React.useMemo(() => {
+        const stats = {};
+        donations.forEach(d => {
+          const key = d.collected_by_mobile || d.collected_by_name;
+          if (!key) return;
+          if (!stats[key]) stats[key] = { name: d.collected_by_name || key, amount: 0, count: 0 };
+          stats[key].amount += parseFloat(d.amount || 0);
+          stats[key].count++;
+        });
+        return Object.values(stats).sort((a, b) => b.amount - a.amount).slice(0, 5);
+      }, [donations]);
+
+      const maxCollected = collectorLeaderboard.length > 0 ? collectorLeaderboard[0].amount : 1;
+
       // Filter local lists if search query is active
-      const displayDonations = donations.filter(d => 
+      const displayDonations = donations.filter(d =>
         d.donor_name.toLowerCase().includes(globalSearch.toLowerCase()) || d.receipt_no.includes(globalSearch)
       );
 
@@ -2980,15 +3066,36 @@
       return (
         <div>
           {/* Dashboard Header Bar */}
-          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tachometer-alt"></i> {t('dashboard')} Overview</h2>
-              <small style={{ color: 'var(--text-muted)' }}>Home / {t('dashboard')}</small>
+              <small style={{ color: 'var(--text-muted)' }}>Welcome back, <strong>{user.name}</strong> 👋</small>
             </div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--navy-accent)' }}>
-              <i className="fas fa-calendar-day"></i> {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {daysLeft !== null && (
+                <div style={{ textAlign: 'center', background: daysLeft <= 7 ? 'linear-gradient(135deg,#ff4136,#c0392b)' : daysLeft <= 30 ? 'linear-gradient(135deg,#ff851b,#e67e22)' : 'linear-gradient(135deg,#0074D9,#001f3f)', color: '#fff', padding: '8px 18px', borderRadius: '10px', minWidth: '90px' }}>
+                  <div style={{ fontSize: '26px', fontWeight: 'bold', lineHeight: '1' }}>{daysLeft > 0 ? daysLeft : 0}</div>
+                  <div style={{ fontSize: '10px', opacity: 0.85 }}>{daysLeft > 0 ? 'Days to Festival' : 'Festival Today! 🎉'}</div>
+                </div>
+              )}
+              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--navy-accent)' }}>
+                <i className="fas fa-calendar-day"></i> {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+              </div>
             </div>
           </div>
+
+          {/* Pending Handover Alert for Admin */}
+          {isAdmin && pendingHandoversCount > 0 && (
+            <div onClick={() => setActiveTab('handovers')} style={{ cursor: 'pointer', background: 'linear-gradient(135deg, #fff8e1, #ffecb3)', border: '1.5px solid #ffe082', borderRadius: '10px', padding: '12px 18px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontWeight: 'bold', color: '#a46000', fontSize: '13px' }}>
+                  <i className="fas fa-clock"></i> {pendingHandoversCount} Cash Handover{pendingHandoversCount > 1 ? 's' : ''} Awaiting Approval
+                </span>
+                <div style={{ fontSize: '11px', color: '#a46000', marginTop: '2px' }}>Click to approve and settle the cash.</div>
+              </div>
+              <span style={{ background: '#ff851b', color: '#fff', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>{pendingHandoversCount}</span>
+            </div>
+          )}
 
           <div className="stats-grid">
             <div className="stat-widget bg-accent" onClick={() => setActiveTab('donations')}>
@@ -3052,11 +3159,72 @@
               </div>
             </div>
           </div>
+
+          {/* Village Target Progress */}
+          {villageStats.length > 0 && (
+            <div className="card" style={{ marginTop: '20px' }}>
+              <div className="card-header">
+                <h3><i className="fas fa-map-marker-alt"></i> Village Collection Progress</h3>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px', padding: '5px 0' }}>
+                {villageStats.map(v => {
+                  const pct = v.target > 0 ? Math.min(100, Math.round((v.collected / v.target) * 100)) : null;
+                  return (
+                    <div key={v.name} style={{ padding: '12px', borderRadius: '8px', background: '#f8faff', border: '1px solid rgba(0,0,0,0.05)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{v.name}</span>
+                        <span style={{ fontWeight: 'bold', color: 'var(--success)', fontSize: '13px' }}>₹{v.collected.toLocaleString('en-IN')}</span>
+                      </div>
+                      {v.target > 0 && (
+                        <>
+                          <div style={{ height: '7px', borderRadius: '4px', background: '#e8ecf0', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? '#2ecc71' : pct >= 60 ? '#0074D9' : '#ff851b', borderRadius: '4px', transition: 'width 0.5s' }}></div>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '10px', color: 'var(--text-muted)' }}>
+                            <span>Target: ₹{v.target.toLocaleString('en-IN')}</span>
+                            <span style={{ fontWeight: 'bold', color: pct >= 100 ? '#2ecc71' : 'inherit' }}>{pct}%</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Collector Leaderboard */}
+          {collectorLeaderboard.length > 0 && (
+            <div className="card" style={{ marginTop: '20px' }}>
+              <div className="card-header">
+                <h3><i className="fas fa-trophy"></i> Top Collectors — Leaderboard</h3>
+              </div>
+              <div style={{ padding: '5px 0' }}>
+                {collectorLeaderboard.map((c, idx) => (
+                  <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: idx === 0 ? '#f1c40f' : idx === 1 ? '#95a5a6' : idx === 2 ? '#cd7f32' : 'var(--navy-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', flexShrink: 0 }}>
+                      {idx + 1}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{c.name}</span>
+                        <span style={{ fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{c.amount.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div style={{ height: '5px', borderRadius: '3px', background: '#e8ecf0', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${(c.amount / maxCollected) * 100}%`, background: idx === 0 ? '#f1c40f' : 'var(--navy-accent)', borderRadius: '3px' }}></div>
+                      </div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{c.count} receipts</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
-    function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, sendWhatsAppReceipt, hasPermission, t }) {
+    function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, sendWhatsAppReceipt, sendWhatsAppCertificate, hasPermission, t }) {
       const [villageFilter, setVillageFilter] = useState('All');
       const [modeFilter, setModeFilter] = useState('All');
       const [searchLocal, setSearchLocal] = useState('');
@@ -3206,7 +3374,8 @@
                               <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
                             )}
                             <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
-                            <button className="action-icon whatsapp-icon" onClick={() => sendWhatsAppReceipt(d, systemData.settings)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#25d366', marginRight: '10px' }} title="Send via WhatsApp"><i className="fab fa-whatsapp"></i></button>
+                            <button className="action-icon whatsapp-icon" onClick={() => sendWhatsAppReceipt(d, systemData.settings)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#25d366', marginRight: '10px' }} title="Send Receipt via WhatsApp"><i className="fab fa-whatsapp"></i></button>
+                            <button className="action-icon certificate-icon" onClick={() => sendWhatsAppCertificate(d, systemData.settings)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e67e22', marginRight: '10px' }} title="Send Certificate via WhatsApp"><i className="fas fa-award"></i></button>
                             {hasPermission('donations', 'd') && (
                               <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
                             )}
@@ -3260,7 +3429,8 @@
                         <button className="btn btn-secondary btn-sm" onClick={() => onEdit(d)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
                       )}
                       <button className="btn btn-success btn-sm" onClick={() => onPrint(d)}><i className="fas fa-print"></i> {t('print')}</button>
-                      <button className="btn btn-sm" onClick={() => sendWhatsAppReceipt(d, systemData.settings)} style={{ background: '#25d366', color: '#fff', border: 'none' }}><i className="fab fa-whatsapp"></i> WhatsApp</button>
+                      <button className="btn btn-sm" onClick={() => sendWhatsAppReceipt(d, systemData.settings)} style={{ background: '#25d366', color: '#fff', border: 'none', marginRight: '5px' }}><i className="fab fa-whatsapp"></i> Receipt</button>
+                      <button className="btn btn-sm" onClick={() => sendWhatsAppCertificate(d, systemData.settings)} style={{ background: '#e67e22', color: '#fff', border: 'none' }}><i className="fas fa-award"></i> Certificate</button>
                       {hasPermission('donations', 'd') && (
                         <button className="btn btn-danger btn-sm" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
                       )}
@@ -3682,6 +3852,30 @@
       const villages = systemData.villages || [];
       const users = systemData.users || [];
       const handovers = systemData.handovers || [];
+      const expenses = (systemData.expenses || []).filter(e => e.status === 'Approved');
+
+      // Calculate P&L Statement
+      const totalIncome = donations.reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
+      const totalExpense = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+      const surplus = totalIncome - totalExpense;
+
+      // Group Expenses by Category
+      const expenseByCategory = React.useMemo(() => {
+        const catMap = {};
+        expenses.forEach(e => {
+          catMap[e.category] = (catMap[e.category] || 0) + parseFloat(e.amount || 0);
+        });
+        return Object.entries(catMap).map(([name, amount]) => ({ name, amount }));
+      }, [expenses]);
+
+      // Group Income by Payment Mode
+      const incomeByMode = React.useMemo(() => {
+        const modeMap = {};
+        donations.forEach(d => {
+          modeMap[d.mode] = (modeMap[d.mode] || 0) + parseFloat(d.amount || 0);
+        });
+        return Object.entries(modeMap).map(([name, amount]) => ({ name, amount }));
+      }, [donations]);
 
       // Calculate village slip counts and collector details
       const villageReport = villages.map(v => {
@@ -3728,6 +3922,52 @@
         printReportTable(title, document.getElementById(elementId).outerHTML, systemData.settings);
       };
 
+      const handlePrintPL = () => {
+        const html = `
+          <div style="border: 2px solid #001f3f; padding: 20px; border-radius: 8px; font-family: sans-serif;">
+            <h3 style="text-align: center; color: #001f3f; margin-top: 0;">Statement of Income and Expenditure (P&L)</h3>
+            <p style="text-align: center; font-size: 13px; color: #666; margin-bottom: 20px;">Generated on ${new Date().toLocaleDateString('en-IN')}</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+              <div>
+                <h4 style="border-bottom: 2px solid #2ecc71; padding-bottom: 5px; color: #27ae60;">INCOME (RECEIPTS)</h4>
+                <table style="width:100%; font-size: 13px; border-collapse: collapse;">
+                  ${incomeByMode.map(i => `
+                    <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 8px 0;">Donation via ${i.name}</td>
+                      <td style="text-align: right; font-weight: bold; padding: 8px 0;">₹${i.amount.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                  <tr style="font-weight: bold; font-size: 14px;">
+                    <td style="padding: 12px 0;">Total Income</td>
+                    <td style="text-align: right; padding: 12px 0; color: #27ae60;">₹${totalIncome.toFixed(2)}</td>
+                  </tr>
+                </table>
+              </div>
+              <div>
+                <h4 style="border-bottom: 2px solid #ff4136; padding-bottom: 5px; color: #c0392b;">EXPENDITURE (EXPENSES)</h4>
+                <table style="width:100%; font-size: 13px; border-collapse: collapse;">
+                  ${expenseByCategory.map(e => `
+                    <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 8px 0;">${e.name}</td>
+                      <td style="text-align: right; font-weight: bold; padding: 8px 0;">₹${e.amount.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                  <tr style="font-weight: bold; font-size: 14px;">
+                    <td style="padding: 12px 0;">Total Expense</td>
+                    <td style="text-align: right; padding: 12px 0; color: #c0392b;">₹${totalExpense.toFixed(2)}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div style="margin-top: 30px; border-top: 2px solid #001f3f; padding-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold;">
+              <span>Net Surplus / Balance Available:</span>
+              <span style="color: ${surplus >= 0 ? '#27ae60' : '#c0392b'}; font-size: 20px;">₹${surplus.toFixed(2)}</span>
+            </div>
+          </div>
+        `;
+        printReportTable("Profit & Loss (P&L) Statement", html, systemData.settings);
+      };
+
       const handleExportMemberCSV = () => {
         let headers = ["Member Name", "Assigned Village", "Target", "Collected", "Handed Over", "Pending", "Remaining Dues"];
         let rows = memberReport.map(mr => [mr.name, mr.village, mr.target, mr.collected, mr.handedOver, mr.pending, mr.dues]);
@@ -3752,6 +3992,61 @@
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '25px' }}>
+            {/* Profit & Loss Statement widget */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3><i className="fas fa-calculator"></i> Income & Expenditure (P&L)</h3>
+                <button className="btn btn-secondary btn-sm" onClick={handlePrintPL} style={{ background: 'var(--navy-accent)' }}>
+                  <i className="fas fa-print"></i> Print P&L Statement
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+                <div style={{ padding: '15px', borderRadius: '8px', background: '#e8f5e9', border: '1px solid #c8e6c9' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2e7d32', fontWeight: 'bold' }}>Total Income</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1b5e20', marginTop: '5px' }}>₹{totalIncome.toLocaleString('en-IN')}</div>
+                </div>
+                <div style={{ padding: '15px', borderRadius: '8px', background: '#ffebee', border: '1px solid #ffcdd2' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#c62828', fontWeight: 'bold' }}>Total Expenses</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#b71c1c', marginTop: '5px' }}>₹{totalExpense.toLocaleString('en-IN')}</div>
+                </div>
+                <div style={{ padding: '15px', borderRadius: '8px', background: surplus >= 0 ? '#e3f2fd' : '#fff3e0', border: surplus >= 0 ? '1px solid #bbdefb' : '1px solid #ffe0b2' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: surplus >= 0 ? '#1565c0' : '#e65100', fontWeight: 'bold' }}>Net Surplus</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: surplus >= 0 ? '#0d47a1' : '#e65100', marginTop: '5px' }}>₹{surplus.toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flexWrap: 'wrap' }}>
+                <div>
+                  <h4 style={{ color: '#2e7d32', borderBottom: '2px solid #c8e6c9', paddingBottom: '6px', marginBottom: '10px' }}>Income By Mode</h4>
+                  <table style={{ width: '100%', fontSize: '13px' }}>
+                    <tbody>
+                      {incomeByMode.map(i => (
+                        <tr key={i.name} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                          <td style={{ padding: '6px 0' }}>Donation ({i.name})</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{i.amount.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <h4 style={{ color: '#c62828', borderBottom: '2px solid #ffcdd2', paddingBottom: '6px', marginBottom: '10px' }}>Expense By Category</h4>
+                  <table style={{ width: '100%', fontSize: '13px' }}>
+                    <tbody>
+                      {expenseByCategory.map(e => (
+                        <tr key={e.name} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                          <td style={{ padding: '6px 0' }}>{e.name}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{e.amount.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      {expenseByCategory.length === 0 && (
+                        <tr><td style={{ color: 'var(--text-muted)' }}>No expenses recorded.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
             {/* Member Collection KPIs Performance Report */}
             <div className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
@@ -3876,6 +4171,225 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function DonorsView({ systemData, t }) {
+      const donations = systemData.donations || [];
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedDonorKey, setSelectedDonorKey] = useState(null);
+
+      // Aggregate donor information
+      const donorProfiles = React.useMemo(() => {
+        const profiles = {};
+        donations.forEach(d => {
+          const mobileStr = String(d.donor_mobile || '').trim();
+          const nameStr = String(d.donor_name || '').trim();
+          // Use mobile as primary key, fallback to name if mobile is empty
+          const key = mobileStr ? mobileStr : `name_${nameStr}`;
+          
+          if (!profiles[key]) {
+            profiles[key] = {
+              key: key,
+              name: nameStr,
+              mobile: mobileStr,
+              village: d.village || 'N/A',
+              totalCollected: 0,
+              totalPromised: 0,
+              slips: []
+            };
+          }
+
+          profiles[key].totalCollected += parseFloat(d.amount || 0);
+          profiles[key].totalPromised += parseFloat(d.promised_amount || d.amount || 0);
+          profiles[key].slips.push(d);
+        });
+
+        // Calculate remaining dues and sort profiles by name
+        return Object.values(profiles).map(p => {
+          const dues = Math.max(0, p.totalPromised - p.totalCollected);
+          return { ...p, dues };
+        }).sort((a, b) => a.name.localeCompare(b.name));
+      }, [donations]);
+
+      const filteredDonors = donorProfiles.filter(p => {
+        const query = searchQuery.toLowerCase();
+        return p.name.toLowerCase().includes(query) || 
+               p.mobile.includes(query) || 
+               p.village.toLowerCase().includes(query);
+      });
+
+      // KPI stats
+      const totalUniqueDonors = donorProfiles.length;
+      const totalCollectedAmount = donorProfiles.reduce((s, p) => s + p.totalCollected, 0);
+      const totalDuesAmount = donorProfiles.reduce((s, p) => s + p.dues, 0);
+
+      const handlePrintDonorLedger = (profile) => {
+        let rowsHtml = profile.slips.map((s, idx) => `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px;">${idx + 1}</td>
+            <td style="padding: 8px;">#${s.receipt_no}</td>
+            <td style="padding: 8px;">${new Date(s.date || s.timestamp).toLocaleDateString('en-IN')}</td>
+            <td style="padding: 8px; font-weight: bold; color: green;">₹${parseFloat(s.amount).toFixed(2)}</td>
+            <td style="padding: 8px;">${s.mode}</td>
+            <td style="padding: 8px;">${s.collected_by_name || 'N/A'}</td>
+          </tr>
+        `).join('');
+
+        let html = `
+          <div style="border: 1px solid #ccc; padding: 20px; border-radius: 6px; font-family: sans-serif;">
+            <h3 style="text-align: center; color: #001f3f; margin-top: 0;">Donor Ledger & Account Statement</h3>
+            <div style="margin-bottom: 20px; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #001f3f;">
+              <strong>Donor Name:</strong> ${profile.name}<br/>
+              <strong>Mobile Number:</strong> ${profile.mobile || 'N/A'}<br/>
+              <strong>Village/Area:</strong> ${profile.village}<br/>
+              <strong>Total Donated:</strong> <span style="color: green; font-weight: bold;">₹${profile.totalCollected.toFixed(2)}</span> &nbsp;|&nbsp; 
+              <strong>Remaining Dues:</strong> <span style="color: red; font-weight: bold;">₹${profile.dues.toFixed(2)}</span>
+            </div>
+            <table border="1" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #001f3f; color: #fff;">
+                  <th style="padding: 8px; text-align: left;">#</th>
+                  <th style="padding: 8px; text-align: left;">Receipt No</th>
+                  <th style="padding: 8px; text-align: left;">Date</th>
+                  <th style="padding: 8px; text-align: left;">Amount</th>
+                  <th style="padding: 8px; text-align: left;">Payment Mode</th>
+                  <th style="padding: 8px; text-align: left;">Collected By</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+        `;
+        printReportTable(`Donor Ledger Statement — ${profile.name}`, html, systemData.settings);
+      };
+
+      return (
+        <div>
+          {/* Header */}
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-address-book"></i> Donor Ledger & Permanent Profiles</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / Donor Ledger</small>
+            </div>
+          </div>
+
+          {/* Stats widgets */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #e3f2fd, #fff)' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--navy-accent)' }}>{totalUniqueDonors}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total Unique Donors</div>
+            </div>
+            <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #e8f5e9, #fff)' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2ecc71' }}>₹{totalCollectedAmount.toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total Collection Amount</div>
+            </div>
+            <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #ffebee, #fff)' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff4136' }}>₹{totalDuesAmount.toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total Remaining Dues</div>
+            </div>
+          </div>
+
+          {/* Detailed Statement Panel */}
+          {selectedDonorKey && (() => {
+            const profile = donorProfiles.find(p => p.key === selectedDonorKey);
+            if (!profile) return null;
+            return (
+              <div className="card" style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h4 style={{ margin: 0, color: 'var(--navy-accent)' }}><i className="fas fa-history"></i> Donation History: {profile.name}</h4>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => handlePrintDonorLedger(profile)} style={{ background: '#34495e' }}>
+                      <i className="fas fa-print"></i> Print Statement
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDonorKey(null)} style={{ background: '#95a5a6' }}>✕ Close</button>
+                  </div>
+                </div>
+                <div className="table-responsive">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Receipt No</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Mode</th>
+                        <th>Collected By</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {profile.slips.map((s, idx) => (
+                        <tr key={idx}>
+                          <td>{idx + 1}</td>
+                          <td>#{s.receipt_no}</td>
+                          <td>{new Date(s.date || s.timestamp).toLocaleDateString('en-IN')}</td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(s.amount).toFixed(2)}</td>
+                          <td>{s.mode}</td>
+                          <td>{s.collected_by_name || 'N/A'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Main Table Card */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+              <div className="form-group" style={{ marginBottom: 0, width: '100%', maxWidth: '300px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Search name, mobile, village..." 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #ddd', width: '100%' }}
+                />
+              </div>
+            </div>
+            
+            <div className="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Donor Name</th>
+                    <th>Mobile Number</th>
+                    <th>Village</th>
+                    <th>Total Donated</th>
+                    <th>Total Promised</th>
+                    <th>Remaining Dues</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDonors.map(profile => (
+                    <tr key={profile.key}>
+                      <td><strong>{profile.name}</strong></td>
+                      <td>{profile.mobile || '—'}</td>
+                      <td>{profile.village}</td>
+                      <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{profile.totalCollected.toFixed(2)}</td>
+                      <td style={{ fontWeight: 'bold' }}>₹{profile.totalPromised.toFixed(2)}</td>
+                      <td style={{ fontWeight: 'bold', color: profile.dues > 0 ? 'red' : 'inherit' }}>
+                        {profile.dues > 0 ? `₹${profile.dues.toFixed(2)}` : '✓ Paid'}
+                      </td>
+                      <td>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDonorKey(profile.key)} style={{ padding: '4px 10px', fontSize: '11px' }}>
+                          <i className="fas fa-eye"></i> Statement
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredDonors.length === 0 && (
+                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No donors found.</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -5890,6 +6404,13 @@
 
     const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(<ChandaApp />);
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>

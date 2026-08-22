@@ -1,13 +1,23 @@
-// Minimal Service Worker for PWA installability requirements
-self.addEventListener('install', (e) => {
+const CACHE_NAME = "chanda-erp-v1";
+const STATIC_ASSETS = ["/", "/index.html", "/config.js"];
+
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)));
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(self.clients.claim());
+self.addEventListener("activate", (e) => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))));
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
-  // Let network handle all fetches directly to ensure real-time Google Sheet sync
-  e.respondWith(fetch(e.request));
+self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return;
+  e.respondWith(
+    fetch(e.request).then(res => {
+      const resClone = res.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(e.request, resClone));
+      return res;
+    }).catch(() => caches.match(e.request))
+  );
 });
