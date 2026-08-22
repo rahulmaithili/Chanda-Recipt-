@@ -467,18 +467,25 @@
       width: 100%;
       border-collapse: collapse;
       text-align: left;
+      border: 1px solid #cbd5e1;
     }
 
     th, td {
       padding: 12px 15px;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
+      border-bottom: 1px solid #cbd5e1;
+      border-right: 1px solid #e2e8f0;
       font-size: 13.5px;
+    }
+
+    th:last-child, td:last-child {
+      border-right: none;
     }
 
     th {
       font-weight: 700;
-      background: rgba(0,0,0,0.02);
+      background: #f1f5f9;
       color: var(--text-primary);
+      border-bottom: 2px solid #94a3b8;
     }
 
     tr:hover {
