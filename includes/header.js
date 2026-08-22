@@ -19,15 +19,18 @@ document.write(`
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
-      --bg: #f4f7f6;
+      --orange: #e8590c;
+      --gold: #f39c12;
+      --bg: #f4f6f9;
       --card: #ffffff;
-      --text: #2c3e50;
-      --muted: #7f8c8d;
-      --border: #e2e8f0;
-      --orange: #ff851b;
-      --orange-hover: #e07310;
-      --gold: #d4af37;
-      --sidebar-width: 250px;
+      --text: #2b2320;
+      --muted: #8a7a6d;
+      --border: #e8e1d7;
+      --sidebar-bg: #1e282c;
+      --sidebar-color: #b8c7ce;
+      --sidebar-hover: #1a2226;
+      --header-bg: #ffffff;
+      --sidebar-width: 240px;
     }
     
     html, body {
@@ -43,14 +46,14 @@ document.write(`
       color: var(--text);
       display: flex;
       min-height: 100vh;
-      transition: 0.3s;
+      transition: background 0.2s, color 0.2s;
     }
     
-    /* Collapsible Sidebar styling (Desktop only) */
+    /* Original Colorful Sidebar styling */
     .sidebar {
       width: var(--sidebar-width);
-      background: #001f3f;
-      color: #fff;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-color);
       display: flex;
       flex-direction: column;
       position: fixed;
@@ -58,62 +61,104 @@ document.write(`
       bottom: 0;
       left: 0;
       z-index: 100;
-      transition: 0.3s;
-      overflow-x: hidden;
+      transition: 0.3s ease;
+      overflow-y: auto;
+      padding: 20px 15px;
     }
     
     .sidebar.collapsed {
       width: 70px;
+      padding: 20px 10px;
     }
     
     .sidebar-brand {
-      padding: 20px;
       font-size: 18px;
+      margin-bottom: 20px;
+      color: #fff;
+      text-align: center;
       font-weight: bold;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2c3b41;
       display: flex;
       align-items: center;
-      gap: 15px;
-      color: var(--orange);
-      white-space: nowrap;
+      justify-content: center;
+      gap: 8px;
     }
     
     .sidebar.collapsed .sidebar-brand span {
       display: none;
     }
     
-    .sidebar-menu {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      flex: 1;
-      overflow-y: auto;
-    }
-    
-    .sidebar-menu li a {
+    /* Nav item with colorful icon badge */
+    .nav-item {
       display: flex;
       align-items: center;
-      gap: 15px;
-      padding: 15px 23px;
-      color: #bdc3c7;
+      gap: 11px;
+      padding: 9px 12px;
       text-decoration: none;
-      transition: 0.2s;
-      font-size: 14px;
+      color: var(--sidebar-color);
+      border-radius: 10px;
+      margin-bottom: 4px;
+      font-weight: 500;
+      font-size: 13.5px;
+      transition: background 0.18s, color 0.18s, transform 0.15s;
+      position: relative;
       white-space: nowrap;
     }
     
-    .sidebar-menu li a:hover, .sidebar-menu li.active a {
+    .nav-item:hover {
+      background: rgba(255,255,255,0.07);
       color: #fff;
-      background: rgba(255,255,255,0.1);
-      border-left: 4px solid var(--orange);
+      transform: translateX(3px);
     }
     
-    .sidebar.collapsed .sidebar-menu li a span {
+    .nav-item.active {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border-left: 3px solid var(--orange);
+    }
+    
+    /* Colorful icon badge */
+    .nav-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 13px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .nav-item:hover .nav-icon {
+      transform: scale(1.12) rotate(-5deg);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+    }
+    
+    .nav-item.active .nav-icon {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    
+    .sidebar.collapsed .nav-item span:not(.nav-icon) {
       display: none;
     }
     
-    .sidebar.collapsed .sidebar-menu li a {
-      padding: 15px 25px;
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 10px 0;
+    }
+    
+    .sidebar.collapsed .nav-icon {
+      width: 36px;
+      height: 36px;
+      font-size: 15px;
     }
     
     /* Main Layout */
@@ -124,9 +169,9 @@ document.write(`
       flex-direction: column;
       min-height: 100vh;
       box-sizing: border-box;
-      padding: 20px;
+      padding: 25px;
       width: calc(100% - var(--sidebar-width));
-      transition: 0.3s;
+      transition: 0.3s ease;
       overflow-x: hidden;
     }
     
@@ -135,33 +180,32 @@ document.write(`
       width: calc(100% - 70px);
     }
     
-    /* Top Bar */
+    /* Top Bar styling matching main-header */
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--card);
-      padding: 12px 20px;
+      background: var(--header-bg);
+      padding: 10px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-bottom: 1px solid var(--border);
       border-radius: 8px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      margin-bottom: 25px;
     }
     
     .btn {
-      padding: 8px 16px;
+      padding: 10px 15px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      font-weight: 600;
-      font-size: 13px;
-      transition: 0.2s;
+      font-weight: bold;
+      color: #fff;
       background: var(--orange);
-      color: white;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      transition: 0.2s;
     }
     
     .btn:hover {
@@ -169,26 +213,26 @@ document.write(`
     }
     
     .btn-secondary {
-      background: #7f8c8d;
+      background: #95a5a6;
     }
     .btn-secondary:hover {
-      background: #95a5a6;
+      background: #7f8c8d;
     }
     
     .btn-dark {
-      background: #001f3f;
+      background: #2c3e50;
     }
     .btn-dark:hover {
-      background: #002d5c;
+      background: #1a252f;
     }
     
     .erp-badge {
       display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
       font-size: 11px;
-      font-weight: 700;
-      color: white;
+      font-weight: bold;
+      color: #fff;
     }
     
     .nav-toggle {
@@ -208,7 +252,6 @@ document.write(`
       background: var(--bg);
     }
     
-    /* Loader Spinner in Topbar */
     .sync-loader {
       display: inline-block;
       width: 12px;
@@ -220,41 +263,75 @@ document.write(`
       margin-left: 8px;
     }
     
-    /* Mobile Navigation Bottom Bar */
+    /* Mobile Navigation Bottom Bar matching PHP layout */
     .mobile-bottom-nav {
       display: none;
       position: fixed;
       bottom: 0;
       left: 0;
-      right: 0;
+      width: 100%;
       height: 60px;
-      background: #001f3f;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
       z-index: 9999;
       justify-content: space-around;
       align-items: center;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+      padding-bottom: env(safe-area-inset-bottom);
     }
     
-    .mobile-bottom-nav a {
-      color: #bdc3c7;
-      text-decoration: none;
+    .mobile-bottom-nav a.mobile-tab {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      text-decoration: none;
       font-size: 10px;
-      font-weight: bold;
-      gap: 4px;
-      width: 20%;
-      transition: 0.2s;
+      font-weight: 600;
+      height: 100%;
+      transition: color 0.2s ease;
+      gap: 3px;
     }
     
-    .mobile-bottom-nav a i {
-      font-size: 20px;
+    .mobile-bottom-nav a.mobile-tab i {
+      font-size: 18px;
     }
     
-    .mobile-bottom-nav a.active {
+    .mobile-bottom-nav a.mobile-tab.active {
       color: var(--orange);
+    }
+    
+    .mobile-tab-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      height: 100%;
+    }
+    
+    .center-btn {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--orange), #e8590c);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(232, 89, 12, 0.4);
+      position: absolute;
+      top: -15px;
+      border: 4px solid var(--card);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .center-btn:active {
+      transform: scale(0.9) rotate(90deg);
+      box-shadow: 0 2px 5px rgba(232, 89, 12, 0.4);
     }
     
     @keyframes spin {
@@ -266,7 +343,6 @@ document.write(`
       #app-sidebar, #app-top-bar, .btn, .nav-toggle, select, input, form, button, .mobile-bottom-nav, .modal-content button, .modal-content > div:last-child {
         display: none !important;
       }
-      
       body, .main-content {
         background: white !important;
         color: black !important;
@@ -276,24 +352,20 @@ document.write(`
         margin-left: 0 !important;
         box-shadow: none !important;
       }
-      
       .table-card, .card {
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
         margin: 0 !important;
       }
-      
       table {
         width: 100% !important;
         border-collapse: collapse !important;
       }
-      
       th, td {
         border: 1px solid #ddd !important;
         padding: 8px !important;
       }
-
       body.receipt-printing * {
         visibility: hidden !important;
       }
@@ -320,7 +392,6 @@ document.write(`
         margin: 0 auto !important;
         padding: 0 !important;
       }
-
       body.voucher-printing * {
         visibility: hidden !important;
       }
@@ -347,7 +418,6 @@ document.write(`
         margin: 0 auto !important;
         padding: 0 !important;
       }
-
       body.id-card-active * {
         visibility: hidden !important;
       }
@@ -383,28 +453,22 @@ document.write(`
       .mobile-bottom-nav {
         display: flex;
       }
-      
-      /* Set inputs to 16px to prevent iOS Safari auto-zoom on focus */
       input, select, textarea {
         font-size: 16px !important;
       }
-      
       .main-content, .main-content.expanded {
         margin-left: 0 !important;
         width: 100% !important;
-        padding: 10px !important; /* Less padding to fit screens */
-        padding-bottom: 80px !important; /* Space for bottom tab bar */
+        padding: 12px !important;
+        padding-bottom: 80px !important;
       }
-      
       .nav-toggle {
         display: none !important;
       }
-      
       .top-bar {
-        padding: 10px !important;
+        padding: 10px 12px !important;
         margin-bottom: 15px !important;
       }
-      
       .card, .form-card {
         padding: 15px !important;
       }
@@ -519,32 +583,85 @@ function renderSidebarUI() {
   }
   
   let menuHTML = `
-    <div class="sidebar-brand">
-      <div id="cardDeityLogo"></div>
-      <span>Chanda App</span>
+    <!-- Logo / Brand Header -->
+    <div class="sidebar-brand" title="Ganesh Puja ERP">
+        <i class="fas fa-om" style="color: var(--gold); margin-right: 5px;"></i> <span class="sidebar-brand-text">Ganesh ERP</span>
     </div>
-    <ul class="sidebar-menu">
-      <li class="${activePage === 'index' ? 'active' : ''}"><a href="index.html"><i class="fas fa-chart-line"></i> <span>${__('dashboard')}</span></a></li>
-      <li class="${activePage === 'donations' || activePage === 'add_donation' ? 'active' : ''}"><a href="donations.html"><i class="fas fa-hand-holding-usd"></i> <span>${__('chanda_list')}</span></a></li>
-      <li class="${activePage === 'expenses' || activePage === 'add_expense' ? 'active' : ''}"><a href="expenses.html"><i class="fas fa-tags"></i> <span>${__('expense_list')}</span></a></li>
-      <li class="${activePage === 'accounts' ? 'active' : ''}"><a href="accounts.html"><i class="fas fa-wallet"></i> <span>${__('accounts_handover')}</span></a></li>
-      <li class="${activePage === 'profile' ? 'active' : ''}"><a href="profile.html"><i class="fas fa-user-circle"></i> <span>${__('edit_profile')}</span></a></li>
+
+    <div style="text-align: center; margin-bottom: 20px; border-bottom: 1px solid #2c3b41; padding-bottom: 15px; white-space: nowrap; overflow: hidden;">
+        ${user && user.profile_pic ? `
+            <img src="${user.profile_pic}" class="sidebar-profile-img" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); transition: width 0.3s ease, height 0.3s ease;">
+        ` : `
+            <div class="sidebar-profile-img" style="width: 60px; height: 60px; border-radius: 50%; background: #e0e0e0; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #555; border: 2px solid var(--gold); transition: width 0.3s ease, height 0.3s ease;">${user ? user.name.charAt(0).toUpperCase() : 'U'}</div>
+        `}
+        <div class="sidebar-profile-text" style="color: #fff; font-weight: bold; margin-top: 8px; font-size: 14px;">${user ? user.name : ''}</div>
+        <div class="sidebar-profile-text" style="color: var(--muted); font-size: 11px; text-transform: capitalize;">${user ? user.role : ''}</div>
+    </div>
+    
+    <a href="index.html" class="nav-item ${activePage === 'index' ? 'active' : ''}" title="${__('dashboard')}">
+        <span class="nav-icon" style="background:linear-gradient(135deg,#e8590c,#f39c12)"><i class="fas fa-chart-pie"></i></span>
+        <span>${__('dashboard')}</span>
+    </a>
+    <a href="add_donation.html" class="nav-item ${activePage === 'add_donation' ? 'active' : ''}" title="${__('chanda_entry')}">
+        <span class="nav-icon" style="background:linear-gradient(135deg,#27ae60,#2ecc71)"><i class="fas fa-hand-holding-usd"></i></span>
+        <span>${__('chanda_entry')}</span>
+    </a>
+    <a href="donations.html" class="nav-item ${activePage === 'donations' ? 'active' : ''}" title="${__('chanda_list')}">
+        <span class="nav-icon" style="background:linear-gradient(135deg,#16a085,#1abc9c)"><i class="fas fa-file-invoice"></i></span>
+        <span>${__('chanda_list')}</span>
+    </a>
+    <a href="add_expense.html" class="nav-item ${activePage === 'add_expense' ? 'active' : ''}" title="${__('expense_entry')}">
+        <span class="nav-icon" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"><i class="fas fa-tags"></i></span>
+        <span>${__('expense_entry')}</span>
+    </a>
+    <a href="expenses.html" class="nav-item ${activePage === 'expenses' ? 'active' : ''}" title="${__('expense_list')}">
+        <span class="nav-icon" style="background:linear-gradient(135deg,#8e44ad,#9b59b6)"><i class="fas fa-receipt"></i></span>
+        <span>${__('expense_list')}</span>
+    </a>
+    <a href="villages.html" class="nav-item ${activePage === 'villages' ? 'active' : ''}" title="${__('villages')}">
+        <span class="nav-icon" style="background:linear-gradient(135deg,#2980b9,#3498db)"><i class="fas fa-map-marked-alt"></i></span>
+        <span>${__('villages')}</span>
+    </a>
+    <a href="accounts.html" class="nav-item ${activePage === 'accounts' ? 'active' : ''}" title="${__('accounts_handover')}">
+        <span class="nav-icon" style="background:linear-gradient(135deg,#f1c40f,#f39c12)"><i class="fas fa-wallet"></i></span>
+        <span>${__('accounts_handover')}</span>
+    </a>
   `;
   
   if (user && user.role === 'admin') {
     menuHTML += `
-      <li class="${activePage === 'members' ? 'active' : ''}"><a href="members.html"><i class="fas fa-users-cog"></i> <span>${__('users_management')}</span></a></li>
-      <li class="${activePage === 'villages' ? 'active' : ''}"><a href="villages.html"><i class="fas fa-map-marked-alt"></i> <span>Villages Master</span></a></li>
-      <li class="${activePage === 'categories' ? 'active' : ''}"><a href="categories.html"><i class="fas fa-list-ul"></i> <span>Categories Master</span></a></li>
-      <li class="${activePage === 'festivals' ? 'active' : ''}"><a href="festivals.html"><i class="fas fa-calendar-alt"></i> <span>Year/Festival Master</span></a></li>
-      <li class="${activePage === 'logs' ? 'active' : ''}"><a href="logs.html"><i class="fas fa-history"></i> <span>${__('audit_logs')}</span></a></li>
-      <li class="${activePage === 'settings' ? 'active' : ''}"><a href="settings.html"><i class="fas fa-cogs"></i> <span>${__('committee_settings')}</span></a></li>
+      <a href="categories.html" class="nav-item ${activePage === 'categories' ? 'active' : ''}" title="${__('expense_categories')}">
+          <span class="nav-icon" style="background:linear-gradient(135deg,#d35400,#e67e22)"><i class="fas fa-list-ul"></i></span>
+          <span>${__('expense_categories')}</span>
+      </a>
+      <a href="members.html" class="nav-item ${activePage === 'members' ? 'active' : ''}" title="${__('users_management')}">
+          <span class="nav-icon" style="background:linear-gradient(135deg,#1a5276,#2471a3)"><i class="fas fa-users-cog"></i></span>
+          <span>${__('users_management')}</span>
+      </a>
+      <a href="festivals.html" class="nav-item ${activePage === 'festivals' ? 'active' : ''}" title="Festival Sessions">
+          <span class="nav-icon" style="background:linear-gradient(135deg,#e67e22,#f39c12)"><i class="fas fa-calendar-alt"></i></span>
+          <span>Festival Sessions</span>
+      </a>
+      <a href="logs.html" class="nav-item ${activePage === 'logs' ? 'active' : ''}" title="Audit Logs">
+          <span class="nav-icon" style="background:linear-gradient(135deg,#2c3e50,#4a6fa5)"><i class="fas fa-history"></i></span>
+          <span>Audit Logs</span>
+      </a>
+      <a href="settings.html" class="nav-item ${activePage === 'settings' ? 'active' : ''}" title="${__('committee_settings')}">
+          <span class="nav-icon" style="background:linear-gradient(135deg,#5d6d7e,#7f8c8d)"><i class="fas fa-sliders-h"></i></span>
+          <span>${__('committee_settings')}</span>
+      </a>
     `;
   }
   
   menuHTML += `
-      <li style="margin-top: 20px;"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt" style="color:#ff4136;"></i> <span>${__('logout')}</span></a></li>
-    </ul>
+      <a href="profile.html" class="nav-item ${activePage === 'profile' ? 'active' : ''}" title="${__('edit_profile')}">
+          <span class="nav-icon" style="background:linear-gradient(135deg,#6c3483,#8e44ad)"><i class="fas fa-user-cog"></i></span>
+          <span>${__('edit_profile')}</span>
+      </a>
+      <a href="#" onclick="logout()" class="nav-item" title="${__('logout')}" style="margin-top:20px;">
+          <span class="nav-icon" style="background:linear-gradient(135deg,#922b21,#e74c3c)"><i class="fas fa-sign-out-alt"></i></span>
+          <span>${__('logout')}</span>
+      </a>
   `;
   
   sidebar.innerHTML = menuHTML;
@@ -583,17 +700,17 @@ function renderSidebarUI() {
     rightDiv.style.gap = "10px";
     
     let langOptions = `
-      <select onchange="setSelectedLanguage(this.value)" style="padding: 5px; border-radius: 4px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size: 12px; cursor:pointer;">
-        <option value="en" ${getSelectedLanguage() === 'en' ? 'selected' : ''}>🇬🇧 En</option>
-        <option value="hi" ${getSelectedLanguage() === 'hi' ? 'selected' : ''}>🇮🇳 हि</option>
+      <select class="lang-select" onchange="setSelectedLanguage(this.value)" style="padding: 5px; border-radius: 4px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size: 12px; cursor:pointer;">
+        <option value="en" ${getSelectedLanguage() === 'en' ? 'selected' : ''}>🌐 EN</option>
+        <option value="hi" ${getSelectedLanguage() === 'hi' ? 'selected' : ''}>🇮🇳 हिन्दी</option>
         <option value="hl" ${getSelectedLanguage() === 'hl' ? 'selected' : ''}>🔤 Hl</option>
       </select>
     `;
     
-    let festOptions = `<select onchange="setViewingFestivalId(this.value)" style="padding: 5px; border-radius: 4px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size: 12px; cursor:pointer;">`;
+    let festOptions = `<select class="lang-select" onchange="setViewingFestivalId(this.value)" style="padding: 5px; border-radius: 4px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size: 12px; cursor:pointer;">`;
     const festivals = sysData.festivals || [];
     festivals.forEach(f => {
-      festOptions += `<option value="${f.id}" ${getViewingFestivalId() == f.id ? 'selected' : ''}>${f.name}</option>`;
+      festOptions += `<option value="${f.id}" ${getViewingFestivalId() == f.id ? 'selected' : ''}>🎪 ${f.name}</option>`;
     });
     festOptions += `</select>`;
     
@@ -626,12 +743,26 @@ function renderMobileBottomNav() {
   const isAdminUser = user && user.role === 'admin';
 
   bottomNav.innerHTML = `
-    <a href="index.html" class="${activePage === 'index' ? 'active' : ''}"><i class="fas fa-home"></i><span>Home</span></a>
-    <a href="donations.html" class="${activePage === 'donations' || activePage === 'add_donation' ? 'active' : ''}"><i class="fas fa-hand-holding-usd"></i><span>Chanda</span></a>
-    <a href="expenses.html" class="${activePage === 'expenses' || activePage === 'add_expense' ? 'active' : ''}"><i class="fas fa-tags"></i><span>Expenses</span></a>
-    <a href="accounts.html" class="${activePage === 'accounts' ? 'active' : ''}"><i class="fas fa-wallet"></i><span>Handover</span></a>
-    <a href="${isAdminUser ? 'members.html' : 'profile.html'}" class="${activePage === 'members' || activePage === 'profile' || activePage === 'settings' || activePage === 'festivals' ? 'active' : ''}">
-      <i class="fas fa-bars"></i><span>Menu</span>
+    <a href="index.html" class="mobile-tab ${activePage === 'index' ? 'active' : ''}">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="donations.html" class="mobile-tab ${activePage === 'donations' ? 'active' : ''}">
+      <i class="fas fa-file-invoice"></i>
+      <span>Chanda</span>
+    </a>
+    <a href="add_donation.html" class="mobile-tab-center" title="Quick Add">
+      <div class="center-btn">
+        <i class="fas fa-plus"></i>
+      </div>
+    </a>
+    <a href="expenses.html" class="mobile-tab ${activePage === 'expenses' ? 'active' : ''}">
+      <i class="fas fa-receipt"></i>
+      <span>Expenses</span>
+    </a>
+    <a href="${isAdminUser ? 'members.html' : 'profile.html'}" class="mobile-tab ${activePage === 'members' || activePage === 'profile' ? 'active' : ''}">
+      <i class="${isAdminUser ? 'fas fa-users-cog' : 'fas fa-user-cog'}"></i>
+      <span>${isAdminUser ? 'Members' : 'Profile'}</span>
     </a>
   `;
   
