@@ -1334,6 +1334,16 @@
         'voucher_preview': 'Voucher Preview',
         'approved': 'Approved',
         'pending': 'Pending',
+        'reviewed': 'Reviewed',
+        'budget': 'Budget',
+        'actual': 'Actual',
+        'overspent': 'Overspent',
+        'surplus': 'Surplus',
+        'deficit': 'Deficit',
+        'income': 'Income',
+        'expenditure': 'Expenditure',
+        'audit_report': 'Annual Audit Report',
+        'multi_year_comp': 'Multi-Year Comparison',
         'active': 'Active',
         'inactive': 'Inactive',
         'handover_submit': 'Submit Handover',
@@ -1444,6 +1454,16 @@
         'voucher_preview': 'व्यय पूर्वावलोकन',
         'approved': 'स्वीकृत (Approved)',
         'pending': 'लंबित (Pending)',
+        'reviewed': 'समीक्षित (Reviewed)',
+        'budget': 'बजट',
+        'actual': 'वास्तविक व्यय',
+        'overspent': 'बजट से अधिक खर्च',
+        'surplus': 'बचत (Surplus)',
+        'deficit': 'घाटा (Deficit)',
+        'income': 'कुल आय (Income)',
+        'expenditure': 'कुल व्यय (Expense)',
+        'audit_report': 'वार्षिक ऑडिट रिपोर्ट',
+        'multi_year_comp': 'बहु-वर्षीय तुलना',
         'active': 'सक्रिय (Active)',
         'inactive': 'निष्क्रिय (Inactive)',
         'handover_submit': 'हैंडओवर सबमिट करें',
@@ -1553,6 +1573,16 @@
         'voucher_preview': 'Voucher Preview',
         'approved': 'Approved',
         'pending': 'Pending',
+        'reviewed': 'Reviewed',
+        'budget': 'Budget',
+        'actual': 'Actual',
+        'overspent': 'Overspent',
+        'surplus': 'Surplus',
+        'deficit': 'Deficit',
+        'income': 'Income',
+        'expenditure': 'Expenditure',
+        'audit_report': 'Annual Audit Report',
+        'multi_year_comp': 'Multi-Year Comparison',
         'active': 'Active',
         'inactive': 'Inactive',
         'handover_submit': 'Submit Handover',
@@ -2220,12 +2250,13 @@
               {activeTab === 'donors' && (
                 <DonorsView
                   systemData={systemData}
+                  user={currentUser}
                   t={translate}
                 />
               )}
               {activeTab === 'handovers' && <HandoversView systemData={systemData} user={currentUser} onAction={handleSaveRecord} t={translate} />}
               {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
-              {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
+              {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} getViewingFestivalId={getViewingFestivalId} fetchInitData={fetchInitData} t={translate} />}
               {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
               
               {activeTab === 'users' && (
@@ -3037,20 +3068,26 @@
       );
 
       const chartRef = useRef(null);
+      const dayChartRef = useRef(null);
+      
       useEffect(() => {
+        let myChart, myDayChart;
+        
         if (chartRef.current) {
           const villageWise = {};
           donations.forEach(d => {
-            villageWise[d.village] = (villageWise[d.village] || 0) + parseFloat(d.amount);
+            if (d.village) {
+              villageWise[d.village] = (villageWise[d.village] || 0) + parseFloat(d.amount || 0);
+            }
           });
-
-          const myChart = new Chart(chartRef.current, {
+          
+          myChart = new Chart(chartRef.current, {
             type: 'doughnut',
             data: {
               labels: Object.keys(villageWise),
               datasets: [{
                 data: Object.values(villageWise),
-                backgroundColor: ['#0074D9', '#2ecc40', '#ff851b', '#ff4136', '#b10dc9', '#39cccc']
+                backgroundColor: ['#0074D9', '#2ecc40', '#ff851b', '#ff4136', '#ff4136', '#39cccc']
               }]
             },
             options: {
@@ -3059,8 +3096,66 @@
               plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
             }
           });
-          return () => myChart.destroy();
         }
+        
+        if (dayChartRef.current) {
+          const dayWise = {};
+          donations.forEach(d => {
+            const dateStr = d.date || (d.timestamp ? d.timestamp.slice(0, 10) : null);
+            if (dateStr) {
+              dayWise[dateStr] = (dayWise[dateStr] || 0) + parseFloat(d.amount || 0);
+            }
+          });
+          
+          const sortedDates = Object.keys(dayWise).sort();
+          const sortedAmounts = sortedDates.map(date => dayWise[date]);
+          const formattedLabels = sortedDates.map(date => {
+            try {
+              const d = new Date(date);
+              return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            } catch(e) {
+              return date;
+            }
+          });
+          
+          myDayChart = new Chart(dayChartRef.current, {
+            type: 'line',
+            data: {
+              labels: formattedLabels,
+              datasets: [{
+                label: 'Collection (₹)',
+                data: sortedAmounts,
+                borderColor: 'var(--navy-accent)',
+                backgroundColor: 'rgba(0, 116, 217, 0.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                  grid: { display: false }
+                }
+              },
+              plugins: {
+                legend: { display: false }
+              }
+            }
+          });
+        }
+        
+        return () => {
+          if (myChart) myChart.destroy();
+          if (myDayChart) myDayChart.destroy();
+        };
       }, [donations]);
 
       return (
@@ -3159,6 +3254,18 @@
               </div>
             </div>
           </div>
+
+          {/* Day-wise Collection Line Graph */}
+          {donations.length > 0 && (
+            <div className="card" style={{ marginTop: '20px' }}>
+              <div className="card-header">
+                <h3><i className="fas fa-chart-line"></i> Day-wise Collection Trend</h3>
+              </div>
+              <div style={{ height: '240px', position: 'relative', marginTop: '10px' }}>
+                <canvas ref={dayChartRef}></canvas>
+              </div>
+            </div>
+          )}
 
           {/* Village Target Progress */}
           {villageStats.length > 0 && (
@@ -3848,6 +3955,7 @@
     }
 
     function ReportsView({ systemData, t }) {
+      const [reportTab, setReportTab] = useState('pl');
       const donations = systemData.donations || [];
       const villages = systemData.villages || [];
       const users = systemData.users || [];
@@ -3899,9 +4007,10 @@
       }).map(u => {
         const slips = donations.filter(d => d.collected_by_mobile === u.mobile);
         const totalCollected = slips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
+        const totalCashCollected = slips.filter(d => d.mode === 'Cash').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
         const approvedHandovers = handovers.filter(h => h.collector_mobile === u.mobile && h.status === 'Approved');
         const totalHandedOver = approvedHandovers.reduce((sum, h) => sum + parseFloat(h.amount || 0), 0);
-        const pendingAmount = totalCollected - totalHandedOver;
+        const pendingAmount = Math.max(0, totalCashCollected - totalHandedOver);
         const target = parseFloat(u.target_donation || 0);
         const remainingDues = target > totalCollected ? target - totalCollected : 0;
 
@@ -3968,6 +4077,11 @@
         printReportTable("Profit & Loss (P&L) Statement", html, systemData.settings);
       };
 
+      const handlePrintAuditReport = () => {
+        const title = `Annual Financial Audit Report — ${systemData.festivals.find(f => f.status === 'active')?.name || ''}`;
+        printReportTable(title, document.getElementById('annual-audit-report-element').innerHTML, systemData.settings);
+      };
+
       const handleExportMemberCSV = () => {
         let headers = ["Member Name", "Assigned Village", "Target", "Collected", "Handed Over", "Pending", "Remaining Dues"];
         let rows = memberReport.map(mr => [mr.name, mr.village, mr.target, mr.collected, mr.handedOver, mr.pending, mr.dues]);
@@ -3981,6 +4095,53 @@
         document.body.removeChild(link);
       };
 
+      const multiYearChartRef = useRef(null);
+      useEffect(() => {
+        let compChart;
+        if (reportTab === 'multi_year' && multiYearChartRef.current) {
+          const fests = systemData.festivals || [];
+          const sortedFests = [...fests].sort((a, b) => a.id - b.id);
+          const labels = sortedFests.map(f => f.name);
+          const donationData = sortedFests.map(f => f.total_donations || 0);
+          const expenseData = sortedFests.map(f => f.total_expenses || 0);
+          
+          compChart = new Chart(multiYearChartRef.current, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: 'Total Collections (₹)',
+                  data: donationData,
+                  backgroundColor: '#0074D9',
+                  borderRadius: 4
+                },
+                {
+                  label: 'Total Expenses (₹)',
+                  data: expenseData,
+                  backgroundColor: '#ff4136',
+                  borderRadius: 4
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false } }
+              },
+              plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12 } }
+              }
+            }
+          });
+        }
+        return () => {
+          if (compChart) compChart.destroy();
+        };
+      }, [reportTab, systemData.festivals]);
+
       return (
         <div>
           {/* Header */}
@@ -3991,244 +4152,456 @@
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '25px' }}>
-            {/* Profit & Loss Statement widget */}
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3><i className="fas fa-calculator"></i> Income & Expenditure (P&L)</h3>
-                <button className="btn btn-secondary btn-sm" onClick={handlePrintPL} style={{ background: 'var(--navy-accent)' }}>
-                  <i className="fas fa-print"></i> Print P&L Statement
-                </button>
+          {/* Sub-tab navigation menu */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', paddingBottom: '10px', flexWrap: 'wrap' }}>
+            <button 
+              onClick={() => setReportTab('pl')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                border: 'none',
+                background: reportTab === 'pl' ? 'var(--navy-accent)' : '#f1f5f9',
+                color: reportTab === 'pl' ? '#fff' : 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <i className="fas fa-calculator"></i> Income vs Expense (P&L)
+            </button>
+            <button 
+              onClick={() => setReportTab('multi_year')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                border: 'none',
+                background: reportTab === 'multi_year' ? 'var(--navy-accent)' : '#f1f5f9',
+                color: reportTab === 'multi_year' ? '#fff' : 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <i className="fas fa-chart-bar"></i> {t('multi_year_comp')}
+            </button>
+            <button 
+              onClick={() => setReportTab('audit')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                border: 'none',
+                background: reportTab === 'audit' ? 'var(--navy-accent)' : '#f1f5f9',
+                color: reportTab === 'audit' ? '#fff' : 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <i className="fas fa-file-invoice"></i> {t('audit_report')}
+            </button>
+          </div>
+
+          {reportTab === 'pl' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '25px' }}>
+              {/* Profit & Loss Statement widget */}
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h3><i className="fas fa-calculator"></i> Income & Expenditure (P&L)</h3>
+                  <button className="btn btn-secondary btn-sm" onClick={handlePrintPL} style={{ background: 'var(--navy-accent)' }}>
+                    <i className="fas fa-print"></i> Print P&L Statement
+                  </button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+                  <div style={{ padding: '15px', borderRadius: '8px', background: '#e8f5e9', border: '1px solid #c8e6c9' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2e7d32', fontWeight: 'bold' }}>Total Income</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1b5e20', marginTop: '5px' }}>₹{totalIncome.toLocaleString('en-IN')}</div>
+                  </div>
+                  <div style={{ padding: '15px', borderRadius: '8px', background: '#ffebee', border: '1px solid #ffcdd2' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#c62828', fontWeight: 'bold' }}>Total Expenses</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#b71c1c', marginTop: '5px' }}>₹{totalExpense.toLocaleString('en-IN')}</div>
+                  </div>
+                  <div style={{ padding: '15px', borderRadius: '8px', background: surplus >= 0 ? '#e3f2fd' : '#fff3e0', border: surplus >= 0 ? '1px solid #bbdefb' : '1px solid #ffe0b2' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: surplus >= 0 ? '#1565c0' : '#e65100', fontWeight: 'bold' }}>Net Surplus</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: surplus >= 0 ? '#0d47a1' : '#e65100', marginTop: '5px' }}>₹{surplus.toLocaleString('en-IN')}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flexWrap: 'wrap' }}>
+                  <div>
+                    <h4 style={{ color: '#2e7d32', borderBottom: '2px solid #c8e6c9', paddingBottom: '6px', marginBottom: '10px' }}>Income By Mode</h4>
+                    <table style={{ width: '100%', fontSize: '13px' }}>
+                      <tbody>
+                        {incomeByMode.map(i => (
+                          <tr key={i.name} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                            <td style={{ padding: '6px 0' }}>Donation ({i.name})</td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{i.amount.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div>
+                    <h4 style={{ color: '#c62828', borderBottom: '2px solid #ffcdd2', paddingBottom: '6px', marginBottom: '10px' }}>Expense By Category</h4>
+                    <table style={{ width: '100%', fontSize: '13px' }}>
+                      <tbody>
+                        {expenseByCategory.map(e => (
+                          <tr key={e.name} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                            <td style={{ padding: '6px 0' }}>{e.name}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{e.amount.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                        {expenseByCategory.length === 0 && (
+                          <tr><td style={{ color: 'var(--text-muted)' }}>No expenses recorded.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-                <div style={{ padding: '15px', borderRadius: '8px', background: '#e8f5e9', border: '1px solid #c8e6c9' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2e7d32', fontWeight: 'bold' }}>Total Income</div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1b5e20', marginTop: '5px' }}>₹{totalIncome.toLocaleString('en-IN')}</div>
+
+              {/* Member Collection KPIs Performance Report */}
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                  <h3><i className="fas fa-users-cog"></i> {t('member_report')}</h3>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('member-report-table', t('member_report'))}>
+                      <i className="fas fa-print"></i> {t('print')}
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={handleExportMemberCSV} style={{ background: '#2c3e50' }}>
+                      <i className="fas fa-file-csv"></i> Excel/CSV
+                    </button>
+                  </div>
                 </div>
-                <div style={{ padding: '15px', borderRadius: '8px', background: '#ffebee', border: '1px solid #ffcdd2' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#c62828', fontWeight: 'bold' }}>Total Expenses</div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#b71c1c', marginTop: '5px' }}>₹{totalExpense.toLocaleString('en-IN')}</div>
-                </div>
-                <div style={{ padding: '15px', borderRadius: '8px', background: surplus >= 0 ? '#e3f2fd' : '#fff3e0', border: surplus >= 0 ? '1px solid #bbdefb' : '1px solid #ffe0b2' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: surplus >= 0 ? '#1565c0' : '#e65100', fontWeight: 'bold' }}>Net Surplus</div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: surplus >= 0 ? '#0d47a1' : '#e65100', marginTop: '5px' }}>₹{surplus.toLocaleString('en-IN')}</div>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flexWrap: 'wrap' }}>
-                <div>
-                  <h4 style={{ color: '#2e7d32', borderBottom: '2px solid #c8e6c9', paddingBottom: '6px', marginBottom: '10px' }}>Income By Mode</h4>
-                  <table style={{ width: '100%', fontSize: '13px' }}>
+                <div className="table-responsive">
+                  <table id="member-report-table">
+                    <thead>
+                      <tr>
+                        <th>{t('member_name')}</th>
+                        <th>{t('village')}</th>
+                        <th>{t('target')}</th>
+                        <th>{t('collected')}</th>
+                        <th>{t('handed_over')}</th>
+                        <th>{t('pending')}</th>
+                        <th>{t('remaining_dues')}</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {incomeByMode.map(i => (
-                        <tr key={i.name} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                          <td style={{ padding: '6px 0' }}>Donation ({i.name})</td>
-                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{i.amount.toFixed(2)}</td>
+                      {memberReport.map(mr => (
+                        <tr key={mr.id}>
+                          <td><strong>{mr.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{mr.mobile}</small></td>
+                          <td>{mr.village}</td>
+                          <td style={{ fontWeight: 'bold' }}>₹{mr.target.toFixed(2)}</td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{mr.collected.toFixed(2)}</td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{mr.handedOver.toFixed(2)}</td>
+                          <td style={{ fontWeight: 'bold', color: mr.pending > 0 ? '#d35400' : '#27ae60' }}>₹{mr.pending.toFixed(2)}</td>
+                          <td style={{ fontWeight: 'bold', color: mr.dues > 0 ? '#c0392b' : '#7f8c8d' }}>₹{mr.dues.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <div>
-                  <h4 style={{ color: '#c62828', borderBottom: '2px solid #ffcdd2', paddingBottom: '6px', marginBottom: '10px' }}>Expense By Category</h4>
-                  <table style={{ width: '100%', fontSize: '13px' }}>
+              </div>
+
+              {/* Village summary list */}
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h3><i className="fas fa-map-marked-alt"></i> {t('village_report')}</h3>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('village-report-table', t('village_report'))}>
+                    <i className="fas fa-print"></i> {t('print')}
+                  </button>
+                </div>
+                <div className="table-responsive">
+                  <table id="village-report-table">
+                    <thead>
+                      <tr>
+                        <th>{t('village')}</th>
+                        <th>Total Slips</th>
+                        <th>Total Amount</th>
+                        <th>Donors List & Slips</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {expenseByCategory.map(e => (
-                        <tr key={e.name} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                          <td style={{ padding: '6px 0' }}>{e.name}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{e.amount.toFixed(2)}</td>
+                      {villageReport.map(vr => (
+                        <tr key={vr.villageName} style={{ verticalAlign: 'top' }}>
+                          <td><strong>{vr.villageName}</strong></td>
+                          <td>{vr.slipCount}</td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{vr.totalAmount.toFixed(2)}</td>
+                          <td>
+                            {vr.slips.length > 0 ? (
+                              <ul style={{ paddingLeft: '15px', margin: 0, fontSize: '12px' }}>
+                                {vr.slips.map(s => (
+                                  <li key={s.receipt_no} style={{ marginBottom: '4px' }}>
+                                    #{s.receipt_no} - {s.donor_name} (₹{parseFloat(s.amount).toFixed(2)})
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>No slips cut</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
-                      {expenseByCategory.length === 0 && (
-                        <tr><td style={{ color: 'var(--text-muted)' }}>No expenses recorded.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* High to Low contributions report */}
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h3><i className="fas fa-sort-amount-down"></i> {t('top_donations')}</h3>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('top-donations-table', t('top_donations'))}>
+                    <i className="fas fa-print"></i> {t('print')}
+                  </button>
+                </div>
+                <div className="table-responsive">
+                  <table id="top-donations-table">
+                    <thead>
+                      <tr>
+                        <th>Rank</th>
+                        <th>{t('receipt_no')}</th>
+                        <th>{t('donor_name')}</th>
+                        <th>{t('village')}</th>
+                        <th>{t('amount')}</th>
+                        <th>{t('mode')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedDonations.map((d, idx) => (
+                        <tr key={d.receipt_no}>
+                          <td><strong>#{idx + 1}</strong></td>
+                          <td>#{d.receipt_no}</td>
+                          <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
+                          <td>{d.village}</td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--success)', fontSize: '14px' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                          <td>{d.mode}</td>
+                        </tr>
+                      ))}
+                      {sortedDonations.length === 0 && (
+                        <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No data available.</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Member Collection KPIs Performance Report */}
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-                <h3><i className="fas fa-users-cog"></i> {t('member_report')}</h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('member-report-table', t('member_report'))}>
-                    <i className="fas fa-print"></i> {t('print')}
-                  </button>
-                  <button className="btn btn-secondary btn-sm" onClick={handleExportMemberCSV} style={{ background: '#2c3e50' }}>
-                    <i className="fas fa-file-csv"></i> Excel/CSV
-                  </button>
+          {reportTab === 'multi_year' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '25px' }}>
+              <div className="card">
+                <h3><i className="fas fa-chart-bar"></i> Multi-Year Performance Comparison</h3>
+                <div style={{ height: '280px', position: 'relative', marginTop: '15px' }}>
+                  <canvas ref={multiYearChartRef}></canvas>
                 </div>
               </div>
-              <div className="table-responsive">
-                <table id="member-report-table">
-                  <thead>
-                    <tr>
-                      <th>{t('member_name')}</th>
-                      <th>{t('village')}</th>
-                      <th>{t('target')}</th>
-                      <th>{t('collected')}</th>
-                      <th>{t('handed_over')}</th>
-                      <th>{t('pending')}</th>
-                      <th>{t('remaining_dues')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {memberReport.map(mr => (
-                      <tr key={mr.id}>
-                        <td><strong>{mr.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{mr.mobile}</small></td>
-                        <td>{mr.village}</td>
-                        <td style={{ fontWeight: 'bold' }}>₹{mr.target.toFixed(2)}</td>
-                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{mr.collected.toFixed(2)}</td>
-                        <td style={{ fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{mr.handedOver.toFixed(2)}</td>
-                        <td style={{ fontWeight: 'bold', color: mr.pending > 0 ? '#d35400' : '#27ae60' }}>₹{mr.pending.toFixed(2)}</td>
-                        <td style={{ fontWeight: 'bold', color: mr.dues > 0 ? '#c0392b' : '#7f8c8d' }}>₹{mr.dues.toFixed(2)}</td>
+
+              <div className="card">
+                <h3><i className="fas fa-table"></i> Session Statistics Summary</h3>
+                <div className="table-responsive" style={{ marginTop: '15px' }}>
+                  <table>
+                    <thead>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th>Festival Session</th>
+                        <th>Total Collections (₹)</th>
+                        <th>Total Expenses (₹)</th>
+                        <th>Net Surplus / Bachat (₹)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {(systemData.festivals || []).map(f => {
+                        const net = parseFloat(f.total_donations || 0) - parseFloat(f.total_expenses || 0);
+                        return (
+                          <tr key={f.id}>
+                            <td><strong>{f.name}</strong></td>
+                            <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>₹{(f.total_donations || 0).toLocaleString('en-IN')}</td>
+                            <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>₹{(f.total_expenses || 0).toLocaleString('en-IN')}</td>
+                            <td style={{ color: net >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 'bold' }}>
+                              ₹{net.toLocaleString('en-IN')}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Village summary list */}
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3><i className="fas fa-map-marked-alt"></i> {t('village_report')}</h3>
-                <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('village-report-table', t('village_report'))}>
-                  <i className="fas fa-print"></i> {t('print')}
-                </button>
-              </div>
-              <div className="table-responsive">
-                <table id="village-report-table">
-                  <thead>
-                    <tr>
-                      <th>{t('village')}</th>
-                      <th>Total Slips</th>
-                      <th>Total Amount</th>
-                      <th>Donors List & Slips</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {villageReport.map(vr => (
-                      <tr key={vr.villageName} style={{ verticalAlign: 'top' }}>
-                        <td><strong>{vr.villageName}</strong></td>
-                        <td>{vr.slipCount}</td>
-                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{vr.totalAmount.toFixed(2)}</td>
-                        <td>
-                          {vr.slips.length > 0 ? (
-                            <ul style={{ paddingLeft: '15px', margin: 0, fontSize: '12px' }}>
-                              {vr.slips.map(s => (
-                                <li key={s.receipt_no} style={{ marginBottom: '4px' }}>
-                                  #{s.receipt_no} - {s.donor_name} (₹{parseFloat(s.amount).toFixed(2)})
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>No slips cut</span>
+          {reportTab === 'audit' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '25px' }}>
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h3><i className="fas fa-file-invoice"></i> {t('audit_report')} Statement</h3>
+                  <button className="btn btn-secondary btn-sm" onClick={handlePrintAuditReport} style={{ background: 'var(--navy-accent)' }}>
+                    <i className="fas fa-print"></i> Print Audit Statement
+                  </button>
+                </div>
+
+                <div id="annual-audit-report-element" style={{ background: '#fff', padding: '25px', borderRadius: '6px', border: '1px solid #e2e8f0', fontFamily: 'sans-serif' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <h2 style={{ margin: '0 0 5px 0', color: 'var(--navy-primary)' }}>{systemData.settings.committee_name || 'Committee'}</h2>
+                    <h4 style={{ margin: 0, color: 'var(--text-muted)', fontWeight: 'normal' }}>
+                      Annual Financial Audit Report — {systemData.festivals.find(f => f.status === 'active')?.name || 'Active Session'}
+                    </h4>
+                    <div style={{ width: '80px', height: '3px', background: 'var(--navy-accent)', margin: '10px auto' }}></div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginTop: '20px' }}>
+                    {/* Receipts column */}
+                    <div>
+                      <h4 style={{ borderBottom: '2px solid #2ecc71', paddingBottom: '6px', color: '#27ae60', margin: '0 0 10px 0' }}>RECEIPTS (INCOME)</h4>
+                      <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}><td colSpan="2" style={{ padding: '6px 4px' }}>Village Summary</td></tr>
+                          {villageReport.map(v => (
+                            <tr key={v.villageName} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '6px 8px' }}>{v.villageName}</td>
+                              <td style={{ textAlign: 'right', padding: '6px 8px' }}>₹{v.totalAmount.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                          <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}><td colSpan="2" style={{ padding: '6px 4px', marginTop: '10px' }}>Mode Summary</td></tr>
+                          {incomeByMode.map(m => (
+                            <tr key={m.name} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '6px 8px' }}>Donations via {m.name}</td>
+                              <td style={{ textAlign: 'right', padding: '6px 8px' }}>₹{m.amount.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                          <tr style={{ fontWeight: 'bold', fontSize: '14px', borderTop: '2px solid #2ecc71' }}>
+                            <td style={{ padding: '10px 8px' }}>Total Income (A)</td>
+                            <td style={{ textAlign: 'right', padding: '10px 8px', color: '#27ae60' }}>₹{totalIncome.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Payments column */}
+                    <div>
+                      <h4 style={{ borderBottom: '2px solid #ff4136', paddingBottom: '6px', color: '#c0392b', margin: '0 0 10px 0' }}>PAYMENTS (EXPENSES)</h4>
+                      <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}><td colSpan="2" style={{ padding: '6px 4px' }}>Category-wise Expenditure</td></tr>
+                          {expenseByCategory.map(e => (
+                            <tr key={e.name} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '6px 8px' }}>{e.name}</td>
+                              <td style={{ textAlign: 'right', padding: '6px 8px' }}>₹{e.amount.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                          {expenseByCategory.length === 0 && (
+                            <tr><td colSpan="2" style={{ padding: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>No expenses recorded.</td></tr>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                          <tr style={{ fontWeight: 'bold', fontSize: '14px', borderTop: '2px solid #ff4136', marginTop: '30px' }}>
+                            <td style={{ padding: '10px 8px' }}>Total Payments (B)</td>
+                            <td style={{ textAlign: 'right', padding: '10px 8px', color: '#c0392b' }}>₹{totalExpense.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
 
-            {/* High to Low contributions report */}
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3><i className="fas fa-sort-amount-down"></i> {t('top_donations')}</h3>
-                <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('top-donations-table', t('top_donations'))}>
-                  <i className="fas fa-print"></i> {t('print')}
-                </button>
-              </div>
-              <div className="table-responsive">
-                <table id="top-donations-table">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>{t('receipt_no')}</th>
-                      <th>{t('donor_name')}</th>
-                      <th>{t('village')}</th>
-                      <th>{t('amount')}</th>
-                      <th>{t('mode')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedDonations.map((d, idx) => (
-                      <tr key={d.receipt_no}>
-                        <td><strong>#{idx + 1}</strong></td>
-                        <td>#{d.receipt_no}</td>
-                        <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
-                        <td>{d.village}</td>
-                        <td style={{ fontWeight: 'bold', color: 'var(--success)', fontSize: '14px' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
-                        <td>{d.mode}</td>
-                      </tr>
-                    ))}
-                    {sortedDonations.length === 0 && (
-                      <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No data available.</td></tr>
-                    )}
-                  </tbody>
-                </table>
+                  {/* Financial Balance summary */}
+                  <div style={{ marginTop: '25px', padding: '15px', borderRadius: '6px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <table style={{ width: '100%', fontSize: '14px', borderCollapse: 'collapse' }}>
+                      <tbody>
+                        <tr>
+                          <td>Total Collections Received (A):</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#27ae60' }}>₹{totalIncome.toLocaleString('en-IN')}</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px dashed #cbd5e1' }}>
+                          <td style={{ paddingBottom: '8px' }}>Total Approved Expenses Paid (B):</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#c0392b', paddingBottom: '8px' }}>- ₹{totalExpense.toLocaleString('en-IN')}</td>
+                        </tr>
+                        <tr style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                          <td style={{ paddingTop: '8px' }}>Surplus Settleable Fund (A - B):</td>
+                          <td style={{ textAlign: 'right', color: surplus >= 0 ? '#27ae60' : '#c0392b', paddingTop: '8px' }}>
+                            ₹{surplus.toLocaleString('en-IN')}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Signatures */}
+                  <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'space-between', padding: '0 10px' }}>
+                    <div style={{ textAlign: 'center', width: '160px' }}>
+                      <div style={{ borderBottom: '1.5px solid #000', marginBottom: '8px', height: '35px' }}></div>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>लेखा परीक्षक / Auditor</span>
+                    </div>
+                    <div style={{ textAlign: 'center', width: '160px' }}>
+                      <div style={{ borderBottom: '1.5px solid #000', marginBottom: '8px', height: '35px' }}></div>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>कोषाध्यक्ष / Treasurer</span>
+                    </div>
+                    <div style={{ textAlign: 'center', width: '160px' }}>
+                      <div style={{ borderBottom: '1.5px solid #000', marginBottom: '8px', height: '35px' }}></div>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>अध्यक्ष / President</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       );
     }
-
-    function DonorsView({ systemData, t }) {
-      const donations = systemData.donations || [];
+    function DonorsView({ systemData, user, t }) {
+      const [donors, setDonors] = useState([]);
+      const [loading, setLoading] = useState(false);
       const [searchQuery, setSearchQuery] = useState('');
       const [selectedDonorKey, setSelectedDonorKey] = useState(null);
+      const [selectedDonorHistory, setSelectedDonorHistory] = useState([]);
+      const [loadingDetails, setLoadingDetails] = useState(false);
 
-      // Aggregate donor information
-      const donorProfiles = React.useMemo(() => {
-        const profiles = {};
-        donations.forEach(d => {
-          const mobileStr = String(d.donor_mobile || '').trim();
-          const nameStr = String(d.donor_name || '').trim();
-          // Use mobile as primary key, fallback to name if mobile is empty
-          const key = mobileStr ? mobileStr : `name_${nameStr}`;
-          
-          if (!profiles[key]) {
-            profiles[key] = {
-              key: key,
-              name: nameStr,
-              mobile: mobileStr,
-              village: d.village || 'N/A',
-              totalCollected: 0,
-              totalPromised: 0,
-              slips: []
-            };
+      const fetchDonors = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(`${API_URL}?action=getDonorList&req_mobile=${user.mobile}`);
+          const data = await res.json();
+          if (data.success) {
+            setDonors(data.donors || []);
           }
+        } catch(e) {
+          console.error("Error fetching unique donors:", e);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-          profiles[key].totalCollected += parseFloat(d.amount || 0);
-          profiles[key].totalPromised += parseFloat(d.promised_amount || d.amount || 0);
-          profiles[key].slips.push(d);
-        });
+      useEffect(() => {
+        fetchDonors();
+      }, [systemData.donations]);
 
-        // Calculate remaining dues and sort profiles by name
-        return Object.values(profiles).map(p => {
-          const dues = Math.max(0, p.totalPromised - p.totalCollected);
-          return { ...p, dues };
-        }).sort((a, b) => a.name.localeCompare(b.name));
-      }, [donations]);
+      const handleViewDonorLedger = async (donorMobile) => {
+        setSelectedDonorKey(donorMobile);
+        setSelectedDonorHistory([]);
+        setLoadingDetails(true);
+        try {
+          const res = await fetch(`${API_URL}?action=getDonorLedgerDetails&req_mobile=${user.mobile}&donor_mobile=${donorMobile}`);
+          const data = await res.json();
+          if (data.success) {
+            setSelectedDonorHistory(data.donations || []);
+          }
+        } catch(e) {
+          console.error("Error fetching donor ledger:", e);
+        } finally {
+          setLoadingDetails(false);
+        }
+      };
 
-      const filteredDonors = donorProfiles.filter(p => {
+      const filteredDonors = donors.filter(p => {
         const query = searchQuery.toLowerCase();
-        return p.name.toLowerCase().includes(query) || 
-               p.mobile.includes(query) || 
-               p.village.toLowerCase().includes(query);
-      });
+        return (p.donor_name || '').toLowerCase().includes(query) || 
+               (p.donor_mobile || '').includes(query) || 
+               (p.village || '').toLowerCase().includes(query);
+      }).sort((a, b) => (a.donor_name || '').localeCompare(b.donor_name || ''));
 
-      // KPI stats
-      const totalUniqueDonors = donorProfiles.length;
-      const totalCollectedAmount = donorProfiles.reduce((s, p) => s + p.totalCollected, 0);
-      const totalDuesAmount = donorProfiles.reduce((s, p) => s + p.dues, 0);
+      const totalUniqueDonors = donors.length;
+      const totalCollectedAmount = donors.reduce((s, p) => s + parseFloat(p.total_donated || 0), 0);
+      const totalReceiptsCount = donors.reduce((s, p) => s + parseInt(p.donation_count || 0), 0);
+
+      const selectedProfile = donors.find(p => p.donor_mobile === selectedDonorKey);
 
       const handlePrintDonorLedger = (profile) => {
-        let rowsHtml = profile.slips.map((s, idx) => `
+        let rowsHtml = selectedDonorHistory.map((s, idx) => `
           <tr style="border-bottom: 1px solid #eee;">
             <td style="padding: 8px;">${idx + 1}</td>
             <td style="padding: 8px;">#${s.receipt_no}</td>
@@ -4243,11 +4616,11 @@
           <div style="border: 1px solid #ccc; padding: 20px; border-radius: 6px; font-family: sans-serif;">
             <h3 style="text-align: center; color: #001f3f; margin-top: 0;">Donor Ledger & Account Statement</h3>
             <div style="margin-bottom: 20px; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #001f3f;">
-              <strong>Donor Name:</strong> ${profile.name}<br/>
-              <strong>Mobile Number:</strong> ${profile.mobile || 'N/A'}<br/>
-              <strong>Village/Area:</strong> ${profile.village}<br/>
-              <strong>Total Donated:</strong> <span style="color: green; font-weight: bold;">₹${profile.totalCollected.toFixed(2)}</span> &nbsp;|&nbsp; 
-              <strong>Remaining Dues:</strong> <span style="color: red; font-weight: bold;">₹${profile.dues.toFixed(2)}</span>
+              <strong>Donor Name:</strong> ${profile.donor_name}<br/>
+              <strong>Mobile Number:</strong> ${profile.donor_mobile || 'N/A'}<br/>
+              <strong>Village/Area:</strong> ${profile.village || 'N/A'}<br/>
+              <strong>Total Donated (Lifetime):</strong> <span style="color: green; font-weight: bold;">₹${parseFloat(profile.total_donated).toFixed(2)}</span> &nbsp;|&nbsp; 
+              <strong>Total Receipts:</strong> <span style="font-weight: bold;">${profile.donation_count} slips</span>
             </div>
             <table border="1" style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <thead>
@@ -4266,7 +4639,7 @@
             </table>
           </div>
         `;
-        printReportTable(`Donor Ledger Statement — ${profile.name}`, html, systemData.settings);
+        printReportTable(`Donor Ledger Statement — ${profile.donor_name}`, html, systemData.settings);
       };
 
       return (
@@ -4274,42 +4647,45 @@
           {/* Header */}
           <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
             <div>
-              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-address-book"></i> Donor Ledger & Permanent Profiles</h2>
-              <small style={{ color: 'var(--text-muted)' }}>Home / Donor Ledger</small>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-address-book"></i> {t('donors')} & Permanent Profiles</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / {t('donors')}</small>
             </div>
           </div>
 
           {/* Stats widgets */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
             <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #e3f2fd, #fff)' }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--navy-accent)' }}>{totalUniqueDonors}</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--navy-accent)' }}>{loading ? '...' : totalUniqueDonors}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total Unique Donors</div>
             </div>
             <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #e8f5e9, #fff)' }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2ecc71' }}>₹{totalCollectedAmount.toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2ecc71' }}>₹{loading ? '...' : totalCollectedAmount.toLocaleString('en-IN')}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total Collection Amount</div>
             </div>
             <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #ffebee, #fff)' }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff4136' }}>₹{totalDuesAmount.toLocaleString('en-IN')}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total Remaining Dues</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff851b' }}>{loading ? '...' : totalReceiptsCount}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total Collection Slips</div>
             </div>
           </div>
 
           {/* Detailed Statement Panel */}
-          {selectedDonorKey && (() => {
-            const profile = donorProfiles.find(p => p.key === selectedDonorKey);
-            if (!profile) return null;
-            return (
-              <div className="card" style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h4 style={{ margin: 0, color: 'var(--navy-accent)' }}><i className="fas fa-history"></i> Donation History: {profile.name}</h4>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => handlePrintDonorLedger(profile)} style={{ background: '#34495e' }}>
-                      <i className="fas fa-print"></i> Print Statement
-                    </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDonorKey(null)} style={{ background: '#95a5a6' }}>✕ Close</button>
-                  </div>
+          {selectedDonorKey && selectedProfile && (
+            <div className="card" style={{ marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h4 style={{ margin: 0, color: 'var(--navy-accent)' }}><i className="fas fa-history"></i> Donation History: {selectedProfile.donor_name}</h4>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handlePrintDonorLedger(selectedProfile)} disabled={loadingDetails} style={{ background: '#34495e' }}>
+                    <i className="fas fa-print"></i> Print Statement
+                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDonorKey(null)} style={{ background: '#95a5a6' }}>✕ Close</button>
                 </div>
+              </div>
+              
+              {loadingDetails ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <i className="fas fa-spinner fa-spin"></i> Loading chronological ledger details...
+                </div>
+              ) : (
                 <div className="table-responsive">
                   <table>
                     <thead>
@@ -4323,7 +4699,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      {profile.slips.map((s, idx) => (
+                      {selectedDonorHistory.map((s, idx) => (
                         <tr key={idx}>
                           <td>{idx + 1}</td>
                           <td>#{s.receipt_no}</td>
@@ -4333,12 +4709,15 @@
                           <td>{s.collected_by_name || 'N/A'}</td>
                         </tr>
                       ))}
+                      {selectedDonorHistory.length === 0 && (
+                        <tr><td colSpan="6" style={{ textAlign: 'center', padding: '15px' }}>No records found.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            );
-          })()}
+              )}
+            </div>
+          )}
 
           {/* Main Table Card */}
           <div className="card">
@@ -4354,48 +4733,49 @@
               </div>
             </div>
             
-            <div className="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Donor Name</th>
-                    <th>Mobile Number</th>
-                    <th>Village</th>
-                    <th>Total Donated</th>
-                    <th>Total Promised</th>
-                    <th>Remaining Dues</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDonors.map(profile => (
-                    <tr key={profile.key}>
-                      <td><strong>{profile.name}</strong></td>
-                      <td>{profile.mobile || '—'}</td>
-                      <td>{profile.village}</td>
-                      <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{profile.totalCollected.toFixed(2)}</td>
-                      <td style={{ fontWeight: 'bold' }}>₹{profile.totalPromised.toFixed(2)}</td>
-                      <td style={{ fontWeight: 'bold', color: profile.dues > 0 ? 'red' : 'inherit' }}>
-                        {profile.dues > 0 ? `₹${profile.dues.toFixed(2)}` : '✓ Paid'}
-                      </td>
-                      <td>
-                        <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDonorKey(profile.key)} style={{ padding: '4px 10px', fontSize: '11px' }}>
-                          <i className="fas fa-eye"></i> Statement
-                        </button>
-                      </td>
+            {loading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <i className="fas fa-spinner fa-spin fa-2x"></i><br/><br/>Fetching permanent donor registry...
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Donor Name</th>
+                      <th>Mobile Number</th>
+                      <th>Village</th>
+                      <th>Lifetime Donations</th>
+                      <th>Total Receipts</th>
+                      <th>Action</th>
                     </tr>
-                  ))}
-                  {filteredDonors.length === 0 && (
-                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No donors found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredDonors.map(profile => (
+                      <tr key={profile.donor_mobile}>
+                        <td><strong>{profile.donor_name}</strong></td>
+                        <td>{profile.donor_mobile || '—'}</td>
+                        <td>{profile.village || '—'}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(profile.total_donated).toFixed(2)}</td>
+                        <td style={{ fontWeight: 'bold' }}>{profile.donation_count} slips</td>
+                        <td>
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleViewDonorLedger(profile.donor_mobile)} style={{ padding: '4px 10px', fontSize: '11px' }}>
+                            <i className="fas fa-eye"></i> Statement
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredDonors.length === 0 && (
+                      <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No donors found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       );
     }
-
     function HandoversView({ systemData, user, onAction, t }) {
       const [amount, setAmount] = useState('');
       const [accountId, setAccountId] = useState('');
@@ -4792,7 +5172,7 @@
       );
     }
 
-    function CategoriesView({ systemData, onAction, onDelete, hasPermission, t }) {
+    function CategoriesView({ systemData, onAction, onDelete, hasPermission, getViewingFestivalId, fetchInitData, t }) {
       const [name, setName] = useState('');
       const [editId, setEditId] = useState(null);
       const [selectedCategory, setSelectedCategory] = useState(null);
@@ -4808,6 +5188,55 @@
           setName('');
           setEditId(null);
         }
+      };
+
+      const handleEditBudget = (catName, currentBudget) => {
+        Swal.fire({
+          title: `Set Budget for ${catName}`,
+          input: 'number',
+          inputLabel: 'Budget Amount (₹)',
+          inputValue: currentBudget || 0,
+          showCancelButton: true,
+          confirmButtonText: 'Save',
+          cancelButtonText: 'Cancel',
+          confirmButtonColor: 'var(--navy-primary)',
+          inputValidator: (value) => {
+            if (value === '' || isNaN(value) || parseFloat(value) < 0) {
+              return 'Please enter a valid positive number!';
+            }
+          }
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            const budgetVal = parseFloat(result.value);
+            Swal.fire({
+              title: 'Saving Budget...',
+              allowOutsideClick: false,
+              didOpen: () => { Swal.showLoading(); }
+            });
+            try {
+              const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                  action: 'saveCategoryBudget',
+                  festival_id: getViewingFestivalId(),
+                  category_name: catName,
+                  budget: budgetVal,
+                  currentUser: JSON.parse(localStorage.getItem('currentUser'))
+                })
+              });
+              const data = await res.json();
+              if (data.success) {
+                Swal.fire('Saved!', 'Budget updated successfully.', 'success');
+                fetchInitData(true);
+              } else {
+                Swal.fire('Error!', data.message || 'Failed to save budget.', 'error');
+              }
+            } catch(e) {
+              Swal.fire('Error!', e.toString(), 'error');
+            }
+          }
+        });
       };
 
       const handlePrintCategoryExpenses = (cInfo) => {
@@ -4852,20 +5281,52 @@
                   <tr>
                     <th>#</th>
                     <th>{t('category_name')}</th>
-                    <th>Total Expenses</th>
+                    <th>{t('budget')}</th>
+                    <th>{t('actual')}</th>
+                    <th>{t('status')}</th>
                     <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {categories.map((c, idx) => {
                     const items = expenses.filter(e => e.category === c.name);
-                    const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+                    const totalAmount = items.filter(e => e.status === 'Approved').reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+                    const budget = parseFloat(c.budget || 0);
+                    const isOver = budget > 0 && totalAmount > budget;
+                    const progressPct = budget > 0 ? Math.min(100, Math.round((totalAmount / budget) * 100)) : 0;
+
                     return (
                       <tr key={c.id}>
                         <td>#{idx + 1}</td>
                         <td><strong>{c.name}</strong></td>
-                        <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>
-                          ₹{totalAmount.toFixed(2)}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>{budget > 0 ? `₹${budget.toLocaleString('en-IN')}` : '—'}</span>
+                            {hasPermission('categories', 'e') && (
+                              <button onClick={() => handleEditBudget(c.name, budget)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', cursor: 'pointer', padding: '2px' }} title="Set Budget">
+                                <i className="fas fa-pencil-alt" style={{ fontSize: '11px' }}></i>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 'bold', color: isOver ? 'var(--danger)' : 'inherit' }}>
+                          ₹{totalAmount.toLocaleString('en-IN')}
+                        </td>
+                        <td>
+                          {budget > 0 ? (
+                            <div style={{ width: '110px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '2px' }}>
+                                <span style={{ fontWeight: 'bold', color: isOver ? 'var(--danger)' : 'var(--success)' }}>
+                                  {isOver ? t('overspent') : `${progressPct}%`}
+                                </span>
+                              </div>
+                              <div style={{ height: '6px', borderRadius: '3px', background: '#e8ecf0', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${progressPct}%`, background: isOver ? 'var(--danger)' : '#2ecc71', borderRadius: '3px' }}></div>
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No Budget</span>
+                          )}
                         </td>
                         <td>
                           <button className="action-icon view-icon" onClick={() => setSelectedCategory({ name: c.name, items, totalAmount })} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-eye"></i></button>
@@ -4926,8 +5387,8 @@
                             <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
                             <td>{ex.mode}</td>
                             <td>
-                              <span style={{ padding: '2px 6px', borderRadius: '10px', fontSize: '10.5px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                                {ex.status === 'Approved' ? t('approved') : t('pending')}
+                              <span style={{ padding: '2px 6px', borderRadius: '10px', fontSize: '10.5px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : ex.status === 'Reviewed' ? '#e0f2fe' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : ex.status === 'Reviewed' ? '#0369a1' : '#a46000' }}>
+                                {ex.status === 'Approved' ? t('approved') : ex.status === 'Reviewed' ? t('reviewed') : t('pending')}
                               </span>
                             </td>
                           </tr>
@@ -4948,7 +5409,6 @@
         </div>
       );
     }
-
     function AccountsView({ systemData, onAction, onDelete, hasPermission, t }) {
       const [name, setName] = useState('');
       const [balance, setBalance] = useState('');
