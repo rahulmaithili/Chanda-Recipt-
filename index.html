@@ -517,7 +517,7 @@
       background: rgba(0,0,0,0.02);
     }
 
-    /* Roles access matrix custom styles (From Screenshot 5 layout style!) */
+    /* Roles access matrix custom styles */
     .rbac-toggle-badge {
       display: inline-flex;
       align-items: center;
@@ -575,7 +575,7 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // Global Confirm Action Helper using SweetAlert2 (Resolves delete ReferenceError!)
+    // Global Confirm Action Helper using SweetAlert2
     function confirmAction(title, text, callback) {
       Swal.fire({
         title: title,
@@ -584,8 +584,8 @@
         showCancelButton: true,
         confirmButtonColor: '#ff851b',
         cancelButtonColor: '#7f8c8d',
-        confirmButtonText: 'हाँ (Yes)',
-        cancelButtonText: 'रद्द करें (Cancel)'
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'Cancel'
       }).then((result) => {
         if (result.isConfirmed) {
           callback();
@@ -593,7 +593,7 @@
       });
     }
 
-    // Language Pack Translation Engine
+    // Language Pack Translation Engine (Fully localized system-wide!)
     const APP_TRANSLATIONS = {
       'en': {
         'dashboard': 'Dashboard',
@@ -615,12 +615,14 @@
         'balance': 'Net Balance',
         'my_collection': 'My Collection',
         'outstanding_dues': 'Outstanding Dues',
+        'recent_contributions': 'Recent Contributions',
+        'village_collections': 'Village Collections',
         
         'donor_name': 'Donor Name',
         'mobile': 'Mobile Number',
         'village': 'Village',
         'amount': 'Amount',
-        'mode': 'Mode',
+        'mode': 'Payment Mode',
         'actions': 'Actions',
         'save': 'Save',
         'cancel': 'Cancel',
@@ -635,7 +637,63 @@
         'pay_installment': 'Pay Installment',
         'load_demo': 'Load Demo Data',
         'clear_all': 'Reset All Data',
-        'search': 'Search here...'
+        'search': 'Search here...',
+        'filters': 'Filters',
+        'clear': 'Clear',
+        'csv': 'CSV',
+        'pdf': 'PDF',
+        'print_table': 'Print Table',
+        
+        'receipt_no': 'Receipt No',
+        'voucher_no': 'Voucher No',
+        'date': 'Date',
+        'status': 'Status',
+        'village_assigned': 'Village Assigned',
+        'opening_balance': 'Opening Balance',
+        'target_collection': 'Target Collection',
+        'category_name': 'Category Name',
+        'account_source': 'Account Source',
+        'notes': 'Notes / Remarks',
+        'title': 'Title',
+        'username': 'Username',
+        'password': 'Password',
+        'role': 'Role',
+        'add_user': 'Add User',
+        'edit_user': 'Edit User',
+        'add_donation': 'Add Donation',
+        'edit_donation': 'Edit Donation',
+        'add_expense': 'Add Expense',
+        'edit_expense': 'Edit Expense',
+        'add_village': 'Add Village',
+        'edit_village': 'Edit Village',
+        'add_category': 'Add Category',
+        'edit_category': 'Edit Category',
+        'add_account': 'Add Account',
+        'edit_account': 'Edit Account',
+        'add_session': 'Add Session',
+        'edit_session': 'Edit Session',
+        'committee_settings': 'Committee Settings',
+        'whatsapp_settings': 'WhatsApp Settings',
+        'maintenance': 'Data Maintenance & Backups',
+        'profile_settings': 'Profile Settings',
+        'live_preview': 'Live Preview',
+        'receipt_preview': 'Receipt Preview',
+        'voucher_preview': 'Voucher Preview',
+        'approved': 'Approved',
+        'pending': 'Pending',
+        'active': 'Active',
+        'inactive': 'Inactive',
+        'handover_submit': 'Submit Handover',
+        'handover_history': 'Handover History & Approvals',
+        'approve': 'Approve',
+        'approved_by': 'Approved by',
+        'destination_account': 'Destination Account',
+        'showing': 'Showing',
+        'to': 'to',
+        'of': 'of',
+        'entries': 'entries',
+        'previous': 'Previous',
+        'next': 'Next'
       },
       'hi': {
         'dashboard': 'डैशबोर्ड',
@@ -657,6 +715,8 @@
         'balance': 'बचत बैलेंस राशि',
         'my_collection': 'मेरा चंदा संग्रह',
         'outstanding_dues': 'कुल बकाया राशि',
+        'recent_contributions': 'हालिया रसीदें',
+        'village_collections': 'गाँव अनुसार चंदा विवरण',
         
         'donor_name': 'दाता का नाम',
         'mobile': 'मोबाइल नंबर',
@@ -677,7 +737,63 @@
         'pay_installment': 'किस्त जमा करें',
         'load_demo': 'डेमो डेटा लोड करें',
         'clear_all': 'डेटा साफ करें',
-        'search': 'खोजें...'
+        'search': 'खोजें...',
+        'filters': 'फ़िल्टर',
+        'clear': 'साफ़ करें',
+        'csv': 'सीएसवी',
+        'pdf': 'पीडीएफ',
+        'print_table': 'टेबल प्रिंट करें',
+        
+        'receipt_no': 'रसीद क्र',
+        'voucher_no': 'वाउचर क्रमांक',
+        'date': 'दिनांक',
+        'status': 'स्थिति',
+        'village_assigned': 'आबंटित गाँव',
+        'opening_balance': 'प्रारंभिक बैलेंस राशि',
+        'target_collection': 'लक्ष्य संग्रह',
+        'category_name': 'श्रेणी नाम',
+        'account_source': 'स्रोत खाता',
+        'notes': 'नोट/टिप्पणी',
+        'title': 'शीर्षक',
+        'username': 'यूज़र का नाम',
+        'password': 'पासवर्ड',
+        'role': 'भूमिका',
+        'add_user': 'नया कलेक्टर जोड़ें',
+        'edit_user': 'कलेक्टर सुधारें',
+        'add_donation': 'नया चंदा प्रविष्ट करें',
+        'edit_donation': 'चंदा रसीद सुधारें',
+        'add_expense': 'नया खर्च दर्ज करें',
+        'edit_expense': 'व्यय विवरण सुधारें',
+        'add_village': 'नया गाँव जोड़ें',
+        'edit_village': 'गाँव बदलें',
+        'add_category': 'नई खर्च श्रेणी जोड़ें',
+        'edit_category': 'व्यय श्रेणी बदलें',
+        'add_account': 'नया खाता/वॉलेट जोड़ें',
+        'edit_account': 'खाता बदलें',
+        'add_session': 'नया उत्सव सत्र जोड़ें',
+        'edit_session': 'उत्सव सत्र सुधारें',
+        'committee_settings': 'समिति सेटिंग्स',
+        'whatsapp_settings': 'व्हाट्सएप गेटवे सेटिंग्स',
+        'maintenance': 'डेटा मेंटेनेंस व बैकअप',
+        'profile_settings': 'प्रोफ़ाइल सेटिंग्स',
+        'live_preview': 'रसीद पूर्वावलोकन',
+        'receipt_preview': 'रसीद पूर्वावलोकन',
+        'voucher_preview': 'व्यय पूर्वावलोकन',
+        'approved': 'स्वीकृत (Approved)',
+        'pending': 'लंबित (Pending)',
+        'active': 'सक्रिय (Active)',
+        'inactive': 'निष्क्रिय (Inactive)',
+        'handover_submit': 'हैंडओवर सबमिट करें',
+        'handover_history': 'हैंडओवर इतिहास और अनुमोदन',
+        'approve': 'मंजूर करें',
+        'approved_by': 'द्वारा मंजूर',
+        'destination_account': 'जमा करने का खाता',
+        'showing': 'दिखा रहा है',
+        'to': 'से',
+        'of': 'का (कुल',
+        'entries': 'प्रविष्टियां)',
+        'previous': 'पिछला',
+        'next': 'अगला'
       },
       'hinglish': {
         'dashboard': 'Dashboard',
@@ -699,6 +815,8 @@
         'balance': 'Net Bachat Balance',
         'my_collection': 'Mera Collection',
         'outstanding_dues': 'Baki / Dues Amount',
+        'recent_contributions': 'Recent Chanda Receipt',
+        'village_collections': 'Gaon wise Collection Status',
         
         'donor_name': 'Donor Name',
         'mobile': 'Mobile Number',
@@ -719,7 +837,63 @@
         'pay_installment': 'Installment Pay Kare',
         'load_demo': 'Demo Data Load Kare',
         'clear_all': 'Data Clear Kare',
-        'search': 'Search kare...'
+        'search': 'Search kare...',
+        'filters': 'Filters',
+        'clear': 'Clear Kare',
+        'csv': 'CSV Download',
+        'pdf': 'PDF Print',
+        'print_table': 'Table Print Kare',
+        
+        'receipt_no': 'Receipt No',
+        'voucher_no': 'Voucher No',
+        'date': 'Tarikh',
+        'status': 'Status',
+        'village_assigned': 'Assigned Gaon',
+        'opening_balance': 'Opening Balance',
+        'target_collection': 'Target Collection',
+        'category_name': 'Category Name',
+        'account_source': 'Account Source',
+        'notes': 'Remarks / Notes',
+        'title': 'Title / Naam',
+        'username': 'Username',
+        'password': 'Password',
+        'role': 'Role / Pad',
+        'add_user': 'Add Collector',
+        'edit_user': 'Edit Collector',
+        'add_donation': 'Naya Chanda Add',
+        'edit_donation': 'Chanda Edit Kare',
+        'add_expense': 'Naya Kharcha Add',
+        'edit_expense': 'Kharcha Edit Kare',
+        'add_village': 'Naya Gaon Add',
+        'edit_village': 'Gaon Edit Kare',
+        'add_category': 'Naya Category Add',
+        'edit_category': 'Category Edit Kare',
+        'add_account': 'Naya Account Add',
+        'edit_account': 'Account Edit Kare',
+        'add_session': 'Naya Session Add',
+        'edit_session': 'Session Edit Kare',
+        'committee_settings': 'Committee Settings',
+        'whatsapp_settings': 'WhatsApp Settings',
+        'maintenance': 'Database Maintenance',
+        'profile_settings': 'Profile Settings',
+        'live_preview': 'Live Preview',
+        'receipt_preview': 'Receipt Preview',
+        'voucher_preview': 'Voucher Preview',
+        'approved': 'Approved',
+        'pending': 'Pending',
+        'active': 'Active',
+        'inactive': 'Inactive',
+        'handover_submit': 'Submit Handover',
+        'handover_history': 'Handover History Approval',
+        'approve': 'Approve Kare',
+        'approved_by': 'Approved by',
+        'destination_account': 'Destination Account',
+        'showing': 'Showing',
+        'to': 'se',
+        'of': 'of (total',
+        'entries': 'entries)',
+        'previous': 'Piche',
+        'next': 'Aage'
       }
     };
 
@@ -815,10 +989,10 @@
             setSystemData(data);
             localStorage.setItem(CACHE_KEY, JSON.stringify(data));
           } else {
-            showToast("डेटा सिंक करने में विफल: " + data.message, "error");
+            showToast("Sync Error: " + data.message, "error");
           }
         } catch(e) {
-          showToast("कनेक्शन एरर: " + e.message, "error");
+          showToast("Connection Error: " + e.message, "error");
         } finally {
           setLoading(false);
         }
@@ -836,12 +1010,12 @@
           if (data.success) {
             localStorage.setItem("currentUser", JSON.stringify(data.user));
             setCurrentUser(data.user);
-            showToast("लॉगिन सफल!");
+            showToast("Login Successful!");
           } else {
             Swal.fire({ text: data.message, icon: 'error', confirmButtonColor: '#ff851b' });
           }
         } catch(e) {
-          Swal.fire({ text: "कनेक्शन एरर: " + e.message, icon: 'error', confirmButtonColor: '#ff851b' });
+          Swal.fire({ text: "Connection Error: " + e.message, icon: 'error', confirmButtonColor: '#ff851b' });
         } finally {
           setLoading(false);
         }
@@ -868,15 +1042,15 @@
           });
           const data = await res.json();
           if (data.success) {
-            showToast("डेटा सफलतापूर्वक सहेजा गया!");
+            showToast("Saved successfully!");
             fetchInitData();
             return true;
           } else {
-            Swal.fire({ text: "त्रुटि: " + data.message, icon: 'error', confirmButtonColor: '#ff851b' });
+            Swal.fire({ text: "Error: " + data.message, icon: 'error', confirmButtonColor: '#ff851b' });
             return false;
           }
         } catch (e) {
-          Swal.fire({ text: "नेटवर्क त्रुटि: " + e.message, icon: 'error', confirmButtonColor: '#ff851b' });
+          Swal.fire({ text: "Network Error: " + e.message, icon: 'error', confirmButtonColor: '#ff851b' });
           return false;
         } finally {
           setLoading(false);
@@ -885,8 +1059,8 @@
 
       const handleDeleteRecord = (table, keyColumn, value) => {
         confirmAction(
-          "क्या आप वाकई इसे हटाना चाहते हैं?",
-          "यह डेटा हमेशा के लिए हटा दिया जाएगा।",
+          "Are you sure?",
+          "This data will be permanently removed.",
           async () => {
             setLoading(true);
             try {
@@ -903,13 +1077,13 @@
               });
               const data = await res.json();
               if (data.success) {
-                showToast("सफलतापूर्वक हटाया गया!");
+                showToast("Deleted successfully!");
                 fetchInitData();
               } else {
-                Swal.fire({ text: "हटाने में विफलता: " + data.message, icon: 'error' });
+                Swal.fire({ text: "Failed to delete: " + data.message, icon: 'error' });
               }
             } catch(e) {
-              Swal.fire({ text: "नेटवर्क त्रुटि: " + e.message, icon: 'error' });
+              Swal.fire({ text: "Network Error: " + e.message, icon: 'error' });
             } finally {
               setLoading(false);
             }
@@ -920,7 +1094,7 @@
       const changeThemePreset = (themeId) => {
         localStorage.setItem("app_theme_id", themeId);
         applyActiveTheme();
-        showToast("थीम रंग लागू कर दिया गया है!");
+        showToast("Theme changed successfully!");
       };
 
       const translate = (key) => {
@@ -936,7 +1110,7 @@
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--c-bg)' }}>
             <div style={{ textAlign: 'center' }}>
               <div className="sync-loader" style={{ width: '40px', height: '40px', borderWidth: '4px', marginBottom: '15px' }}></div>
-              <h4 style={{ color: 'var(--navy-accent)' }}>डेटाबेस लोड हो रहा है... कृपया प्रतीक्षा करें</h4>
+              <h4 style={{ color: 'var(--navy-accent)' }}>Loading Database... Please wait</h4>
             </div>
           </div>
         );
@@ -1363,8 +1537,8 @@
           {/* Dashboard Header Bar */}
           <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
             <div>
-              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
-              <small style={{ color: 'var(--text-muted)' }}>Home / Dashboard</small>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tachometer-alt"></i> {t('dashboard')} Overview</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / {t('dashboard')}</small>
             </div>
             <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--navy-accent)' }}>
               <i className="fas fa-calendar-day"></i> {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
@@ -1397,7 +1571,7 @@
           <div className="split-layout">
             <div className="card">
               <div className="card-header">
-                <h3><i className="fas fa-chart-pie"></i> गाँव अनुसार चंदा विवरण (Village Collections)</h3>
+                <h3><i className="fas fa-chart-pie"></i> {t('village_collections')}</h3>
               </div>
               <div style={{ height: '280px', position: 'relative' }}>
                 <canvas ref={chartRef}></canvas>
@@ -1406,15 +1580,15 @@
 
             <div className="card">
               <div className="card-header">
-                <h3><i className="fas fa-history"></i> हालिया रसीदें (Recent Contributions)</h3>
+                <h3><i className="fas fa-history"></i> {t('recent_contributions')}</h3>
               </div>
               <div className="table-responsive">
                 <table>
                   <thead>
                     <tr>
-                      <th>रसीद</th>
-                      <th>दाता</th>
-                      <th>राशि</th>
+                      <th>{t('receipt_no')}</th>
+                      <th>{t('donor_name')}</th>
+                      <th>{t('amount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1426,7 +1600,7 @@
                       </tr>
                     ))}
                     {displayDonations.length === 0 && (
-                      <tr><td colSpan="3" style={{ textAlign: 'center' }}>कोई डेटा उपलब्ध नहीं है।</td></tr>
+                      <tr><td colSpan="3" style={{ textAlign: 'center' }}>No data available.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1480,7 +1654,7 @@
         printWindow.document.write('<html><head><title>Print Donations List</title>');
         printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
         printWindow.document.write('</head><body>');
-        printWindow.document.write('<h2>चंदा संग्रह विवरण (Donations List)</h2>');
+        printWindow.document.write(`<h2>${t('chanda')}</h2>`);
         printWindow.document.write(document.getElementById('donations-data-table').outerHTML);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
@@ -1492,44 +1666,44 @@
           {/* Screen Header */}
           <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
             <div>
-              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-hand-holding-usd"></i> चंदा संग्रह रसीदें (Donation Records)</h2>
-              <small style={{ color: 'var(--text-muted)' }}>Home / Chanda Entry</small>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-hand-holding-usd"></i> {t('chanda')}</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / {t('chanda')}</small>
             </div>
-            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> नया चंदा प्रविष्ट करें</button>
+            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_donation')}</button>
           </div>
 
           {/* Unified Filter Controls Panel - From Screenshot 3 Layout */}
           <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> FILTERS</span>
-              <button className="btn btn-secondary btn-sm" onClick={handleClearFilters} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> Clear</button>
+              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> {t('filters')}</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleClearFilters} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> {t('clear')}</button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '15px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>SEARCH DONORS</label>
+                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>{t('search').toUpperCase()}</label>
                 <input 
                   type="text" 
-                  placeholder="खोजें: नाम, मोबाइल या रसीद..." 
+                  placeholder={t('search')} 
                   value={searchLocal} 
                   onChange={e => setSearchLocal(e.target.value)} 
                   style={{ padding: '8px', fontSize: '13px' }}
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>VILLAGE</label>
+                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>{t('village').toUpperCase()}</label>
                 <select value={villageFilter} onChange={e => setVillageFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
-                  <option value="All">सभी गाँव (All Villages)</option>
+                  <option value="All">All {t('villages')}</option>
                   {systemData.villages && systemData.villages.map(v => (
                     <option key={v.id} value={v.name}>{v.name}</option>
                   ))}
                 </select>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>PAYMENT MODE</label>
+                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>{t('mode').toUpperCase()}</label>
                 <select value={modeFilter} onChange={e => setModeFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
-                  <option value="All">सभी माध्यम (All Modes)</option>
-                  <option value="Cash">Cash (नकद)</option>
-                  <option value="Online">Online (यूपीआई)</option>
+                  <option value="All">All {t('mode')}</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Online">Online</option>
                 </select>
               </div>
             </div>
@@ -1537,8 +1711,8 @@
 
           {/* Export & Action Buttons */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-            <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> CSV</button>
-            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> Print Table</button>
+            <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> {t('csv')}</button>
+            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
           </div>
 
           <div className="card">
@@ -1546,14 +1720,14 @@
               <table id="donations-data-table">
                 <thead>
                   <tr>
-                    <th>रसीद क्र</th>
-                    <th>दिनांक</th>
-                    <th>दाता विवरण</th>
-                    <th>गाँव</th>
-                    <th>प्राप्त राशि</th>
-                    <th>शेष (Dues)</th>
-                    <th>भुगतान माध्यम</th>
-                    <th>कार्रवाई</th>
+                    <th>{t('receipt_no')}</th>
+                    <th>{t('date')}</th>
+                    <th>{t('donor_name')}</th>
+                    <th>{t('village')}</th>
+                    <th>{t('amount')}</th>
+                    <th>{t('remaining')}</th>
+                    <th>{t('mode')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1577,7 +1751,7 @@
                     );
                   })}
                   {filtered.length === 0 && (
-                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>कोई रसीद नहीं मिली।</td></tr>
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No data available.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1598,19 +1772,19 @@
       return (
         <div className="card">
           <div className="card-header">
-            <h2><i className="fas fa-search-dollar"></i> बकाया चंदा विवरण (Dues Tracking) ({dueRecords.length})</h2>
+            <h2><i className="fas fa-search-dollar"></i> {t('dues_tracker')} ({dueRecords.length})</h2>
           </div>
           <div className="table-responsive">
             <table>
               <thead>
                 <tr>
-                  <th>प्रारंभिक रसीद</th>
-                  <th>दाता विवरण</th>
-                  <th>गाँव</th>
-                  <th>तय राशि (Deal)</th>
-                  <th>कुल प्राप्त</th>
-                  <th>कुल बकाया (Dues)</th>
-                  <th>कार्रवाई</th>
+                  <th>{t('receipt_no')}</th>
+                  <th>{t('donor_name')}</th>
+                  <th>{t('village')}</th>
+                  <th>{t('promised_amount')}</th>
+                  <th>{t('collected')}</th>
+                  <th>{t('remaining')}</th>
+                  <th>{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1632,14 +1806,14 @@
                       <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{remaining.toFixed(2)}</td>
                       <td>
                         <button className="btn btn-success btn-sm" onClick={() => onPayInstallment(d)} style={{ padding: '4px 10px', fontSize: '12px' }}>
-                          <i className="fas fa-plus"></i> किस्त जोड़ें
+                          <i className="fas fa-plus"></i> {t('pay_installment')}
                         </button>
                       </td>
                     </tr>
                   );
                 })}
                 {dueRecords.length === 0 && (
-                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>कोई बकाया रिकॉर्ड लंबित नहीं है।</td></tr>
+                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>No pending dues found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -1670,7 +1844,7 @@
         printWindow.document.write('<html><head><title>Print Expenses List</title>');
         printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
         printWindow.document.write('</head><body>');
-        printWindow.document.write('<h2>समिति व्यय विवरण (Expenses List)</h2>');
+        printWindow.document.write(`<h2>${t('expenses')}</h2>`);
         printWindow.document.write(document.getElementById('expenses-data-table').outerHTML);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
@@ -1682,33 +1856,33 @@
           {/* Header */}
           <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
             <div>
-              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tags"></i> समिति के व्यय विवरण</h2>
-              <small style={{ color: 'var(--text-muted)' }}>Home / Expenses</small>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tags"></i> {t('expenses')}</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / {t('expenses')}</small>
             </div>
-            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> नया व्यय दर्ज करें</button>
+            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_expense')}</button>
           </div>
 
           {/* Filters Row */}
           <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> FILTERS</span>
-              <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> Clear</button>
+              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> {t('filters')}</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> {t('clear')}</button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '15px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px' }}>SEARCH VOUCHERS</label>
+                <label style={{ fontSize: '11px' }}>{t('search').toUpperCase()}</label>
                 <input 
                   type="text" 
-                  placeholder="खर्च का नाम या वाउचर क्र..." 
+                  placeholder={t('search')} 
                   value={searchLocal} 
                   onChange={e => setSearchLocal(e.target.value)} 
                   style={{ padding: '8px', fontSize: '13px' }}
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px' }}>EXPENSE CATEGORY</label>
+                <label style={{ fontSize: '11px' }}>{t('category_name').toUpperCase()}</label>
                 <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
-                  <option value="All">सभी श्रेणियां (All Categories)</option>
+                  <option value="All">All {t('categories')}</option>
                   {systemData.categories && systemData.categories.map(c => (
                     <option key={c.id} value={c.name}>{c.name}</option>
                   ))}
@@ -1719,7 +1893,7 @@
 
           {/* Print Options */}
           <div style={{ marginBottom: '15px' }}>
-            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> Print Table</button>
+            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
           </div>
 
           <div className="card">
@@ -1727,14 +1901,14 @@
               <table id="expenses-data-table">
                 <thead>
                   <tr>
-                    <th>वाउचर क्रमांक</th>
-                    <th>दिनांक</th>
-                    <th>विवरण</th>
-                    <th>श्रेणी</th>
-                    <th>राशि</th>
-                    <th>खाता</th>
-                    <th>स्थिति</th>
-                    <th>कार्रवाई</th>
+                    <th>{t('voucher_no')}</th>
+                    <th>{t('date')}</th>
+                    <th>{t('title')}</th>
+                    <th>{t('category_name')}</th>
+                    <th>{t('amount')}</th>
+                    <th>{t('account_source')}</th>
+                    <th>{t('status')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1748,7 +1922,7 @@
                       <td>{ex.mode}</td>
                       <td>
                         <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                          {ex.status}
+                          {ex.status === 'Approved' ? t('approved') : t('pending')}
                         </span>
                       </td>
                       <td>
@@ -1759,7 +1933,7 @@
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>कोई खर्चा नहीं मिला।</td></tr>
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No expenses found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1780,7 +1954,7 @@
 
       const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!amount || parseFloat(amount) <= 0) return alert("कृपया सही राशि डालें।");
+        if (!amount || parseFloat(amount) <= 0) return alert("Please enter a valid amount.");
         const ok = await onAction("submitHandover", {
           handover: {
             collector_name: user.name,
@@ -1802,14 +1976,14 @@
       return (
         <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-paper-plane"></i> हैंडओवर सबमिट करें</h3>
+            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-paper-plane"></i> {t('handover_submit')}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>हैंडओवर राशि (Amount to Handover)</label>
-                <input type="number" placeholder="₹ दर्ज करें" value={amount} onChange={e => setAmount(e.target.value)} required />
+                <label>{t('amount')} *</label>
+                <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>जमा करने का माध्यम (Destination Account)</label>
+                <label>{t('destination_account')}</label>
                 <select value={accountId} onChange={e => setAccountId(e.target.value)}>
                   {accounts.map(acc => (
                     <option key={acc.id} value={acc.id}>{acc.account_name} (Bal: ₹{parseFloat(acc.balance).toFixed(2)})</option>
@@ -1817,23 +1991,23 @@
                 </select>
               </div>
               <div className="form-group">
-                <label>रिमार्क / टिप्पणी</label>
-                <textarea rows="3" placeholder="वैकल्पिक विवरण" value={remark} onChange={e => setRemark(e.target.value)}></textarea>
+                <label>{t('notes')}</label>
+                <textarea rows="3" placeholder="..." value={remark} onChange={e => setRemark(e.target.value)}></textarea>
               </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>सबमिट करें</button>
+              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-wallet"></i> हैंडओवर इतिहास और अनुमोदन</h3>
+            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-wallet"></i> {t('handover_history')}</h3>
             <div className="table-responsive">
               <table>
                 <thead>
                   <tr>
-                    <th>विवरण</th>
-                    <th>राशि</th>
-                    <th>स्थिति</th>
-                    <th>कार्रवाई</th>
+                    <th>{t('username')}</th>
+                    <th>{t('amount')}</th>
+                    <th>{t('status')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1843,16 +2017,16 @@
                       <td style={{ fontWeight: 'bold' }}>₹{parseFloat(h.amount).toFixed(2)}</td>
                       <td>
                         <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: h.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: h.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                          {h.status}
+                          {h.status === 'Approved' ? t('approved') : t('pending')}
                         </span>
                       </td>
                       <td>
                         {isSuper && h.status === "Pending" && (
                           <button className="btn btn-success btn-sm" onClick={() => onAction("approveHandover", { handover_id: h.id })} style={{ padding: '3px 8px', fontSize: '11px' }}>
-                            मंजूर करें
+                            {t('approve')}
                           </button>
                         )}
-                        {h.status === "Approved" && <small style={{ color: 'var(--text-muted)' }}>Approved by {h.approved_by}</small>}
+                        {h.status === "Approved" && <small style={{ color: 'var(--text-muted)' }}>{t('approved_by')} {h.approved_by}</small>}
                       </td>
                     </tr>
                   ))}
@@ -1882,25 +2056,25 @@
       return (
         <div className="split-layout">
           <div className="card">
-            <h3><i className="fas fa-map-marker-alt"></i> {editId ? 'गाँव बदलें' : 'नया गाँव जोड़ें'}</h3>
+            <h3><i className="fas fa-map-marker-alt"></i> {editId ? t('edit_village') : t('add_village')}</h3>
             <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>गाँव का नाम (Village Name)</label>
-                <input type="text" placeholder="गाँव का नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
+                <label>{t('village')} *</label>
+                <input type="text" placeholder="..." value={name} onChange={e => setName(e.target.value)} required />
               </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
+              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
           </div>
 
           <div className="card">
-            <h3><i className="fas fa-map-marked-alt"></i> गाँव की सूची</h3>
+            <h3><i className="fas fa-map-marked-alt"></i> {t('villages')}</h3>
             <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>गाँव क्रमांक</th>
-                    <th>नाम</th>
-                    <th>कार्रवाई</th>
+                    <th>#</th>
+                    <th>{t('village')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1940,25 +2114,25 @@
       return (
         <div className="split-layout">
           <div className="card">
-            <h3><i className="fas fa-list-ul"></i> {editId ? 'व्यय श्रेणी बदलें' : 'नई खर्च श्रेणी जोड़ें'}</h3>
+            <h3><i className="fas fa-list-ul"></i> {editId ? t('edit_category') : t('add_category')}</h3>
             <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>श्रेणी नाम (Category Name)</label>
-                <input type="text" placeholder="श्रेणी नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
+                <label>{t('category_name')} *</label>
+                <input type="text" placeholder="..." value={name} onChange={e => setName(e.target.value)} required />
               </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
+              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
           </div>
 
           <div className="card">
-            <h3><i className="fas fa-folder-open"></i> खर्चे की श्रेणियां</h3>
+            <h3><i className="fas fa-folder-open"></i> {t('categories')}</h3>
             <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>क्रमांक</th>
-                    <th>नाम</th>
-                    <th>कार्रवाई</th>
+                    <th>#</th>
+                    <th>{t('category_name')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2006,32 +2180,32 @@
       return (
         <div className="split-layout">
           <div className="card">
-            <h3><i className="fas fa-piggy-bank"></i> {editId ? 'खाता बदलें' : 'नया खाता/वॉलेट जोड़ें'}</h3>
+            <h3><i className="fas fa-piggy-bank"></i> {editId ? t('edit_account') : t('add_account')}</h3>
             <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>खाते का नाम</label>
+                <label>{t('account_source')} *</label>
                 <input type="text" placeholder="SBI Bank, Cash Box etc." value={name} onChange={e => setName(e.target.value)} required />
               </div>
               {!editId && (
                 <div className="form-group">
-                  <label>प्रारंभिक बैलेंस राशि (Opening Balance)</label>
+                  <label>{t('opening_balance')}</label>
                   <input type="number" placeholder="₹" value={balance} onChange={e => setBalance(e.target.value)} />
                 </div>
               )}
-              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
+              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
           </div>
 
           <div className="card">
-            <h3><i className="fas fa-university"></i> पंजीकृत बैंक एवं वॉलेट्स</h3>
+            <h3><i className="fas fa-university"></i> {t('accounts')}</h3>
             <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>क्रमांक</th>
-                    <th>खाता</th>
-                    <th>बैलेंस</th>
-                    <th>कार्रवाई</th>
+                    <th>#</th>
+                    <th>{t('accounts')}</th>
+                    <th>{t('balance')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2093,42 +2267,42 @@
           {/* Header */}
           <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
             <div>
-              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-users-cog"></i> Users Management</h2>
-              <small style={{ color: 'var(--text-muted)' }}>Home / Users Management</small>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-users-cog"></i> {t('users')}</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / {t('users')}</small>
             </div>
-            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> Add User</button>
+            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_user')}</button>
           </div>
 
           {/* Filters Bar (Screenshot 2 style) */}
           <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> Filters</span>
-              <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> Clear</button>
+              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> {t('filters')}</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> {t('clear')}</button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '15px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px' }}>SEARCH</label>
+                <label style={{ fontSize: '11px' }}>{t('search').toUpperCase()}</label>
                 <input 
                   type="text" 
-                  placeholder="Search users..." 
+                  placeholder={t('search')} 
                   value={search} 
                   onChange={e => setSearch(e.target.value)} 
                   style={{ padding: '8px', fontSize: '13px' }}
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px' }}>ROLE</label>
+                <label style={{ fontSize: '11px' }}>{t('role').toUpperCase()}</label>
                 <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
-                  <option value="All">All Roles</option>
+                  <option value="All">All {t('role')}s</option>
                   <option value="Collector">Collector</option>
                   <option value="Admin">Admin</option>
                   <option value="Super Admin">Super Admin</option>
                 </select>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px' }}>STATUS</label>
+                <label style={{ fontSize: '11px' }}>{t('status').toUpperCase()}</label>
                 <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
-                  <option value="All">All Status</option>
+                  <option value="All">All {t('status')}</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
@@ -2138,7 +2312,7 @@
 
           {/* Action Toolbar */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-            <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> CSV</button>
+            <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> {t('csv')}</button>
           </div>
 
           {/* Table list */}
@@ -2147,12 +2321,12 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Username</th>
-                    <th>Mobile (Login ID)</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Village Assigned</th>
-                    <th>Actions</th>
+                    <th>{t('username')}</th>
+                    <th>{t('mobile')} (Login ID)</th>
+                    <th>{t('role')}</th>
+                    <th>{t('status')}</th>
+                    <th>{t('village_assigned')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2163,7 +2337,7 @@
                       <td>{u.role}</td>
                       <td>
                         <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: u.status === 'active' ? '#d2f4ea' : '#f8d7da', color: u.status === 'active' ? '#0f766e' : '#721c24' }}>
-                          {u.status}
+                          {u.status === 'active' ? t('active') : t('inactive')}
                         </span>
                       </td>
                       <td>{u.village || 'N/A'}</td>
@@ -2181,11 +2355,11 @@
             </div>
             {/* Pagination / Table info footer */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '15px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Showing 1 to {filtered.length} of {filtered.length} entries</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('showing')} 1 {t('to')} {filtered.length} {t('of')} {filtered.length} {t('entries')}</span>
               <div style={{ display: 'flex', gap: '5px' }}>
-                <button className="btn btn-secondary btn-sm" disabled style={{ padding: '4px 10px', fontSize: '11px' }}>Previous</button>
+                <button className="btn btn-secondary btn-sm" disabled style={{ padding: '4px 10px', fontSize: '11px' }}>{t('previous')}</button>
                 <button className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '11px', background: 'var(--navy-accent)' }}>1</button>
-                <button className="btn btn-secondary btn-sm" disabled style={{ padding: '4px 10px', fontSize: '11px' }}>Next</button>
+                <button className="btn btn-secondary btn-sm" disabled style={{ padding: '4px 10px', fontSize: '11px' }}>{t('next')}</button>
               </div>
             </div>
           </div>
@@ -2210,8 +2384,8 @@
         <div className="card">
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-key"></i> Roles & Permissions Matrix</h2>
-              <small style={{ color: 'var(--text-muted)' }}>Home / Roles & Permissions</small>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-key"></i> {t('roles')} Matrix</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / {t('roles')}</small>
             </div>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '5px 0 20px' }}>
@@ -2354,39 +2528,43 @@
       return (
         <div className="split-layout">
           <div className="card">
-            <h3><i className="fas fa-calendar-plus"></i> {editId ? 'उत्सव सत्र सुधारें' : 'नया उत्सव सत्र जोड़ें'}</h3>
+            <h3><i className="fas fa-calendar-plus"></i> {editId ? t('edit_session') : t('add_session')}</h3>
             <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>उत्सव सत्र का नाम</label>
+                <label>{t('title')} *</label>
                 <input type="text" placeholder="Ganesh Utsav 2026" value={name} onChange={e => setName(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>स्थिति</label>
+                <label>{t('status')}</label>
                 <select value={status} onChange={e => setStatus(e.target.value)}>
-                  <option value="active">Active (सक्रिय)</option>
-                  <option value="archived">Archived (पुराना)</option>
+                  <option value="active">{t('active')}</option>
+                  <option value="archived">Archived</option>
                 </select>
               </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
+              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
           </div>
 
           <div className="card">
-            <h3><i className="fas fa-calendar-alt"></i> उपलब्ध उत्सव सत्र</h3>
+            <h3><i className="fas fa-calendar-alt"></i> {t('festivals')}</h3>
             <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>नाम</th>
-                    <th>स्थिति</th>
-                    <th>कार्रवाई</th>
+                    <th>{t('title')}</th>
+                    <th>{t('status')}</th>
+                    <th>{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {festivals.map(f => (
                     <tr key={f.id}>
                       <td><strong>{f.name}</strong></td>
-                      <td><span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: f.status === 'active' ? '#d2f4ea' : '#e2e8f0', color: f.status === 'active' ? '#0f766e' : '#4a5568' }}>{f.status}</span></td>
+                      <td>
+                        <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: f.status === 'active' ? '#d2f4ea' : '#e2e8f0', color: f.status === 'active' ? '#0f766e' : '#4a5568' }}>
+                          {f.status === 'active' ? t('active') : 'Archived'}
+                        </span>
+                      </td>
                       <td>
                         <button className="action-icon edit-icon" onClick={() => { setEditId(f.id); setName(f.name); setStatus(f.status); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
                         <button className="action-icon delete-icon" onClick={() => onDelete("festivals", "id", f.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
@@ -2434,14 +2612,14 @@
       return (
         <div className="split-layout">
           <div className="card">
-            <h3><i className="fas fa-cogs"></i> समिति एवं गेटवे सेटिंग्स</h3>
+            <h3><i className="fas fa-cogs"></i> {t('committee_settings')}</h3>
             <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>समिति का नाम (Committee Name)</label>
+                <label>{t('committee_settings')} Name *</label>
                 <input type="text" value={name} onChange={e => setName(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>समिति का पता (Address)</label>
+                <label>Address</label>
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
               </div>
               <div className="form-group">
@@ -2454,27 +2632,27 @@
               </div>
               <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="sms_auto" checked={smsAuto} onChange={e => setSmsAuto(e.target.checked)} style={{ width: 'auto' }} />
-                <label htmlFor="sms_auto" style={{ margin: 0, cursor: 'pointer' }}>व्हाट्सएप पर रसीद स्वतः भेजें (Auto Send WhatsApp)</label>
+                <label htmlFor="sms_auto" style={{ margin: 0, cursor: 'pointer' }}>Auto Send WhatsApp receipt</label>
               </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>सुरक्षित करें</button>
+              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
           </div>
 
           <div className="card" style={{ borderTop: '4px solid var(--danger)' }}>
-            <h3 style={{ color: 'var(--danger)' }}><i className="fas fa-tools"></i> डेटा मेंटेनेंस व बैकअप</h3>
+            <h3 style={{ color: 'var(--danger)' }}><i className="fas fa-tools"></i> {t('maintenance')}</h3>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '10px 0 20px' }}>
-              डेमो डेटा लोड करने या सभी फ़ाइलों को डिलीट करने की सेटिंग्स। यह क्रिया पूर्ववत नहीं की जा सकती।
+              Backup operations, restoration of mock logs, and reset functions. Action cannot be undone.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button className="btn btn-success" onClick={async () => {
-                confirmAction("क्या आप वाकई मॉक डेटा रिस्टोर करना चाहते हैं?", "इससे वर्तमान सारा डेटा साफ़ हो जाएगा।", async () => {
+                confirmAction("Restore Mock Dataset?", "Current collection data will be overwritten.", async () => {
                   const ok = await onAction("loadDemoData", {});
                   if (ok) onRefresh();
                 });
               }}><i className="fas fa-database"></i> {t('load_demo')}</button>
               
               <button className="btn btn-danger" onClick={async () => {
-                confirmAction("क्या आप वाकई सम्पूर्ण डेटा साफ़ करना चाहते हैं?", "यह डेटा हमेशा के लिए हटा दिया जाएगा।", async () => {
+                confirmAction("Clear Database Records?", "All entries will be permanently deleted.", async () => {
                   const ok = await onAction("clearAllData", {});
                   if (ok) onRefresh();
                 });
@@ -2496,36 +2674,36 @@
         const ok = await onAction("updateMyProfile", { profile: payload });
         if (ok) {
           setPassword('');
-          Swal.fire({ text: "प्रोफ़ाइल सहेजी गई! सेटिंग्स लागू करने के लिए कृपया फिर से लॉगिन करें।", icon: 'success' }).then(() => onLogout());
+          Swal.fire({ text: "Profile updated! Please log in again.", icon: 'success' }).then(() => onLogout());
         }
       };
 
       return (
         <div className="split-layout">
           <div className="card">
-            <h3><i className="fas fa-user-cog"></i> प्रोफ़ाइल संपादित करें</h3>
+            <h3><i className="fas fa-user-cog"></i> {t('profile_settings')}</h3>
             <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>मेरा नाम</label>
+                <label>{t('username')}</label>
                 <input type="text" value={name} onChange={e => setName(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>लॉगिन मोबाइल नंबर (अपरिवर्तनीय)</label>
+                <label>{t('mobile')} (ID)</label>
                 <input type="text" value={user.mobile} disabled />
               </div>
               <div className="form-group">
-                <label>नया पासवर्ड (सुरक्षा के लिए भरें)</label>
-                <input type="password" placeholder="खाली छोड़ें यदि नहीं बदलना है" value={password} onChange={e => setPassword(e.target.value)} />
+                <label>{t('password')}</label>
+                <input type="password" placeholder="..." value={password} onChange={e => setPassword(e.target.value)} />
               </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>अपडेट करें</button>
+              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
           </div>
 
           {/* Expanded 15-presets grid layout - matches Screenshot 4 */}
           <div className="card">
-            <h3><i className="fas fa-palette"></i> रंग पैलेट (Theme Preset Gallery)</h3>
+            <h3><i className="fas fa-palette"></i> Theme Gallery</h3>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '5px 0 15px' }}>
-              अपने पसंदीदा रंग पैलेट का चयन करें जो पूरे अनुप्रयोग में तुरंत लागू हो जाएगा।
+              Select a visual color preset which updates the primary UI palette instantly.
             </p>
             <div className="theme-preset-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
               {THEME_PRESETS.map(theme => (
@@ -2597,7 +2775,7 @@
         <div className="modal-slideover-overlay">
           <div className="modal-slideover">
             <div className="slideover-header">
-              <h3><i className="fas fa-hand-holding-usd"></i> {record ? 'चंदा रसीद सुधारें' : (parentRecord ? 'किस्त जमा करें (Installment)' : 'नया चंदा प्रविष्ट करें')}</h3>
+              <h3><i className="fas fa-hand-holding-usd"></i> {record ? t('edit_donation') : (parentRecord ? t('pay_installment') : t('add_donation'))}</h3>
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -2606,21 +2784,16 @@
                 
                 {/* Form fields section */}
                 <div>
-                  {parentRecord && (
-                    <div style={{ padding: '10px', background: '#fff0d3', borderRadius: '4px', marginBottom: '15px', fontSize: '12.5px', color: '#a46000' }}>
-                      <strong>किस्त भुगतान:</strong> रसीद #{parentRecord.receipt_no} के लिए शेष किस्त राशि जमा की जा रही है।
-                    </div>
-                  )}
                   <div className="form-group">
-                    <label>दाता का नाम (Donor Name)*</label>
+                    <label>{t('donor_name')} *</label>
                     <input type="text" value={donorName} onChange={e => setDonorName(e.target.value)} required disabled={!!parentRecord} />
                   </div>
                   <div className="form-group">
-                    <label>दाता का मोबाइल नंबर</label>
+                    <label>{t('mobile')}</label>
                     <input type="text" value={donorMobile} onChange={e => setDonorMobile(e.target.value)} disabled={!!parentRecord} />
                   </div>
                   <div className="form-group">
-                    <label>गाँव (Village)*</label>
+                    <label>{t('village')} *</label>
                     <select value={village} onChange={e => setVillage(e.target.value)} disabled={!!parentRecord}>
                       {villages.map(v => (
                         <option key={v.id} value={v.name}>{v.name}</option>
@@ -2630,59 +2803,54 @@
                   {!parentRecord && (
                     <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input type="checkbox" id="is_promised" checked={isPromised} onChange={e => setIsPromised(e.target.checked)} style={{ width: 'auto' }} />
-                      <label htmlFor="is_promised" style={{ margin: 0, cursor: 'pointer' }}>किस्त/तय राशि भुगतान (Promised Deal)</label>
+                      <label htmlFor="is_promised" style={{ margin: 0, cursor: 'pointer' }}>{t('promised_amount')}</label>
                     </div>
                   )}
                   {isPromised && !parentRecord && (
                     <div className="form-group">
-                      <label>कुल तय राशि (Total Deal Amount)*</label>
+                      <label>{t('promised_amount')} *</label>
                       <input type="number" placeholder="₹" value={promisedAmount} onChange={e => setPromisedAmount(e.target.value)} required />
                     </div>
                   )}
                   <div className="form-group">
-                    <label>{parentRecord ? 'किस्त भुगतान राशि' : 'आज प्राप्त राशि'} (Amount)*</label>
+                    <label>{t('amount')} *</label>
                     <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
                   </div>
                   <div className="form-group">
-                    <label>भुगतान माध्यम (Mode)</label>
+                    <label>{t('mode')}</label>
                     <select value={mode} onChange={e => setMode(e.target.value)}>
-                      <option value="Cash">Cash (नकद)</option>
-                      <option value="Online">Online (UPI / क्यूआर)</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Online">Online</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Live Preview Panel on the Right */}
                 <div style={{ background: 'rgba(0,0,0,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
-                  <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice-dollar"></i> रसीद पूर्वावलोकन (Live Slip Preview)</h4>
+                  <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice-dollar"></i> {t('live_preview')}</h4>
                   <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifycontent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
                     <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px' }}>
-                      <strong style={{ fontSize: '13px' }}>गणेश उत्सव समिति</strong>
-                      <p style={{ margin: '2px 0 0', fontSize: '9px' }}>चंदा प्राप्ति रसीद</p>
+                      <strong style={{ fontSize: '13px' }}>{t('chanda')} Slip</strong>
                     </div>
                     <div style={{ margin: '15px 0', flex: 1 }}>
-                      <p><strong>रसीद क्र:</strong> #{record?.receipt_no || 'DRAFT'}</p>
-                      <p><strong>दाता:</strong> {donorName || '---'}</p>
-                      <p><strong>ग्राम:</strong> {village || '---'}</p>
-                      <p><strong>प्राप्त राशि:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
+                      <p><strong>{t('receipt_no')}:</strong> #{record?.receipt_no || 'DRAFT'}</p>
+                      <p><strong>{t('donor_name')}:</strong> {donorName || '---'}</p>
+                      <p><strong>{t('village')}:</strong> {village || '---'}</p>
+                      <p><strong>{t('amount')}:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
                       {isPromised && (
                         <>
-                          <p><strong>तय राशि:</strong> ₹{parseFloat(promisedAmount || 0).toFixed(2)}</p>
-                          <p style={{ color: 'red' }}><strong>बकाया:</strong> ₹{remainingDues.toFixed(2)}</p>
+                          <p><strong>{t('promised_amount')}:</strong> ₹{parseFloat(promisedAmount || 0).toFixed(2)}</p>
+                          <p style={{ color: 'red' }}><strong>{t('remaining')}:</strong> ₹{remainingDues.toFixed(2)}</p>
                         </>
                       )}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #000', paddingTop: '8px' }}>
-                      <span>कोषाध्यक्ष</span>
-                      <span>कलेक्टर</span>
                     </div>
                   </div>
                 </div>
 
               </div>
               <div className="slideover-footer">
-                <button type="submit" className="btn">सहेजें (Save)</button>
-                <button type="button" className="btn btn-secondary" onClick={onClose}>रद्द करें</button>
+                <button type="submit" className="btn">{t('save')}</button>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>{t('cancel')}</button>
               </div>
             </form>
           </div>
@@ -2701,7 +2869,7 @@
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        if (!title.trim() || !amount) return alert("सभी आवश्यक फील्ड भरें।");
+        if (!title.trim() || !amount) return alert("Required fields missing.");
         onSave({
           title: title.trim(),
           category: category,
@@ -2722,7 +2890,7 @@
         <div className="modal-slideover-overlay">
           <div className="modal-slideover">
             <div className="slideover-header">
-              <h3><i className="fas fa-tags"></i> {record ? 'व्यय विवरण सुधारें' : 'नया खर्च दर्ज करें'}</h3>
+              <h3><i className="fas fa-tags"></i> {record ? t('edit_expense') : t('add_expense')}</h3>
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -2731,11 +2899,11 @@
                 {/* Form Inputs */}
                 <div>
                   <div className="form-group">
-                    <label>खर्च शीर्षक (Title)*</label>
+                    <label>{t('title')} *</label>
                     <input type="text" value={title} onChange={e => setTitle(e.target.value)} required />
                   </div>
                   <div className="form-group">
-                    <label>व्यय श्रेणी (Category)*</label>
+                    <label>{t('category_name')} *</label>
                     <select value={category} onChange={e => setCategory(e.target.value)}>
                       {categories.map(c => (
                         <option key={c.id} value={c.name}>{c.name}</option>
@@ -2743,18 +2911,18 @@
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>राशि (Amount)*</label>
+                    <label>{t('amount')} *</label>
                     <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
                   </div>
                   <div className="form-group">
-                    <label>भुगतान माध्यम (Mode)</label>
+                    <label>{t('mode')}</label>
                     <select value={mode} onChange={e => setMode(e.target.value)}>
-                      <option value="Cash">Cash (नकद)</option>
-                      <option value="Online">Online (UPI / बैंक)</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Online">Online</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>स्रोत खाता (Account source)</label>
+                    <label>{t('account_source')}</label>
                     <select value={accountId} onChange={e => setAccountId(e.target.value)}>
                       {accounts.map(a => (
                         <option key={a.id} value={a.id}>{a.account_name} (Bal: ₹{parseFloat(a.balance).toFixed(2)})</option>
@@ -2762,45 +2930,39 @@
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>स्थिति (Status)</label>
+                    <label>{t('status')}</label>
                     <select value={status} onChange={e => setStatus(e.target.value)}>
-                      <option value="Pending">Pending (लंबित)</option>
-                      <option value="Approved">Approved (स्वीकृत)</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Approved">Approved</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>नोट/टिप्पणी</label>
-                    <textarea rows="3" placeholder="वैकल्पिक" value={note} onChange={e => setNote(e.target.value)}></textarea>
+                    <label>{t('notes')}</label>
+                    <textarea rows="3" placeholder="..." value={note} onChange={e => setNote(e.target.value)}></textarea>
                   </div>
                 </div>
 
                 {/* Right Side Live Preview */}
                 <div style={{ background: 'rgba(0,0,0,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
-                  <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice"></i> व्यय पूर्वावलोकन (Voucher Preview)</h4>
+                  <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice"></i> {t('voucher_preview')}</h4>
                   <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifycontent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
                     <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px' }}>
-                      <strong style={{ fontSize: '13px' }}>गणेश उत्सव समिति</strong>
-                      <p style={{ margin: '2px 0 0', fontSize: '9px' }}>व्यय भुगतान वाउचर</p>
+                      <strong style={{ fontSize: '13px' }}>{t('expenses')} Slip</strong>
                     </div>
                     <div style={{ margin: '15px 0', flex: 1 }}>
-                      <p><strong>वाउचर क्र:</strong> #{record?.expense_no || 'DRAFT'}</p>
-                      <p><strong>विवरण:</strong> {title || '---'}</p>
-                      <p><strong>श्रेणी:</strong> {category}</p>
-                      <p><strong>राशि:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
-                      <p><strong>माध्यम:</strong> {mode}</p>
-                      <p><strong>स्थिति:</strong> {status}</p>
-                    </div>
-                    <div style={{ display: 'flex', justifycontent: 'space-between', borderTop: '1px dashed #000', paddingTop: '8px' }}>
-                      <span>स्वीकृतकर्ता</span>
-                      <span>प्राप्तकर्ता</span>
+                      <p><strong>{t('voucher_no')}:</strong> #{record?.expense_no || 'DRAFT'}</p>
+                      <p><strong>{t('title')}:</strong> {title || '---'}</p>
+                      <p><strong>{t('category_name')}:</strong> {category}</p>
+                      <p><strong>{t('amount')}:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
+                      <p><strong>{t('mode')}:</strong> {mode}</p>
                     </div>
                   </div>
                 </div>
 
               </div>
               <div className="slideover-footer">
-                <button type="submit" className="btn">सहेजें</button>
-                <button type="button" className="btn btn-secondary" onClick={onClose}>रद्द करें</button>
+                <button type="submit" className="btn">{t('save')}</button>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>{t('cancel')}</button>
               </div>
             </form>
           </div>
@@ -2837,27 +2999,27 @@
         <div className="modal-slideover-overlay">
           <div className="modal-slideover" style={{ width: '600px' }}>
             <div className="slideover-header">
-              <h3><i className="fas fa-user-plus"></i> {record ? 'Edit User Details' : 'Add New User'}</h3>
+              <h3><i className="fas fa-user-plus"></i> {record ? t('edit_user') : t('add_user')}</h3>
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <div className="slideover-body">
-                {/* Two Column Grid Layout (Screenshot 3 style!) */}
+                {/* Two Column Grid Layout */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                   <div className="form-group">
-                    <label>Username *</label>
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" />
+                    <label>{t('username')} *</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="..." />
                   </div>
                   <div className="form-group">
-                    <label>Mobile (Login ID) *</label>
+                    <label>{t('mobile')} (ID) *</label>
                     <input type="text" value={mobile} onChange={e => setMobile(e.target.value)} required placeholder="10-digit number" />
                   </div>
                   <div className="form-group">
-                    <label>{record ? 'New Password' : 'Password (Default: 123)'}</label>
-                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Keep blank if unchanged" />
+                    <label>{t('password')}</label>
+                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="..." />
                   </div>
                   <div className="form-group">
-                    <label>Role</label>
+                    <label>{t('role')}</label>
                     <select value={role} onChange={e => setRole(e.target.value)}>
                       <option value="Collector">Collector</option>
                       <option value="Admin">Admin</option>
@@ -2865,14 +3027,14 @@
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Status</label>
+                    <label>{t('status')}</label>
                     <select value={status} onChange={e => setStatus(e.target.value)}>
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Assigned Village</label>
+                    <label>{t('village_assigned')}</label>
                     <select value={village} onChange={e => setVillage(e.target.value)}>
                       <option value="">None (All Villages)</option>
                       {villages.map(v => (
@@ -2881,14 +3043,14 @@
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Target Collection (Optional)</label>
+                    <label>{t('target_collection')}</label>
                     <input type="number" placeholder="₹" value={targetDonation} onChange={e => setTargetDonation(e.target.value)} />
                   </div>
                 </div>
               </div>
               <div className="slideover-footer">
-                <button type="submit" className="btn">Save User</button>
-                <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn">{t('save')}</button>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>{t('cancel')}</button>
               </div>
             </form>
           </div>
