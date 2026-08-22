@@ -1608,7 +1608,7 @@
                    `*गणपति बाप्पा मोरया! मंगल मूर्ति मोरया!*`;
                    
       const encodedText = encodeURIComponent(text);
-      let phone = (d.donor_mobile || '').replace(/\D/g, '');
+      let phone = String(d.donor_mobile || '').replace(/\D/g, '');
       if (phone.length === 10) {
         phone = '91' + phone;
       }
