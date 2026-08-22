@@ -948,13 +948,18 @@
         top: -15px;
         background: var(--navy-accent);
         color: #ffffff !important;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
+        width: 50px !important;
+        height: 50px !important;
+        max-width: 50px !important;
+        max-height: 50px !important;
+        min-width: 50px !important;
+        min-height: 50px !important;
+        border-radius: 50% !important;
         display: flex;
         justify-content: center;
         align-items: center;
         box-shadow: 0 4px 12px rgba(0, 116, 217, 0.35);
+        flex: none !important;
       }
 
       .mobile-bottom-nav .fab-trigger i {
@@ -1188,7 +1193,13 @@
         'of': 'of',
         'entries': 'entries',
         'previous': 'Previous',
-        'next': 'Next'
+        'next': 'Next',
+        'member_report': 'Member Performance Report',
+        'member_name': 'Member Name',
+        'target': 'Target',
+        'handed_over': 'Handed Over',
+        'pending': 'Pending Cash',
+        'remaining_dues': 'Remaining Dues'
       },
       'hi': {
         'dashboard': 'डैशबोर्ड',
@@ -1291,7 +1302,13 @@
         'of': 'का (कुल',
         'entries': 'प्रविष्टियां)',
         'previous': 'पिछला',
-        'next': 'अगला'
+        'next': 'अगला',
+        'member_report': 'सदस्य संग्रह प्रदर्शन रिपोर्ट',
+        'member_name': 'सदस्य का नाम',
+        'target': 'चंदा लक्ष्य',
+        'handed_over': 'जमा राशि',
+        'pending': 'शेष पास में',
+        'remaining_dues': 'लक्ष्य शेष'
       },
       'hinglish': {
         'dashboard': 'Dashboard',
@@ -1394,7 +1411,13 @@
         'of': 'of (total',
         'entries': 'entries)',
         'previous': 'Piche',
-        'next': 'Aage'
+        'next': 'Aage',
+        'member_report': 'Member Performance Report',
+        'member_name': 'Member Name',
+        'target': 'Target',
+        'handed_over': 'Handed Over',
+        'pending': 'Pending Cash',
+        'remaining_dues': 'Remaining Dues'
       }
     };
 
@@ -2859,9 +2882,9 @@
             {/* Member Collection KPIs Performance Report */}
             <div className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-                <h3><i className="fas fa-users-cog"></i> सदस्य संग्रह प्रदर्शन रिपोर्ट (Member Collections Report)</h3>
+                <h3><i className="fas fa-users-cog"></i> {t('member_report')}</h3>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('member-report-table', 'Member Performance & Collection Report')}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('member-report-table', t('member_report'))}>
                     <i className="fas fa-print"></i> {t('print')}
                   </button>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportMemberCSV} style={{ background: '#2c3e50' }}>
@@ -2873,13 +2896,13 @@
                 <table id="member-report-table">
                   <thead>
                     <tr>
-                      <th>सदस्य का नाम (Member Name)</th>
-                      <th>गाँव (Village)</th>
-                      <th>चंदा लक्ष्य (Target)</th>
-                      <th>कुल जमा चंदा (Collected)</th>
-                      <th>जमा राशि (Handed Over)</th>
-                      <th>शेष पास में (Pending)</th>
-                      <th>लक्ष्य शेष (Remaining Dues)</th>
+                      <th>{t('member_name')}</th>
+                      <th>{t('village')}</th>
+                      <th>{t('target')}</th>
+                      <th>{t('collected')}</th>
+                      <th>{t('handed_over')}</th>
+                      <th>{t('pending')}</th>
+                      <th>{t('remaining_dues')}</th>
                     </tr>
                   </thead>
                   <tbody>
