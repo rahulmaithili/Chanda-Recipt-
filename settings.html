@@ -142,28 +142,26 @@
 
         await loadSettings();
 
-        // Bind Base64 converters
+        // Bind Base64 converters with compression
         document.getElementById("lord_photo").addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    lordPhotoBase64 = evt.target.result;
+                compressImage(file, 200, 200, 0.7, (base64) => {
+                    lordPhotoBase64 = base64;
                     document.getElementById("deity_preview").innerHTML = `<img src="${lordPhotoBase64}" style="width:100%; height:100%; object-fit:contain;">`;
-                };
-                reader.readAsDataURL(file);
+                    showToast("Deity photo compressed successfully!");
+                });
             }
         });
 
         document.getElementById("bg_wallpaper").addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    bgWallpaperBase64 = evt.target.result;
+                compressImage(file, 800, 600, 0.6, (base64) => {
+                    bgWallpaperBase64 = base64;
                     document.getElementById("wallpaper_preview").innerHTML = `<img src="${bgWallpaperBase64}" style="width:100%; height:100%; object-fit:cover;">`;
-                };
-                reader.readAsDataURL(file);
+                    showToast("Wallpaper compressed successfully!");
+                });
             }
         });
     });

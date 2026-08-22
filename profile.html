@@ -94,16 +94,15 @@
         translateLabels();
         loadProfileData();
 
-        // Setup FileReader base64 converter
+        // Setup image compression on upload
         document.getElementById("profile_pic").addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    profilePicBase64 = evt.target.result;
+                compressImage(file, 200, 200, 0.7, (base64) => {
+                    profilePicBase64 = base64;
                     document.getElementById("avatar_container").innerHTML = `<img src="${profilePicBase64}" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid var(--gold); background:#fff;">`;
-                };
-                reader.readAsDataURL(file);
+                    showToast("Image compressed successfully!");
+                });
             }
         });
     });

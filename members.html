@@ -595,15 +595,14 @@
             document.querySelectorAll(".dropdown-menu").forEach(m => m.classList.remove("show"));
         });
 
-        // Setup FileReader base64 converter
+        // Setup image compression on upload
         document.getElementById("user_pic").addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    picBase64 = evt.target.result;
-                };
-                reader.readAsDataURL(file);
+                compressImage(file, 200, 200, 0.7, (base64) => {
+                    picBase64 = base64;
+                    showToast("Image compressed successfully!");
+                });
             }
         });
 

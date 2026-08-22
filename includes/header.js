@@ -1,7 +1,8 @@
-// Shared Header, Sidebar & Collapsible Layout Template for Chanda Netlify client
+// Shared Header, Sidebar & Bottom Navigation Layout Template (Mobile App Shell)
 
 document.write(`
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
   <style>
     :root {
       --bg: #f4f7f6;
@@ -25,7 +26,7 @@ document.write(`
       transition: 0.3s;
     }
     
-    /* Collapsible Sidebar styling */
+    /* Collapsible Sidebar styling (Desktop only) */
     .sidebar {
       width: var(--sidebar-width);
       background: #001f3f;
@@ -67,10 +68,6 @@ document.write(`
       margin: 0;
       flex: 1;
       overflow-y: auto;
-    }
-    
-    .sidebar-menu li {
-      position: relative;
     }
     
     .sidebar-menu li a {
@@ -202,63 +199,98 @@ document.write(`
       margin-left: 8px;
     }
     
+    /* Mobile Navigation Bottom Bar */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #001f3f;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      z-index: 9999;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+    }
+    
+    .mobile-bottom-nav a {
+      color: #bdc3c7;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 10px;
+      font-weight: bold;
+      gap: 4px;
+      width: 20%;
+      transition: 0.2s;
+    }
+    
+    .mobile-bottom-nav a i {
+      font-size: 20px;
+    }
+    
+    .mobile-bottom-nav a.active {
+      color: var(--orange);
+    }
+    
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
     
     @media (max-width: 768px) {
       .sidebar {
-        left: -250px;
+        display: none !important;
       }
-      .sidebar.open {
-        left: 0;
-      }
-      .sidebar.collapsed {
-        left: -70px;
-      }
-      .sidebar.collapsed.open {
-        left: 0;
-        width: 250px;
-      }
-      .sidebar.collapsed.open .sidebar-menu li a span {
-        display: inline;
-      }
-      .sidebar.collapsed.open .sidebar-brand span {
-        display: inline;
+      .mobile-bottom-nav {
+        display: flex;
       }
       .main-content, .main-content.expanded {
-        margin-left: 0;
-        width: 100%;
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-bottom: 80px; /* Padding for bottom bar */
+      }
+      .nav-toggle {
+        display: none !important; /* Hide hamburger on mobile, not needed due to bottom nav */
       }
     }
   </style>
 `);
 
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Service Worker registered', reg))
+      .catch(err => console.error('Service worker registration failed', err));
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   requireLogin();
   
-  // Render sidebar immediately from localStorage cache (Synchronous UI paint)
+  // Render layout and bottom bar
   renderSidebarUI();
+  renderMobileBottomNav();
   
-  // Load and apply wallpaper in background
+  // Apply settings backgrounds
   applyWallpaperSettings();
   
   // Setup auto-refresh handler when background sync finishes fetching new data
   document.addEventListener('chandaDataRefreshed', (e) => {
-    // Re-render UI elements to show updated real-time data
     applyWallpaperSettings();
     
-    // Hide sync indicator
     const indicator = document.getElementById("sync-indicator");
     if (indicator) indicator.style.display = "none";
     
-    // Fire page refresh if custom refresh handler exists on the page
     if (typeof syncData === 'function') {
       syncData();
     }
   });
 
-  // Start background API sync
+  // Start background sync
   getSystemData(false);
 });
 
@@ -275,7 +307,6 @@ function applyWallpaperSettings() {
     document.body.style.backgroundAttachment = "fixed";
   }
 
-  // Update deity brand logo
   const logo = document.getElementById("cardDeityLogo");
   if (logo && settings.lord_photo) {
     logo.innerHTML = `<img src="${settings.lord_photo}" style="width:24px; height:24px; object-fit:contain; border-radius:50%;">`;
@@ -290,7 +321,6 @@ function renderSidebarUI() {
   const activePage = window.location.pathname.split("/").pop().replace(".html", "") || "index";
   const isCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
   
-  // Create Sidebar
   let sidebar = document.getElementById("app-sidebar");
   if (!sidebar) {
     sidebar = document.createElement("div");
@@ -305,48 +335,43 @@ function renderSidebarUI() {
       <span>Chanda App</span>
     </div>
     <ul class="sidebar-menu">
-      <li class="${activePage === 'index' ? 'active' : ''}"><a href="index.html" title="${__('dashboard')}"><i class="fas fa-chart-line"></i> <span>${__('dashboard')}</span></a></li>
-      <li class="${activePage === 'donations' || activePage === 'add_donation' ? 'active' : ''}"><a href="donations.html" title="${__('chanda_list')}"><i class="fas fa-hand-holding-usd"></i> <span>${__('chanda_list')}</span></a></li>
-      <li class="${activePage === 'expenses' || activePage === 'add_expense' ? 'active' : ''}"><a href="expenses.html" title="${__('expense_list')}"><i class="fas fa-tags"></i> <span>${__('expense_list')}</span></a></li>
-      <li class="${activePage === 'accounts' ? 'active' : ''}"><a href="accounts.html" title="${__('accounts_handover')}"><i class="fas fa-wallet"></i> <span>${__('accounts_handover')}</span></a></li>
-      <li class="${activePage === 'profile' ? 'active' : ''}"><a href="profile.html" title="${__('edit_profile')}"><i class="fas fa-user-circle"></i> <span>${__('edit_profile')}</span></a></li>
+      <li class="${activePage === 'index' ? 'active' : ''}"><a href="index.html"><i class="fas fa-chart-line"></i> <span>${__('dashboard')}</span></a></li>
+      <li class="${activePage === 'donations' || activePage === 'add_donation' ? 'active' : ''}"><a href="donations.html"><i class="fas fa-hand-holding-usd"></i> <span>${__('chanda_list')}</span></a></li>
+      <li class="${activePage === 'expenses' || activePage === 'add_expense' ? 'active' : ''}"><a href="expenses.html"><i class="fas fa-tags"></i> <span>${__('expense_list')}</span></a></li>
+      <li class="${activePage === 'accounts' ? 'active' : ''}"><a href="accounts.html"><i class="fas fa-wallet"></i> <span>${__('accounts_handover')}</span></a></li>
+      <li class="${activePage === 'profile' ? 'active' : ''}"><a href="profile.html"><i class="fas fa-user-circle"></i> <span>${__('edit_profile')}</span></a></li>
   `;
   
   if (user && user.role === 'admin') {
     menuHTML += `
-      <li class="admin-only ${activePage === 'members' ? 'active' : ''}"><a href="members.html" title="${__('users_management')}"><i class="fas fa-users-cog"></i> <span>${__('users_management')}</span></a></li>
-      <li class="admin-only ${activePage === 'villages' ? 'active' : ''}"><a href="villages.html" title="Villages Master"><i class="fas fa-map-marked-alt"></i> <span>Villages Master</span></a></li>
-      <li class="admin-only ${activePage === 'categories' ? 'active' : ''}"><a href="categories.html" title="Categories Master"><i class="fas fa-list-ul"></i> <span>Categories Master</span></a></li>
-      <li class="admin-only ${activePage === 'festivals' ? 'active' : ''}"><a href="festivals.html" title="Year/Festival Closing"><i class="fas fa-calendar-alt"></i> <span>Year/Festival Closing</span></a></li>
-      <li class="admin-only ${activePage === 'logs' ? 'active' : ''}"><a href="logs.html" title="${__('audit_logs')}"><i class="fas fa-history"></i> <span>${__('audit_logs')}</span></a></li>
-      <li class="admin-only ${activePage === 'settings' ? 'active' : ''}"><a href="settings.html" title="${__('committee_settings')}"><i class="fas fa-cogs"></i> <span>${__('committee_settings')}</span></a></li>
+      <li class="${activePage === 'members' ? 'active' : ''}"><a href="members.html"><i class="fas fa-users-cog"></i> <span>${__('users_management')}</span></a></li>
+      <li class="${activePage === 'villages' ? 'active' : ''}"><a href="villages.html"><i class="fas fa-map-marked-alt"></i> <span>Villages Master</span></a></li>
+      <li class="${activePage === 'categories' ? 'active' : ''}"><a href="categories.html"><i class="fas fa-list-ul"></i> <span>Categories Master</span></a></li>
+      <li class="${activePage === 'festivals' ? 'active' : ''}"><a href="festivals.html"><i class="fas fa-calendar-alt"></i> <span>Year/Festival Master</span></a></li>
+      <li class="${activePage === 'logs' ? 'active' : ''}"><a href="logs.html"><i class="fas fa-history"></i> <span>${__('audit_logs')}</span></a></li>
+      <li class="${activePage === 'settings' ? 'active' : ''}"><a href="settings.html"><i class="fas fa-cogs"></i> <span>${__('committee_settings')}</span></a></li>
     `;
   }
   
   menuHTML += `
-      <li style="margin-top: 20px;"><a href="#" onclick="logout()" title="${__('logout')}"><i class="fas fa-sign-out-alt" style="color:#ff4136;"></i> <span>${__('logout')}</span></a></li>
+      <li style="margin-top: 20px;"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt" style="color:#ff4136;"></i> <span>${__('logout')}</span></a></li>
     </ul>
   `;
   
   sidebar.innerHTML = menuHTML;
   
-  // Set Main Content Layout Margin
   const mainContent = document.querySelector(".main-content");
   if (mainContent) {
-    if (isCollapsed) {
-      mainContent.classList.add("expanded");
-    } else {
-      mainContent.classList.remove("expanded");
-    }
+    if (isCollapsed) mainContent.classList.add("expanded");
+    else mainContent.classList.remove("expanded");
   }
 
-  // 2. Render Topbar
+  // Render Topbar
   if (mainContent && !document.getElementById("app-top-bar")) {
     const topBar = document.createElement("div");
     topBar.className = "top-bar";
     topBar.id = "app-top-bar";
     
-    // Left: Menu Toggle + Page Header Titles
     const leftDiv = document.createElement("div");
     leftDiv.style.display = "flex";
     leftDiv.style.alignItems = "center";
@@ -363,30 +388,26 @@ function renderSidebarUI() {
       </div>
     `;
     
-    // Right: Language and Festival selectors
     const rightDiv = document.createElement("div");
     rightDiv.style.display = "flex";
     rightDiv.style.alignItems = "center";
     rightDiv.style.gap = "10px";
     
-    // Language options select
     let langOptions = `
       <select onchange="setSelectedLanguage(this.value)" style="padding: 5px; border-radius: 4px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size: 12px; cursor:pointer;">
-        <option value="en" ${getSelectedLanguage() === 'en' ? 'selected' : ''}>🇬🇧 English</option>
-        <option value="hi" ${getSelectedLanguage() === 'hi' ? 'selected' : ''}>🇮🇳 हिन्दी</option>
-        <option value="hl" ${getSelectedLanguage() === 'hl' ? 'selected' : ''}>🔤 Hinglish</option>
+        <option value="en" ${getSelectedLanguage() === 'en' ? 'selected' : ''}>🇬🇧 En</option>
+        <option value="hi" ${getSelectedLanguage() === 'hi' ? 'selected' : ''}>🇮🇳 हि</option>
+        <option value="hl" ${getSelectedLanguage() === 'hl' ? 'selected' : ''}>🔤 Hl</option>
       </select>
     `;
     
-    // Festival options select
     let festOptions = `<select onchange="setViewingFestivalId(this.value)" style="padding: 5px; border-radius: 4px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size: 12px; cursor:pointer;">`;
     const festivals = sysData.festivals || [];
     festivals.forEach(f => {
-      festOptions += `<option value="${f.id}" ${getViewingFestivalId() == f.id ? 'selected' : ''}>${f.name} ${f.status === 'active' ? '(Active)' : ''}</option>`;
+      festOptions += `<option value="${f.id}" ${getViewingFestivalId() == f.id ? 'selected' : ''}>${f.name}</option>`;
     });
     festOptions += `</select>`;
     
-    // User profile status indicator
     let userAvatar = `<div style="width:30px; height:30px; border-radius:50%; background:var(--orange); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px;" title="${user ? user.name : ''}">${user ? user.name.charAt(0) : 'U'}</div>`;
     if (user && user.profile_pic) {
       userAvatar = `<img src="${user.profile_pic}" style="width:30px; height:30px; border-radius:50%; object-fit:cover; border:1px solid var(--border);">`;
@@ -404,21 +425,39 @@ function renderSidebarUI() {
   }
 }
 
+function renderMobileBottomNav() {
+  if (document.getElementById("app-bottom-nav")) return;
+
+  const bottomNav = document.createElement("div");
+  bottomNav.className = "mobile-bottom-nav";
+  bottomNav.id = "app-bottom-nav";
+  
+  const activePage = window.location.pathname.split("/").pop().replace(".html", "") || "index";
+  const user = getCurrentUser();
+  const isAdminUser = user && user.role === 'admin';
+
+  bottomNav.innerHTML = `
+    <a href="index.html" class="${activePage === 'index' ? 'active' : ''}"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="donations.html" class="${activePage === 'donations' || activePage === 'add_donation' ? 'active' : ''}"><i class="fas fa-hand-holding-usd"></i><span>Chanda</span></a>
+    <a href="expenses.html" class="${activePage === 'expenses' || activePage === 'add_expense' ? 'active' : ''}"><i class="fas fa-tags"></i><span>Expenses</span></a>
+    <a href="accounts.html" class="${activePage === 'accounts' ? 'active' : ''}"><i class="fas fa-wallet"></i><span>Handover</span></a>
+    <a href="${isAdminUser ? 'members.html' : 'profile.html'}" class="${activePage === 'members' || activePage === 'profile' || activePage === 'settings' || activePage === 'festivals' ? 'active' : ''}">
+      <i class="fas fa-bars"></i><span>Menu</span>
+    </a>
+  `;
+  
+  document.body.appendChild(bottomNav);
+}
+
 function toggleSidebar() {
   const sb = document.getElementById("app-sidebar");
   const main = document.querySelector(".main-content");
   if (sb) {
-    if (window.innerWidth > 768) {
-      // Desktop collapse toggle
-      const isCollapsed = sb.classList.toggle("collapsed");
-      localStorage.setItem("sidebar_collapsed", isCollapsed ? "true" : "false");
-      if (main) {
-        if (isCollapsed) main.classList.add("expanded");
-        else main.classList.remove("expanded");
-      }
-    } else {
-      // Mobile slide toggle
-      sb.classList.toggle("open");
+    const isCollapsed = sb.classList.toggle("collapsed");
+    localStorage.setItem("sidebar_collapsed", isCollapsed ? "true" : "false");
+    if (main) {
+      if (isCollapsed) main.classList.add("expanded");
+      else main.classList.remove("expanded");
     }
   }
 }
