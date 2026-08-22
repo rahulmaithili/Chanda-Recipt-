@@ -1616,6 +1616,64 @@
       window.open(url, '_blank');
     };
 
+    const printReportTable = (title, tableHtml, settings) => {
+      const committeeName = settings?.committee_name || "श्री गणेश उत्सव समिति";
+      const logoHtml = settings?.lord_photo ? `<img src="${settings.lord_photo}" style="height:70px; margin-right:15px; border-radius:50%;" alt="Logo" />` : '';
+      
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #333; }
+            .header-container { display: flex; align-items: center; justify-content: center; border-bottom: 3px double #d35400; padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
+            .header-text h1 { margin: 0; font-size: 24px; color: #d35400; text-transform: uppercase; letter-spacing: 1px; }
+            .header-text p { margin: 5px 0 0; font-size: 13px; color: #666; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }
+            th { background: #f5f6fa; font-weight: bold; color: #333; }
+            tr:nth-child(even) { background: #fafafa; }
+            .print-footer { margin-top: 50px; display: flex; justify-content: space-between; padding: 0 10px; font-size: 12px; font-weight: bold; }
+            .signature-line { border-top: 1px dashed #333; width: 150px; text-align: center; padding-top: 5px; margin-top: 40px; }
+            @media print {
+              body { padding: 10px; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            ${logoHtml}
+            <div class="header-text">
+              <h1>${committeeName}</h1>
+              <p>${settings?.committee_address || "रायपुर, छत्तीसगढ़"}</p>
+              <h3 style="margin: 10px 0 0; color: #555; text-transform: uppercase; font-size: 14px; border-top: 1px solid #ddd; display: inline-block; padding-top: 5px;">${title}</h3>
+            </div>
+          </div>
+          
+          ${tableHtml}
+          
+          <div class="print-footer">
+            <div>
+              <div class="signature-line">प्राप्तकर्ता / सदस्य</div>
+            </div>
+            <div>
+              <div class="signature-line">कोषाध्यक्ष (Treasurer)</div>
+            </div>
+            <div>
+              <div class="signature-line">अध्यक्ष (President)</div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    };
+
     function ChandaApp() {
       const [currentUser, setCurrentUser] = useState(getCurrentUser());
       const [activeTab, setActiveTab] = useState('dashboard');
@@ -2057,9 +2115,14 @@
                   systemData={systemData} 
                   onDelete={handleDeleteRecord} 
                   globalSearch={globalSearch}
-                  onEdit={(rec) => { setCurrentRecord(rec); setShowExpenseForm(true); }}
-                  onAdd={() => { setCurrentRecord(null); setShowExpenseForm(true); }}
+                  onEdit={(rec) => { setCurrentRecord(rec); setInstallmentParent(null); setShowExpenseForm(true); }}
+                  onAdd={() => { setCurrentRecord(null); setInstallmentParent(null); setShowExpenseForm(true); }}
                   onPrint={(rec) => { setPrintRecord(rec); setPrintType('voucher'); setTimeout(() => window.print(), 100); }}
+                  onPayInstallment={(parentRec) => {
+                    setInstallmentParent(parentRec);
+                    setCurrentRecord(null);
+                    setShowExpenseForm(true);
+                  }}
                   hasPermission={hasPermission}
                   t={translate}
                 />
@@ -2146,11 +2209,14 @@
           {showExpenseForm && (
             <ExpenseFormModal 
               record={currentRecord} 
+              parentRecord={installmentParent}
+              expenses={systemData.expenses || []}
               categories={systemData.categories} 
               accounts={systemData.accounts}
               onClose={() => setShowExpenseForm(false)} 
               onSave={async (payload) => {
-                const ok = await handleSaveRecord(currentRecord ? "updateExpense" : "addExpense", { expense: payload });
+                const action = currentRecord ? "updateExpense" : "addExpense";
+                const ok = await handleSaveRecord(action, { expense: payload });
                 if (ok) setShowExpenseForm(false);
               }}
               t={translate}
@@ -2946,15 +3012,7 @@
 
       // Native print table helper (Resolves print view requirements!)
       const handlePrintTable = () => {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>Print Donations List</title>');
-        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(`<h2>${t('chanda')}</h2>`);
-        printWindow.document.write(document.getElementById('donations-data-table').outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
+        printReportTable(t('chanda') + " List", document.getElementById('donations-data-table').outerHTML, systemData.settings);
       };
 
       return (
@@ -3196,10 +3254,11 @@
       );
     }
 
-    function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, hasPermission, t }) {
+    function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, onPayInstallment, hasPermission, t }) {
       const [categoryFilter, setCategoryFilter] = useState('All');
       const [searchLocal, setSearchLocal] = useState('');
       const [viewMode, setViewMode] = useState(localStorage.getItem('expenses_view_mode') || 'table');
+      const [subTab, setSubTab] = useState('list'); // 'list' or 'dues'
       
       const expenses = systemData.expenses || [];
       const filtered = expenses.filter(e => {
@@ -3215,15 +3274,62 @@
       };
 
       const handlePrintTable = () => {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>Print Expenses List</title>');
-        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(`<h2>${t('expenses')}</h2>`);
-        printWindow.document.write(document.getElementById('expenses-data-table').outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
+        printReportTable(t('expenses') + " List", document.getElementById('expenses-data-table').outerHTML, systemData.settings);
+      };
+
+      // Find contract parent expenses (where total_contract_amount is set, and parent_expense_no is blank)
+      const parentContracts = expenses.filter(e => e.total_contract_amount && parseFloat(e.total_contract_amount) > 0 && !e.parent_expense_no);
+
+      const getContractLedger = (parentEx) => {
+        const installments = expenses.filter(e => e.parent_expense_no === parentEx.expense_no);
+        const totalPaid = parseFloat(parentEx.amount) + installments.reduce((sum, ins) => sum + parseFloat(ins.amount || 0), 0);
+        const remaining = parseFloat(parentEx.total_contract_amount) - totalPaid;
+        return { installments, totalPaid, remaining };
+      };
+
+      const handlePrintLedger = (parentEx) => {
+        const ledger = getContractLedger(parentEx);
+        let html = `
+          <div style="margin-bottom: 20px; font-size: 13px; line-height: 1.6; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa;">
+            <strong>Voucher / Contract Ref:</strong> #${parentEx.expense_no}<br/>
+            <strong>Contract Title:</strong> ${parentEx.title}<br/>
+            <strong>Category:</strong> ${parentEx.category}<br/>
+            <strong>Total Contract Amount:</strong> ₹${parseFloat(parentEx.total_contract_amount).toLocaleString('en-IN')}<br/>
+            <strong>Remaining Payable (Vendor Due):</strong> <span style="color:#c0392b; font-weight:bold;">₹${ledger.remaining.toLocaleString('en-IN')}</span><br/>
+          </div>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f4f6f9;">
+                <th style="border: 1px solid #ccc; padding: 8px;">Date</th>
+                <th style="border: 1px solid #ccc; padding: 8px;">Description</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">Amount Paid</th>
+                <th style="border: 1px solid #ccc; padding: 8px;">Account Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;">${new Date(parentEx.date || parentEx.timestamp).toLocaleDateString('en-IN')}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">Initial Advance Payment</td>
+                <td style="border: 1px solid #ccc; padding: 8px; text-align: right; font-weight: bold;">₹${parseFloat(parentEx.amount).toFixed(2)}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">${parentEx.mode}</td>
+              </tr>
+              ${ledger.installments.map((ins, index) => `
+                <tr>
+                  <td style="border: 1px solid #ccc; padding: 8px;">${new Date(ins.date || ins.timestamp).toLocaleDateString('en-IN')}</td>
+                  <td style="border: 1px solid #ccc; padding: 8px;">Installment Payment #${index + 1} (${ins.note || 'No notes'})</td>
+                  <td style="border: 1px solid #ccc; padding: 8px; text-align: right; font-weight: bold;">₹${parseFloat(ins.amount).toFixed(2)}</td>
+                  <td style="border: 1px solid #ccc; padding: 8px;">${ins.mode}</td>
+                </tr>
+              `).join('')}
+              <tr style="background: #fafafa; font-weight: bold;">
+                <td colspan="2" style="border: 1px solid #ccc; padding: 8px; text-align: right;">Total Paid So Far:</td>
+                <td style="border: 1px solid #ccc; padding: 8px; text-align: right; color: green; font-size: 13px;">₹${ledger.totalPaid.toFixed(2)}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;"></td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+        printReportTable(`Contract Payment Ledger - ${parentEx.title}`, html, systemData.settings);
       };
 
       return (
@@ -3239,158 +3345,248 @@
             )}
           </div>
 
-          {/* Filters Row */}
-          <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> {t('filters')}</span>
-              <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> {t('clear')}</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '15px' }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px' }}>{t('search').toUpperCase()}</label>
-                <input 
-                  type="text" 
-                  placeholder={t('search')} 
-                  value={searchLocal} 
-                  onChange={e => setSearchLocal(e.target.value)} 
-                  style={{ padding: '8px', fontSize: '13px' }}
-                />
+          {/* Sub Tab Switcher */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid rgba(0,0,0,0.05)', paddingBottom: '10px' }}>
+            <button 
+              onClick={() => setSubTab('list')}
+              style={{
+                border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', padding: '6px 12px',
+                color: subTab === 'list' ? 'var(--navy-accent)' : 'var(--text-muted)',
+                borderBottom: subTab === 'list' ? '3px solid var(--navy-accent)' : 'none',
+                marginBottom: '-13px'
+              }}
+            >
+              <i className="fas fa-list"></i> {t('expenses')} List
+            </button>
+            <button 
+              onClick={() => setSubTab('dues')}
+              style={{
+                border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', padding: '6px 12px',
+                color: subTab === 'dues' ? 'var(--navy-accent)' : 'var(--text-muted)',
+                borderBottom: subTab === 'dues' ? '3px solid var(--navy-accent)' : 'none',
+                marginBottom: '-13px'
+              }}
+            >
+              <i className="fas fa-hand-holding-usd"></i> Vendor Payables & Dues
+            </button>
+          </div>
+
+          {subTab === 'list' ? (
+            <>
+              {/* Filters Row */}
+              <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> {t('filters')}</span>
+                  <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> {t('clear')}</button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '15px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '11px' }}>{t('search').toUpperCase()}</label>
+                    <input 
+                      type="text" 
+                      placeholder={t('search')} 
+                      value={searchLocal} 
+                      onChange={e => setSearchLocal(e.target.value)} 
+                      style={{ padding: '8px', fontSize: '13px' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '11px' }}>{t('category_name').toUpperCase()}</label>
+                    <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                      <option value="All">All {t('categories')}</option>
+                      {systemData.categories && systemData.categories.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '11px' }}>{t('category_name').toUpperCase()}</label>
-                <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
-                  <option value="All">All {t('categories')}</option>
-                  {systemData.categories && systemData.categories.map(c => (
-                    <option key={c.id} value={c.name}>{c.name}</option>
+
+              {/* Export & Action Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
+                </div>
+                
+                {/* View Mode Toggle Picker */}
+                <div style={{ display: 'flex', gap: '5px', background: 'rgba(0,0,0,0.05)', padding: '3px', borderRadius: '6px' }}>
+                  <button 
+                    onClick={() => { setViewMode('table'); localStorage.setItem('expenses_view_mode', 'table'); }} 
+                    style={{ border: 'none', background: viewMode === 'table' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'table' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+                  >
+                    <i className="fas fa-list"></i> List
+                  </button>
+                  <button 
+                    onClick={() => { setViewMode('grid'); localStorage.setItem('expenses_view_mode', 'grid'); }} 
+                    style={{ border: 'none', background: viewMode === 'grid' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'grid' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+                  >
+                    <i className="fas fa-th-large"></i> Grid
+                  </button>
+                </div>
+              </div>
+
+              {viewMode === 'table' ? (
+                <div className="card">
+                  <div className="table-responsive">
+                    <table id="expenses-data-table">
+                      <thead>
+                        <tr>
+                          <th>{t('voucher_no')}</th>
+                          <th>{t('date')}</th>
+                          <th>{t('title')}</th>
+                          <th>{t('category_name')}</th>
+                          <th>{t('amount')}</th>
+                          <th>{t('account_source')}</th>
+                          <th>{t('status')}</th>
+                          <th>{t('actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map(ex => {
+                          const hasDues = ex.total_contract_amount && parseFloat(ex.total_contract_amount) > parseFloat(ex.amount);
+                          return (
+                            <tr key={ex.expense_no}>
+                              <td>#{ex.expense_no}</td>
+                              <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
+                              <td>
+                                <strong>{ex.title}</strong>
+                                {hasDues && <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#ffebeb', color: '#ff4136', fontSize: '10px', fontWeight: 'bold', borderRadius: '4px' }}>Contract Dues</span>}
+                                <br/><small style={{ color: 'var(--text-muted)' }}>{ex.note}</small>
+                              </td>
+                              <td>{ex.category}</td>
+                              <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
+                              <td>{ex.mode}</td>
+                              <td>
+                                <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                                  {ex.status === 'Approved' ? t('approved') : t('pending')}
+                                </span>
+                              </td>
+                              <td>
+                                {hasPermission('expenses', 'e') && (
+                                  <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                                )}
+                                <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
+                                {hasPermission('expenses', 'd') && (
+                                  <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {filtered.length === 0 && (
+                          <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No expenses found.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="records-grid">
+                  {filtered.map(ex => (
+                    <div key={ex.expense_no} className="record-card">
+                      <div className="record-card-header">
+                        <span className="title">Voucher: #{ex.expense_no}</span>
+                        <span className="date">{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</span>
+                      </div>
+                      <div className="record-card-body">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{t('title')}</span>
+                          <strong>{ex.title}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{t('category_name')}</span>
+                          <span>{ex.category}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{t('amount')}</span>
+                          <span style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{t('account_source')}</span>
+                          <span>{ex.mode}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{t('status')}</span>
+                          <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                            {ex.status === 'Approved' ? t('approved') : t('pending')}
+                          </span>
+                        </div>
+                        {ex.note && (
+                          <div style={{ marginTop: '8px', fontSize: '12px', background: 'rgba(0,0,0,0.01)', padding: '6px', borderRadius: '4px', borderLeft: '3px solid var(--navy-accent)' }}>
+                            <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Note:</span>
+                            <span>{ex.note}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="record-card-footer">
+                        {hasPermission('expenses', 'e') && (
+                          <button className="btn btn-secondary btn-sm" onClick={() => onEdit(ex)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
+                        )}
+                        <button className="btn btn-success btn-sm" onClick={() => onPrint(ex)}><i className="fas fa-print"></i> {t('print')}</button>
+                        {hasPermission('expenses', 'd') && (
+                          <button className="btn btn-danger btn-sm" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Export & Action Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> {t('print_table')}</button>
-            </div>
-            
-            {/* View Mode Toggle Picker */}
-            <div style={{ display: 'flex', gap: '5px', background: 'rgba(0,0,0,0.05)', padding: '3px', borderRadius: '6px' }}>
-              <button 
-                onClick={() => { setViewMode('table'); localStorage.setItem('expenses_view_mode', 'table'); }} 
-                style={{ border: 'none', background: viewMode === 'table' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'table' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
-              >
-                <i className="fas fa-list"></i> List
-              </button>
-              <button 
-                onClick={() => { setViewMode('grid'); localStorage.setItem('expenses_view_mode', 'grid'); }} 
-                style={{ border: 'none', background: viewMode === 'grid' ? '#fff' : 'transparent', padding: '5px 12px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', color: viewMode === 'grid' ? 'var(--navy-primary)' : 'var(--text-muted)', boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
-              >
-                <i className="fas fa-th-large"></i> Grid
-              </button>
-            </div>
-          </div>
-
-          {viewMode === 'table' ? (
+                  {filtered.length === 0 && (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: '#fff', borderRadius: '8px' }}>No records found.</div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
             <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--navy-primary)' }}><i className="fas fa-hand-holding-usd"></i> Pending Vendor Payables</span>
+                <button className="btn btn-secondary btn-sm" onClick={() => printReportTable("Pending Vendor Payables", document.getElementById('vendor-payables-table').outerHTML, systemData.settings)} style={{ padding: '4px 10px', fontSize: '11px', background: '#34495e', display: 'flex', alignItems: 'center', gap: '5px' }}><i className="fas fa-print"></i> {t('print')}</button>
+              </div>
               <div className="table-responsive">
-                <table id="expenses-data-table">
+                <table id="vendor-payables-table">
                   <thead>
-                    <tr>
-                      <th>{t('voucher_no')}</th>
-                      <th>{t('date')}</th>
-                      <th>{t('title')}</th>
-                      <th>{t('category_name')}</th>
-                      <th>{t('amount')}</th>
-                      <th>{t('account_source')}</th>
-                      <th>{t('status')}</th>
-                      <th>{t('actions')}</th>
+                    <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
+                      <th>Voucher Ref</th>
+                      <th>Expense/Contract Title</th>
+                      <th>Category</th>
+                      <th>Contract Deal (₹)</th>
+                      <th>Total Paid (₹)</th>
+                      <th>Pending Due (₹)</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map(ex => (
-                      <tr key={ex.expense_no}>
-                        <td>#{ex.expense_no}</td>
-                        <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
-                        <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{ex.note}</small></td>
-                        <td>{ex.category}</td>
-                        <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
-                        <td>{ex.mode}</td>
-                        <td>
-                          <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                            {ex.status === 'Approved' ? t('approved') : t('pending')}
-                          </span>
-                        </td>
-                        <td>
-                          {hasPermission('expenses', 'e') && (
-                            <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                          )}
-                          <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
-                          {hasPermission('expenses', 'd') && (
-                            <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {filtered.length === 0 && (
-                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No expenses found.</td></tr>
+                    {parentContracts.map(pc => {
+                      const ledger = getContractLedger(pc);
+                      if (ledger.remaining <= 0) return null;
+                      return (
+                        <tr key={pc.expense_no}>
+                          <td>#{pc.expense_no}</td>
+                          <td><strong>{pc.title}</strong><br/><small style={{ color: 'var(--text-muted)' }}>Initial date: {new Date(pc.date || pc.timestamp).toLocaleDateString('en-IN')}</small></td>
+                          <td>{pc.category}</td>
+                          <td style={{ fontWeight: 'bold' }}>₹{parseFloat(pc.total_contract_amount).toFixed(2)}</td>
+                          <td style={{ color: 'var(--success)' }}>₹{ledger.totalPaid.toFixed(2)}</td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{ledger.remaining.toFixed(2)}</td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {hasPermission('expenses', 'a') && (
+                                <button className="btn btn-success btn-sm" onClick={() => onPayInstallment(pc)} style={{ padding: '4px 10px', fontSize: '11.5px', background: '#2ecc71', border: 'none' }}>
+                                  <i className="fas fa-coins"></i> Pay Due
+                                </button>
+                              )}
+                              <button className="btn btn-secondary btn-sm" onClick={() => handlePrintLedger(pc)} style={{ padding: '4px 10px', fontSize: '11.5px', background: '#34495e' }}>
+                                <i className="fas fa-file-invoice"></i> Ledger
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {parentContracts.length === 0 && (
+                      <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No contract expenses with pending balance found.</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
-            </div>
-          ) : (
-            <div className="records-grid">
-              {filtered.map(ex => (
-                <div key={ex.expense_no} className="record-card">
-                  <div className="record-card-header">
-                    <span className="title">Voucher: #{ex.expense_no}</span>
-                    <span className="date">{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</span>
-                  </div>
-                  <div className="record-card-body">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>{t('title')}</span>
-                      <strong>{ex.title}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>{t('category_name')}</span>
-                      <span>{ex.category}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>{t('amount')}</span>
-                      <span style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>{t('account_source')}</span>
-                      <span>{ex.mode}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>{t('status')}</span>
-                      <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                        {ex.status === 'Approved' ? t('approved') : t('pending')}
-                      </span>
-                    </div>
-                    {ex.note && (
-                      <div style={{ marginTop: '8px', fontSize: '12px', background: 'rgba(0,0,0,0.01)', padding: '6px', borderRadius: '4px', borderLeft: '3px solid var(--navy-accent)' }}>
-                        <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Note:</span>
-                        <span>{ex.note}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="record-card-footer">
-                    {hasPermission('expenses', 'e') && (
-                      <button className="btn btn-secondary btn-sm" onClick={() => onEdit(ex)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
-                    )}
-                    <button className="btn btn-success btn-sm" onClick={() => onPrint(ex)}><i className="fas fa-print"></i> {t('print')}</button>
-                    {hasPermission('expenses', 'd') && (
-                      <button className="btn btn-danger btn-sm" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {filtered.length === 0 && (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: '#fff', borderRadius: '8px' }}>No records found.</div>
-              )}
             </div>
           )}
         </div>
@@ -3445,15 +3641,7 @@
       });
 
       const handlePrintReport = (elementId, title) => {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>Print Report</title>');
-        printWindow.document.write('<style>body { font-family: sans-serif; padding: 20px; } table { width:100%; border-collapse:collapse; margin-top:15px; } th,td { border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; } th { background:#f4f6f9; }</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(`<h2>${title}</h2>`);
-        printWindow.document.write(document.getElementById(elementId).outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
+        printReportTable(title, document.getElementById(elementId).outerHTML, systemData.settings);
       };
 
       const handleExportMemberCSV = () => {
@@ -3614,10 +3802,20 @@
       const [amount, setAmount] = useState('');
       const [accountId, setAccountId] = useState('1');
       const [remark, setRemark] = useState('');
+      const [collectorFilter, setCollectorFilter] = useState('All');
       const isSuper = (user.role || "").toLowerCase() === "super admin" || (user.role || "").toLowerCase() === "admin";
 
       const handovers = systemData.handovers || [];
       const accounts = systemData.accounts || [];
+
+      const uniqueCollectors = Array.from(new Set(handovers.map(h => h.collector_name)));
+
+      const filteredHandovers = handovers.filter(h => {
+        const matchesCollector = collectorFilter === 'All' || h.collector_name === collectorFilter;
+        // Non-super users should only see their own entries
+        const matchesUserScope = isSuper || h.collector_mobile === user.mobile;
+        return matchesCollector && matchesUserScope;
+      });
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -3666,9 +3864,25 @@
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-wallet"></i> {t('handover_history')}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h3 style={{ color: 'var(--navy-accent)', margin: 0 }}><i className="fas fa-wallet"></i> {t('handover_history')}</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => printReportTable(t('handover_history'), document.getElementById('handover-history-table').outerHTML, systemData.settings)} style={{ padding: '4px 10px', fontSize: '11px', background: '#34495e', display: 'flex', alignItems: 'center', gap: '5px' }}><i className="fas fa-print"></i> {t('print')}</button>
+            </div>
+            
+            {isSuper && (
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 'bold' }}>FILTER BY COLLECTOR</label>
+                <select value={collectorFilter} onChange={e => setCollectorFilter(e.target.value)} style={{ padding: '6px 10px', fontSize: '12px', width: '100%', maxWidth: '200px' }}>
+                  <option value="All">All Collectors</option>
+                  {uniqueCollectors.map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="table-responsive">
-              <table>
+              <table id="handover-history-table">
                 <thead>
                   <tr>
                     <th>{t('username')}</th>
@@ -3678,7 +3892,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {handovers.map(h => (
+                  {filteredHandovers.map(h => (
                     <tr key={h.id}>
                       <td><strong>{h.collector_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{h.transfer_date}</small></td>
                       <td style={{ fontWeight: 'bold' }}>₹{parseFloat(h.amount).toFixed(2)}</td>
@@ -3697,6 +3911,9 @@
                       </td>
                     </tr>
                   ))}
+                  {filteredHandovers.length === 0 && (
+                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No handover entries found.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -3724,16 +3941,9 @@
       };
 
       const handlePrintVillageDonors = (vInfo) => {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>Print Village Donors</title>');
-        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(`<h2>Village Donor List - ${vInfo.name}</h2>`);
-        printWindow.document.write(`<p><strong>Total Slips:</strong> ${vInfo.slips.length} | <strong>Total Collected:</strong> ₹${vInfo.totalAmount.toFixed(2)}</p>`);
-        printWindow.document.write(document.getElementById('village-donors-print-table').outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
+        const summaryHtml = `<p><strong>Total Slips:</strong> ${vInfo.slips.length} | <strong>Total Collected:</strong> ₹${vInfo.totalAmount.toFixed(2)}</p>` + 
+                            document.getElementById('village-donors-print-table').outerHTML;
+        printReportTable(`Village Donor List - ${vInfo.name}`, summaryHtml, systemData.settings);
       };
 
       const handleExportVillageCSV = (vInfo) => {
@@ -3881,16 +4091,9 @@
       };
 
       const handlePrintCategoryExpenses = (cInfo) => {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>Print Category Expenses</title>');
-        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(`<h2>Category Expenses List - ${cInfo.name}</h2>`);
-        printWindow.document.write(`<p><strong>Total Items:</strong> ${cInfo.items.length} | <strong>Total Spent:</strong> ₹${cInfo.totalAmount.toFixed(2)}</p>`);
-        printWindow.document.write(document.getElementById('category-expenses-print-table').outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
+        const summaryHtml = `<p><strong>Total Items:</strong> ${cInfo.items.length} | <strong>Total Spent:</strong> ₹${cInfo.totalAmount.toFixed(2)}</p>` + 
+                            document.getElementById('category-expenses-print-table').outerHTML;
+        printReportTable(`Category Expenses List - ${cInfo.name}`, summaryHtml, systemData.settings);
       };
 
       const handleExportCategoryCSV = (cInfo) => {
@@ -4854,18 +5057,36 @@
       );
     }
 
-    function ExpenseFormModal({ record, categories, accounts, onClose, onSave, t }) {
-      const [title, setTitle] = useState(record?.title || '');
-      const [category, setCategory] = useState(record?.category || (categories[0]?.name || ''));
+    function ExpenseFormModal({ record, parentRecord, expenses, categories, accounts, onClose, onSave, t }) {
+      const [title, setTitle] = useState(record?.title || (parentRecord ? `Installment for ${parentRecord.title}` : ''));
+      const [category, setCategory] = useState(record?.category || parentRecord?.category || (categories[0]?.name || ''));
       const [amount, setAmount] = useState(record?.amount || '');
       const [mode, setMode] = useState(record?.mode || 'Cash');
       const [accountId, setAccountId] = useState(record?.account_id || accounts[0]?.id || '1');
       const [status, setStatus] = useState(record?.status || 'Pending');
       const [note, setNote] = useState(record?.note || '');
+      const [isContract, setIsContract] = useState(!!(record?.total_contract_amount || parentRecord));
+      const [totalContractAmount, setTotalContractAmount] = useState(record?.total_contract_amount || parentRecord?.total_contract_amount || '');
+
+      let remainingBalance = 0;
+      if (parentRecord) {
+        const installments = expenses.filter(e => e.parent_expense_no === parentRecord.expense_no);
+        const paidSoFar = parseFloat(parentRecord.amount) + installments.reduce((sum, ins) => sum + parseFloat(ins.amount || 0), 0);
+        remainingBalance = parseFloat(parentRecord.total_contract_amount) - paidSoFar;
+      }
 
       const handleSubmit = (e) => {
         e.preventDefault();
         if (!title.trim() || !amount) return alert("Required fields missing.");
+        
+        const finalContractAmt = parentRecord 
+          ? parseFloat(parentRecord.total_contract_amount)
+          : (isContract ? parseFloat(totalContractAmount) : 0);
+
+        if (parentRecord && parseFloat(amount) > remainingBalance) {
+          return alert(`Amount cannot exceed remaining contract balance of ₹${remainingBalance}`);
+        }
+
         onSave({
           title: title.trim(),
           category: category,
@@ -4878,7 +5099,9 @@
           added_by_name: record ? record.added_by_name : JSON.parse(localStorage.getItem("currentUser")).name,
           added_by_mobile: record ? record.added_by_mobile : JSON.parse(localStorage.getItem("currentUser")).mobile,
           date: record ? record.date : new Date().toISOString().slice(0, 10),
-          expense_no: record?.expense_no
+          expense_no: record?.expense_no,
+          total_contract_amount: finalContractAmt,
+          parent_expense_no: parentRecord ? parentRecord.expense_no : record?.parent_expense_no
         });
       };
 
@@ -4886,7 +5109,7 @@
         <div className="modal-slideover-overlay">
           <div className="modal-slideover">
             <div className="slideover-header">
-              <h3><i className="fas fa-tags"></i> {record ? t('edit_expense') : t('add_expense')}</h3>
+              <h3><i className="fas fa-tags"></i> {record ? t('edit_expense') : (parentRecord ? 'Pay Vendor Due' : t('add_expense'))}</h3>
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -4896,18 +5119,45 @@
                 <div>
                   <div className="form-group">
                     <label>{t('title')} *</label>
-                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} required />
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} required disabled={!!parentRecord} />
                   </div>
                   <div className="form-group">
                     <label>{t('category_name')} *</label>
-                    <select value={category} onChange={e => setCategory(e.target.value)}>
+                    <select value={category} onChange={e => setCategory(e.target.value)} disabled={!!parentRecord}>
                       {categories.map(c => (
                         <option key={c.id} value={c.name}>{c.name}</option>
                       ))}
                     </select>
                   </div>
+                  
+                  {parentRecord && (
+                    <div style={{ background: '#ffebeb', padding: '10px', borderRadius: '6px', marginBottom: '15px', color: '#ff4136', fontSize: '11.5px', fontWeight: 'bold' }}>
+                      <i className="fas fa-exclamation-circle"></i> Remaining Contract Due: ₹{remainingBalance.toFixed(2)}
+                    </div>
+                  )}
+
+                  {!parentRecord && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="isContractCheck" 
+                        checked={isContract} 
+                        onChange={e => setIsContract(e.target.checked)} 
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      <label htmlFor="isContractCheck" style={{ margin: 0, fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}>Is this a contract/partial payment?</label>
+                    </div>
+                  )}
+
+                  {isContract && !parentRecord && (
+                    <div className="form-group" style={{ background: 'rgba(0,0,0,0.02)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                      <label>Total Deal/Contract Amount *</label>
+                      <input type="number" placeholder="₹" value={totalContractAmount} onChange={e => setTotalContractAmount(e.target.value)} required />
+                    </div>
+                  )}
+
                   <div className="form-group">
-                    <label>{t('amount')} *</label>
+                    <label>{parentRecord ? 'Amount to Pay Now *' : `${t('amount')} *`}</label>
                     <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
                   </div>
                   <div className="form-group">
@@ -4949,7 +5199,10 @@
                       <p><strong>{t('voucher_no')}:</strong> #{record?.expense_no || 'DRAFT'}</p>
                       <p><strong>{t('title')}:</strong> {title || '---'}</p>
                       <p><strong>{t('category_name')}:</strong> {category}</p>
-                      <p><strong>{t('amount')}:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
+                      {isContract && (
+                        <p><strong>Contract Deal:</strong> ₹{parseFloat(totalContractAmount || 0).toFixed(2)}</p>
+                      )}
+                      <p><strong>Paid Amount:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
                       <p><strong>{t('mode')}:</strong> {mode}</p>
                     </div>
                   </div>
