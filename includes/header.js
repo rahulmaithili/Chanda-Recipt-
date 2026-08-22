@@ -1,4 +1,20 @@
-// Shared Header, Sidebar & Bottom Navigation Layout Template (Mobile App Shell)
+// Shared Header, Sidebar & Bottom Navigation Layout Template (Mobile App Shell with SPA Client Router)
+
+// Override addEventListener for DOMContentLoaded to support SPA dynamic routing
+(function() {
+  const originalAddEventListener = document.addEventListener;
+  document.addEventListener = function(type, listener, options) {
+    if (type === "DOMContentLoaded" && document.readyState !== "loading") {
+      try {
+        listener();
+      } catch (e) {
+        console.error("SPA execution error:", e);
+      }
+    } else {
+      originalAddEventListener.call(document, type, listener, options);
+    }
+  };
+})();
 
 // Dynamically inject viewport meta tag to lock zoom scale on mobile devices (PWA standard)
 (function() {
@@ -518,6 +534,121 @@ function confirmAction(title, text, callback) {
     }
   }
 }
+
+// ==========================================
+// SPA CLIENT-SIDE ROUTER (Instant Page Loads)
+// ==========================================
+async function loadPageSPA(url, pushState = true) {
+  const spinner = document.getElementById("sync-indicator");
+  if (spinner) spinner.style.display = "inline-block";
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Load failed");
+    const htmlText = await response.text();
+    
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, "text/html");
+    
+    const newContent = doc.querySelector(".main-content");
+    const currentContent = document.querySelector(".main-content");
+    
+    if (newContent && currentContent) {
+      // Fade-out effect
+      currentContent.style.opacity = 0.4;
+      currentContent.style.transition = "opacity 0.15s ease";
+      
+      setTimeout(() => {
+        currentContent.innerHTML = newContent.innerHTML;
+        document.title = doc.title || "Chanda App";
+        
+        if (pushState) {
+          history.pushState(null, "", url);
+        }
+        
+        updateActiveNavHighlights(url);
+        applyWallpaperSettings();
+        
+        // Re-execute scripts inside the newly loaded content
+        const scripts = newContent.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          if (oldScript.src) {
+            newScript.src = oldScript.src;
+          } else {
+            // Wrap script in block braces to avoid "already declared" errors on let/const!
+            newScript.textContent = `{\n${oldScript.textContent}\n}`;
+          }
+          document.body.appendChild(newScript);
+          newScript.remove(); // Remove immediately after running to keep DOM clean
+        });
+        
+        // Fade-in effect
+        currentContent.style.opacity = 1;
+      }, 150);
+    } else {
+      window.location.href = url; // Fallback if structures are different
+    }
+  } catch (err) {
+    console.error("SPA dynamic routing failed. Falling back to reload:", err);
+    window.location.href = url;
+  } finally {
+    if (spinner) {
+      setTimeout(() => spinner.style.display = "none", 300);
+    }
+  }
+}
+
+function updateActiveNavHighlights(url) {
+  const pageName = url.split("/").pop().replace(".html", "") || "index";
+  
+  // Highlight Desktop Sidebar Active State
+  document.querySelectorAll("#app-sidebar .nav-item").forEach(item => {
+    const href = item.getAttribute("href");
+    if (href && href.replace(".html", "") === pageName) {
+      item.classList.add("active");
+    } else {
+      item.classList.remove("active");
+    }
+  });
+  
+  // Highlight Mobile Bottom Tab Bar Active State
+  document.querySelectorAll("#app-bottom-nav a.mobile-tab").forEach(tab => {
+    const href = tab.getAttribute("href");
+    if (href && href.replace(".html", "") === pageName) {
+      tab.classList.add("active");
+    } else {
+      tab.classList.remove("active");
+    }
+  });
+}
+
+// Global click interceptor to catch internal links and route them dynamically
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("a");
+  if (link && link.href) {
+    const hrefAttr = link.getAttribute("href");
+    
+    // Only intercept local HTML pages. Exclude anchors, external endpoints, and logouts
+    if (hrefAttr && 
+        !hrefAttr.startsWith("#") && 
+        !hrefAttr.startsWith("javascript:") && 
+        !hrefAttr.startsWith("mailto:") &&
+        !hrefAttr.startsWith("tel:") &&
+        hrefAttr.endsWith(".html") &&
+        !hrefAttr.includes("logout") &&
+        link.target !== "_blank") {
+        
+      e.preventDefault();
+      loadPageSPA(hrefAttr);
+    }
+  }
+});
+
+// Browser back/forward navigation popstate listener
+window.addEventListener("popstate", () => {
+  loadPageSPA(window.location.pathname, false);
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   requireLogin();
