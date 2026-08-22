@@ -1,5 +1,18 @@
 // Shared Header, Sidebar & Bottom Navigation Layout Template (Mobile App Shell)
 
+// Dynamically inject viewport meta tag to lock zoom scale on mobile devices (PWA standard)
+(function() {
+  let viewport = document.querySelector('meta[name="viewport"]');
+  if (viewport) {
+    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+  } else {
+    viewport = document.createElement('meta');
+    viewport.name = 'viewport';
+    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    document.head.appendChild(viewport);
+  }
+})();
+
 document.write(`
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="manifest" href="manifest.json">
@@ -17,8 +30,14 @@ document.write(`
       --sidebar-width: 250px;
     }
     
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden; /* Avoid horizontal scrolling */
+    }
+    
+    body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: var(--bg);
       color: var(--text);
@@ -108,6 +127,7 @@ document.write(`
       padding: 20px;
       width: calc(100% - var(--sidebar-width));
       transition: 0.3s;
+      overflow-x: hidden;
     }
     
     .main-content.expanded {
@@ -274,7 +294,6 @@ document.write(`
         padding: 8px !important;
       }
 
-      /* Receipt printing body */
       body.receipt-printing * {
         visibility: hidden !important;
       }
@@ -302,7 +321,6 @@ document.write(`
         padding: 0 !important;
       }
 
-      /* Voucher printing body */
       body.voucher-printing * {
         visibility: hidden !important;
       }
@@ -330,7 +348,6 @@ document.write(`
         padding: 0 !important;
       }
 
-      /* ID Card printing body */
       body.id-card-active * {
         visibility: hidden !important;
       }
@@ -358,6 +375,7 @@ document.write(`
       }
     }
     
+    /* Specific Mobile Layout Adjustments */
     @media (max-width: 768px) {
       .sidebar {
         display: none !important;
@@ -365,13 +383,30 @@ document.write(`
       .mobile-bottom-nav {
         display: flex;
       }
+      
+      /* Set inputs to 16px to prevent iOS Safari auto-zoom on focus */
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+      
       .main-content, .main-content.expanded {
         margin-left: 0 !important;
         width: 100% !important;
-        padding-bottom: 80px;
+        padding: 10px !important; /* Less padding to fit screens */
+        padding-bottom: 80px !important; /* Space for bottom tab bar */
       }
+      
       .nav-toggle {
         display: none !important;
+      }
+      
+      .top-bar {
+        padding: 10px !important;
+        margin-bottom: 15px !important;
+      }
+      
+      .card, .form-card {
+        padding: 15px !important;
       }
     }
   </style>
@@ -395,7 +430,6 @@ window.alert = function(msg) {
       confirmButtonColor: '#ff851b'
     });
   } else {
-    // Fallback if sweetalert fails to load
     console.log(msg);
   }
 };
