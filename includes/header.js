@@ -1,4 +1,4 @@
-// Shared Header & Navigation Template for Chanda Netlify client
+// Shared Header, Sidebar & Collapsible Layout Template for Chanda Netlify client
 
 document.write(`
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,9 +22,10 @@ document.write(`
       color: var(--text);
       display: flex;
       min-height: 100vh;
+      transition: 0.3s;
     }
     
-    /* Sidebar */
+    /* Collapsible Sidebar styling */
     .sidebar {
       width: var(--sidebar-width);
       background: #001f3f;
@@ -37,6 +38,11 @@ document.write(`
       left: 0;
       z-index: 100;
       transition: 0.3s;
+      overflow-x: hidden;
+    }
+    
+    .sidebar.collapsed {
+      width: 70px;
     }
     
     .sidebar-brand {
@@ -46,8 +52,13 @@ document.write(`
       border-bottom: 1px solid rgba(255,255,255,0.1);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 15px;
       color: var(--orange);
+      white-space: nowrap;
+    }
+    
+    .sidebar.collapsed .sidebar-brand span {
+      display: none;
     }
     
     .sidebar-menu {
@@ -58,15 +69,20 @@ document.write(`
       overflow-y: auto;
     }
     
+    .sidebar-menu li {
+      position: relative;
+    }
+    
     .sidebar-menu li a {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 15px 20px;
+      gap: 15px;
+      padding: 15px 23px;
       color: #bdc3c7;
       text-decoration: none;
       transition: 0.2s;
       font-size: 14px;
+      white-space: nowrap;
     }
     
     .sidebar-menu li a:hover, .sidebar-menu li.active a {
@@ -75,10 +91,12 @@ document.write(`
       border-left: 4px solid var(--orange);
     }
     
-    .sidebar-menu li.admin-only {
-      border-top: 1px dashed rgba(255,255,255,0.05);
-      margin-top: 5px;
-      padding-top: 5px;
+    .sidebar.collapsed .sidebar-menu li a span {
+      display: none;
+    }
+    
+    .sidebar.collapsed .sidebar-menu li a {
+      padding: 15px 25px;
     }
     
     /* Main Layout */
@@ -91,6 +109,12 @@ document.write(`
       box-sizing: border-box;
       padding: 20px;
       width: calc(100% - var(--sidebar-width));
+      transition: 0.3s;
+    }
+    
+    .main-content.expanded {
+      margin-left: 70px;
+      width: calc(100% - 70px);
     }
     
     /* Top Bar */
@@ -140,7 +164,6 @@ document.write(`
       background: #002d5c;
     }
     
-    /* Responsive Badges */
     .erp-badge {
       display: inline-block;
       padding: 4px 8px;
@@ -150,11 +173,37 @@ document.write(`
       color: white;
     }
     
-    /* Mobile Responsive Hamburger */
-    .mobile-nav-toggle {
-      display: none;
-      font-size: 20px;
+    .nav-toggle {
+      font-size: 18px;
       cursor: pointer;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      transition: 0.2s;
+    }
+    
+    .nav-toggle:hover {
+      background: var(--bg);
+    }
+    
+    /* Loader Spinner in Topbar */
+    .sync-loader {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(0,0,0,0.1);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     
     @media (max-width: 768px) {
@@ -164,12 +213,22 @@ document.write(`
       .sidebar.open {
         left: 0;
       }
-      .main-content {
+      .sidebar.collapsed {
+        left: -70px;
+      }
+      .sidebar.collapsed.open {
+        left: 0;
+        width: 250px;
+      }
+      .sidebar.collapsed.open .sidebar-menu li a span {
+        display: inline;
+      }
+      .sidebar.collapsed.open .sidebar-brand span {
+        display: inline;
+      }
+      .main-content, .main-content.expanded {
         margin-left: 0;
         width: 100%;
-      }
-      .mobile-nav-toggle {
-        display: block;
       }
     }
   </style>
@@ -177,15 +236,37 @@ document.write(`
 
 document.addEventListener("DOMContentLoaded", () => {
   requireLogin();
-  setupUI();
+  
+  // Render sidebar immediately from localStorage cache (Synchronous UI paint)
+  renderSidebarUI();
+  
+  // Load and apply wallpaper in background
+  applyWallpaperSettings();
+  
+  // Setup auto-refresh handler when background sync finishes fetching new data
+  document.addEventListener('chandaDataRefreshed', (e) => {
+    // Re-render UI elements to show updated real-time data
+    applyWallpaperSettings();
+    
+    // Hide sync indicator
+    const indicator = document.getElementById("sync-indicator");
+    if (indicator) indicator.style.display = "none";
+    
+    // Fire page refresh if custom refresh handler exists on the page
+    if (typeof syncData === 'function') {
+      syncData();
+    }
+  });
+
+  // Start background API sync
+  getSystemData(false);
 });
 
-async function setupUI() {
-  const user = getCurrentUser();
-  const sysData = await getSystemData() || { settings: {}, festivals: [] };
-  const settings = sysData.settings || {};
+function applyWallpaperSettings() {
+  const sysData = getSystemDataImmediate();
+  if (!sysData || !sysData.settings) return;
+  const settings = sysData.settings;
   
-  // Set wallpapers
   if (settings.bg_wallpaper) {
     const opacity = settings.wallpaper_opacity || '0.1';
     document.body.style.backgroundImage = `linear-gradient(rgba(244, 247, 246, ${1 - parseFloat(opacity)}), rgba(244, 247, 246, ${1 - parseFloat(opacity)})), url('${settings.bg_wallpaper}')`;
@@ -193,54 +274,77 @@ async function setupUI() {
     document.body.style.backgroundPosition = "center";
     document.body.style.backgroundAttachment = "fixed";
   }
+
+  // Update deity brand logo
+  const logo = document.getElementById("cardDeityLogo");
+  if (logo && settings.lord_photo) {
+    logo.innerHTML = `<img src="${settings.lord_photo}" style="width:24px; height:24px; object-fit:contain; border-radius:50%;">`;
+  }
+}
+
+function renderSidebarUI() {
+  const user = getCurrentUser();
+  const sysData = getSystemDataImmediate() || { settings: {}, festivals: [] };
+  const settings = sysData.settings || {};
   
   const activePage = window.location.pathname.split("/").pop().replace(".html", "") || "index";
+  const isCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
   
-  // 1. Render Sidebar
-  const sidebar = document.createElement("div");
-  sidebar.className = "sidebar";
-  sidebar.id = "app-sidebar";
+  // Create Sidebar
+  let sidebar = document.getElementById("app-sidebar");
+  if (!sidebar) {
+    sidebar = document.createElement("div");
+    sidebar.className = "sidebar" + (isCollapsed ? " collapsed" : "");
+    sidebar.id = "app-sidebar";
+    document.body.insertBefore(sidebar, document.body.firstChild);
+  }
   
   let menuHTML = `
     <div class="sidebar-brand">
       <div id="cardDeityLogo"></div>
-      <span style="font-size:16px;">Chanda App</span>
+      <span>Chanda App</span>
     </div>
     <ul class="sidebar-menu">
-      <li class="${activePage === 'index' ? 'active' : ''}"><a href="index.html"><i class="fas fa-chart-line"></i> <span>${__('dashboard')}</span></a></li>
-      <li class="${activePage === 'donations' || activePage === 'add_donation' ? 'active' : ''}"><a href="donations.html"><i class="fas fa-hand-holding-usd"></i> <span>${__('chanda_list')}</span></a></li>
-      <li class="${activePage === 'expenses' || activePage === 'add_expense' ? 'active' : ''}"><a href="expenses.html"><i class="fas fa-tags"></i> <span>${__('expense_list')}</span></a></li>
-      <li class="${activePage === 'accounts' ? 'active' : ''}"><a href="accounts.html"><i class="fas fa-wallet"></i> <span>${__('accounts_handover')}</span></a></li>
-      <li class="${activePage === 'profile' ? 'active' : ''}"><a href="profile.html"><i class="fas fa-user-circle"></i> <span>${__('edit_profile')}</span></a></li>
+      <li class="${activePage === 'index' ? 'active' : ''}"><a href="index.html" title="${__('dashboard')}"><i class="fas fa-chart-line"></i> <span>${__('dashboard')}</span></a></li>
+      <li class="${activePage === 'donations' || activePage === 'add_donation' ? 'active' : ''}"><a href="donations.html" title="${__('chanda_list')}"><i class="fas fa-hand-holding-usd"></i> <span>${__('chanda_list')}</span></a></li>
+      <li class="${activePage === 'expenses' || activePage === 'add_expense' ? 'active' : ''}"><a href="expenses.html" title="${__('expense_list')}"><i class="fas fa-tags"></i> <span>${__('expense_list')}</span></a></li>
+      <li class="${activePage === 'accounts' ? 'active' : ''}"><a href="accounts.html" title="${__('accounts_handover')}"><i class="fas fa-wallet"></i> <span>${__('accounts_handover')}</span></a></li>
+      <li class="${activePage === 'profile' ? 'active' : ''}"><a href="profile.html" title="${__('edit_profile')}"><i class="fas fa-user-circle"></i> <span>${__('edit_profile')}</span></a></li>
   `;
   
   if (user && user.role === 'admin') {
     menuHTML += `
-      <li class="admin-only ${activePage === 'members' ? 'active' : ''}"><a href="members.html"><i class="fas fa-users-cog"></i> <span>${__('users_management')}</span></a></li>
-      <li class="admin-only ${activePage === 'festivals' ? 'active' : ''}"><a href="festivals.html"><i class="fas fa-calendar-alt"></i> <span>Year/Festival Closing</span></a></li>
-      <li class="admin-only ${activePage === 'logs' ? 'active' : ''}"><a href="logs.html"><i class="fas fa-history"></i> <span>${__('audit_logs')}</span></a></li>
-      <li class="admin-only ${activePage === 'settings' ? 'active' : ''}"><a href="settings.html"><i class="fas fa-cogs"></i> <span>${__('committee_settings')}</span></a></li>
+      <li class="admin-only ${activePage === 'members' ? 'active' : ''}"><a href="members.html" title="${__('users_management')}"><i class="fas fa-users-cog"></i> <span>${__('users_management')}</span></a></li>
+      <li class="admin-only ${activePage === 'villages' ? 'active' : ''}"><a href="villages.html" title="Villages Master"><i class="fas fa-map-marked-alt"></i> <span>Villages Master</span></a></li>
+      <li class="admin-only ${activePage === 'categories' ? 'active' : ''}"><a href="categories.html" title="Categories Master"><i class="fas fa-list-ul"></i> <span>Categories Master</span></a></li>
+      <li class="admin-only ${activePage === 'festivals' ? 'active' : ''}"><a href="festivals.html" title="Year/Festival Closing"><i class="fas fa-calendar-alt"></i> <span>Year/Festival Closing</span></a></li>
+      <li class="admin-only ${activePage === 'logs' ? 'active' : ''}"><a href="logs.html" title="${__('audit_logs')}"><i class="fas fa-history"></i> <span>${__('audit_logs')}</span></a></li>
+      <li class="admin-only ${activePage === 'settings' ? 'active' : ''}"><a href="settings.html" title="${__('committee_settings')}"><i class="fas fa-cogs"></i> <span>${__('committee_settings')}</span></a></li>
     `;
   }
   
   menuHTML += `
-      <li style="margin-top: 20px;"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt" style="color:#ff4136;"></i> <span>${__('logout')}</span></a></li>
+      <li style="margin-top: 20px;"><a href="#" onclick="logout()" title="${__('logout')}"><i class="fas fa-sign-out-alt" style="color:#ff4136;"></i> <span>${__('logout')}</span></a></li>
     </ul>
   `;
   
   sidebar.innerHTML = menuHTML;
-  document.body.insertBefore(sidebar, document.body.firstChild);
   
-  // Add deity image in brand
-  if (settings.lord_photo) {
-    document.getElementById("cardDeityLogo").innerHTML = `<img src="${settings.lord_photo}" style="width:24px; height:24px; object-fit:contain; border-radius:50%;">`;
-  }
-  
-  // 2. Render Topbar in main content container
+  // Set Main Content Layout Margin
   const mainContent = document.querySelector(".main-content");
   if (mainContent) {
+    if (isCollapsed) {
+      mainContent.classList.add("expanded");
+    } else {
+      mainContent.classList.remove("expanded");
+    }
+  }
+
+  // 2. Render Topbar
+  if (mainContent && !document.getElementById("app-top-bar")) {
     const topBar = document.createElement("div");
     topBar.className = "top-bar";
+    topBar.id = "app-top-bar";
     
     // Left: Menu Toggle + Page Header Titles
     const leftDiv = document.createElement("div");
@@ -249,9 +353,12 @@ async function setupUI() {
     leftDiv.style.gap = "15px";
     
     leftDiv.innerHTML = `
-      <div class="mobile-nav-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+      <div class="nav-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
       <div style="line-height:1.2;">
-        <h4 style="margin:0; font-size:15px; font-weight:bold; color:var(--orange);">${settings.committee_name || 'युवा गणेश उत्सव समिति'}</h4>
+        <h4 style="margin:0; font-size:15px; font-weight:bold; color:var(--orange); display:flex; align-items:center;">
+          ${settings.committee_name || 'युवा गणेश उत्सव समिति'}
+          <span id="sync-indicator" class="sync-loader" style="display:inline-block;" title="Syncing real-time data..."></span>
+        </h4>
         <small style="font-size:10px; color:var(--muted);">${settings.committee_address || 'ग्राम - गणेशखपरी'}</small>
       </div>
     `;
@@ -299,7 +406,19 @@ async function setupUI() {
 
 function toggleSidebar() {
   const sb = document.getElementById("app-sidebar");
+  const main = document.querySelector(".main-content");
   if (sb) {
-    sb.classList.toggle("open");
+    if (window.innerWidth > 768) {
+      // Desktop collapse toggle
+      const isCollapsed = sb.classList.toggle("collapsed");
+      localStorage.setItem("sidebar_collapsed", isCollapsed ? "true" : "false");
+      if (main) {
+        if (isCollapsed) main.classList.add("expanded");
+        else main.classList.remove("expanded");
+      }
+    } else {
+      // Mobile slide toggle
+      sb.classList.toggle("open");
+    }
   }
 }

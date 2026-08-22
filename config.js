@@ -1,35 +1,55 @@
 // Chanda & Expense Management System - Static Web Client Configuration
 
-// ⚠️ PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL HERE:
 const API_URL = "https://script.google.com/macros/s/AKfycbyQ3AHpLi9wLgPl8mFqU7jb-sKwyhoD4HyslUMNMq5mvpdIHr8e-h6G4Mvh__DMQswS/exec";
 
 // Caching and API Fetching Helper
 const CACHE_KEY = "chanda_system_cache";
-const CACHE_TTL_MS = 15000; // 15 seconds Cache Lifetime
+
+function getSystemDataImmediate() {
+  const cached = localStorage.getItem(CACHE_KEY);
+  return cached ? JSON.parse(cached) : null;
+}
 
 async function getSystemData(forceSync = false) {
   const cached = localStorage.getItem(CACHE_KEY);
-  const cachedTime = localStorage.getItem(CACHE_KEY + "_time");
   const now = new Date().getTime();
   
-  if (!forceSync && cached && cachedTime && (now - parseInt(cachedTime) < CACHE_TTL_MS)) {
+  // Return cached instantly for ultra-fast loading
+  if (!forceSync && cached) {
+    // Fire background sync asynchronously to update cache and notify UI
+    setTimeout(() => backgroundSync(), 50);
     return JSON.parse(cached);
   }
   
+  // Force sync / No cache fallback
+  return await backgroundSync();
+}
+
+async function backgroundSync() {
   const viewingFestId = getViewingFestivalId();
+  if (API_URL.includes("YOUR_DEPLOYED_APPS_SCRIPT_URL")) return null;
+  
   try {
     const res = await fetch(`${API_URL}?action=getInitData&festival_id=${viewingFestId}`);
     const data = await res.json();
     if (data.success) {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-      localStorage.setItem(CACHE_KEY + "_time", now.toString());
+      const oldCached = localStorage.getItem(CACHE_KEY);
+      const newCachedStr = JSON.stringify(data);
+      
+      // Update cache
+      localStorage.setItem(CACHE_KEY, newCachedStr);
+      localStorage.setItem(CACHE_KEY + "_time", new Date().getTime().toString());
+      
+      // If data changed, notify page to reload or re-render
+      if (oldCached !== newCachedStr) {
+        document.dispatchEvent(new CustomEvent('chandaDataRefreshed', { detail: data }));
+      }
       return data;
     }
   } catch(e) {
-    console.error("API Sync failed, using local cache if available", e);
+    console.error("Background sync failed", e);
   }
-  
-  return cached ? JSON.parse(cached) : null;
+  return null;
 }
 
 // Invalidate Cache after write action
@@ -85,6 +105,56 @@ function setViewingFestivalId(id) {
 
 function isHistoricalView() {
   return getViewingFestivalId() !== getActiveFestivalId();
+}
+
+// Toast / Custom Alert Notification System
+function showToast(message, type = "success") {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.style.position = "fixed";
+    container.style.top = "20px";
+    container.style.right = "20px";
+    container.style.zIndex = "9999";
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
+    container.style.gap = "10px";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.style.background = type === "success" ? "#2ecc40" : "#ff4136";
+  toast.style.color = "white";
+  toast.style.padding = "12px 20px";
+  toast.style.borderRadius = "8px";
+  toast.style.fontSize = "14px";
+  toast.style.fontWeight = "600";
+  toast.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
+  toast.style.display = "flex";
+  toast.style.alignItems = "center";
+  toast.style.gap = "10px";
+  toast.style.minWidth = "250px";
+  toast.style.transition = "0.3s ease";
+  toast.style.transform = "translateX(120%)";
+
+  const icon = type === "success" ? "fa-check-circle" : "fa-exclamation-triangle";
+  toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+  
+  container.appendChild(toast);
+  
+  // Slide in
+  setTimeout(() => {
+    toast.style.transform = "translateX(0)";
+  }, 10);
+
+  // Auto remove
+  setTimeout(() => {
+    toast.style.transform = "translateX(120%)";
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 3500);
 }
 
 // Language / Translation System

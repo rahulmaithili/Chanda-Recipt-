@@ -62,6 +62,7 @@
         <div id="error" style="color:red; font-weight:bold; margin-bottom:15px; display:none;"></div>
 
         <form id="settingsForm">
+            <h4 style="margin: 20px 0 10px 0; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px;"><i class="fas fa-university"></i> General Identity</h4>
             <div class="form-group">
                 <label>Committee Name (समिति का नाम) *</label>
                 <input type="text" id="committee_name" required placeholder="e.g. युवा गणेश उत्सव समिति">
@@ -100,7 +101,26 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn" style="width:100%; margin-top:10px;" id="lbl_save_settings"><i class="fas fa-save"></i> Save Settings</button>
+            <!-- SMS Gateway Settings -->
+            <h4 style="margin: 30px 0 10px 0; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px;"><i class="fas fa-sms"></i> SMS Gateway Configuration</h4>
+            <div class="form-group">
+                <label>SMS API Provider URL</label>
+                <input type="text" id="sms_api_url" placeholder="https://api.sms-provider.com/send">
+            </div>
+            <div class="form-group">
+                <label>SMS API Auth Key / Token</label>
+                <input type="text" id="sms_api_key" placeholder="Enter API auth token">
+            </div>
+            <div class="form-group">
+                <label>SMS Sender ID (DLT Approved)</label>
+                <input type="text" id="sms_sender_id" placeholder="e.g. YUGUTS">
+            </div>
+            <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" id="sms_auto_send" style="width:auto; margin:0;">
+                <label for="sms_auto_send" style="margin:0; font-size:13px; font-weight:600; cursor:pointer;">Auto-send SMS to donors on receipt generation</label>
+            </div>
+
+            <button type="submit" class="btn" style="width:100%; margin-top:20px;" id="lbl_save_settings"><i class="fas fa-save"></i> Save Settings</button>
         </form>
     </div>
 </div>
@@ -113,6 +133,13 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
         translateLabels();
+        
+        if (!isAdmin()) {
+            showToast("Access denied.", "error");
+            window.location.href = "index.html";
+            return;
+        }
+
         await loadSettings();
 
         // Bind Base64 converters
@@ -154,6 +181,12 @@
         document.getElementById("committee_name").value = settings.committee_name || "";
         document.getElementById("committee_address").value = settings.committee_address || "";
         document.getElementById("wallpaper_opacity").value = settings.wallpaper_opacity || "0.1";
+        
+        // SMS values
+        document.getElementById("sms_api_url").value = settings.sms_api_url || "";
+        document.getElementById("sms_api_key").value = settings.sms_api_key || "";
+        document.getElementById("sms_sender_id").value = settings.sms_sender_id || "";
+        document.getElementById("sms_auto_send").checked = settings.sms_auto_send === "true" || settings.sms_auto_send === true;
 
         if (settings.lord_photo) {
             document.getElementById("deity_preview").innerHTML = `<img src="${settings.lord_photo}" style="width:100%; height:100%; object-fit:contain;">`;
@@ -172,7 +205,11 @@
         const settingsData = {
             committee_name: document.getElementById("committee_name").value.trim(),
             committee_address: document.getElementById("committee_address").value.trim(),
-            wallpaper_opacity: document.getElementById("wallpaper_opacity").value
+            wallpaper_opacity: document.getElementById("wallpaper_opacity").value,
+            sms_api_url: document.getElementById("sms_api_url").value.trim(),
+            sms_api_key: document.getElementById("sms_api_key").value.trim(),
+            sms_sender_id: document.getElementById("sms_sender_id").value.trim(),
+            sms_auto_send: document.getElementById("sms_auto_send").checked ? "true" : "false"
         };
 
         if (lordPhotoBase64) settingsData.lord_photo_base64 = lordPhotoBase64;
@@ -191,7 +228,7 @@
             const data = await res.json();
             if (data.success) {
                 invalidateCache();
-                alert("समिति सेटिंग्स सफलतापूर्वक अपडेट की गई!");
+                showToast("समिति सेटिंग्स सफलतापूर्वक अपडेट की गई!");
                 window.location.reload();
             } else {
                 errDiv.innerText = "Error: " + data.message;
