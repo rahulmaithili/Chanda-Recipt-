@@ -1,298 +1,2236 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chanda System - Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 35px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Ganesh Utsav - Chanda ERP</title>
 
-        .kpi-card {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            position: relative;
-            overflow: hidden;
-        }
+  <!-- CDN Dependencies -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-        .kpi-card h3 {
-            margin: 0;
-            font-size: 28px;
-            color: var(--text);
-            font-weight: 700;
-        }
+  <style>
+    :root {
+      --orange: #e8590c;
+      --gold: #f39c12;
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #2b2320;
+      --muted: #8a7a6d;
+      --border: #e8e1d7;
+      --sidebar-bg: #1e282c;
+      --sidebar-color: #b8c7ce;
+      --sidebar-hover: #1a2226;
+      --header-bg: #ffffff;
+      --sidebar-width: 240px;
+      --r-md: 8px;
+    }
 
-        .kpi-card p {
-            margin: 5px 0 0 0;
-            font-size: 13px;
-            color: var(--muted);
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+    body.dark-mode {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #e0e0e0;
+      --muted: #a0a0a0;
+      --border: #333333;
+      --header-bg: #1e1e1e;
+    }
 
-        .kpi-card i {
-            position: absolute;
-            right: 20px;
-            bottom: 20px;
-            font-size: 32px;
-            opacity: 0.15;
-            color: var(--orange);
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-        .charts-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh;
+      transition: background 0.2s, color 0.2s;
+    }
 
-        .chart-container {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); border-radius: 6px; }
 
-        .chart-container h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 15px;
-            font-weight: 700;
-            border-bottom: 2px solid var(--orange);
-            padding-bottom: 8px;
-            color: var(--text);
-        }
+    /* App Container Layout */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
 
-        @media (max-width: 768px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    /* Sidebar Styles */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      color: var(--sidebar-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      overflow-y: auto;
+      padding: 20px 15px;
+      transition: width 0.3s ease;
+    }
+
+    .sidebar.collapsed {
+      width: 70px;
+      padding: 20px 10px;
+    }
+
+    .sidebar-brand {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #fff;
+      text-align: center;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2c3b41;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .sidebar.collapsed .sidebar-brand span { display: none; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 9px 12px;
+      text-decoration: none;
+      color: var(--sidebar-color);
+      border-radius: 10px;
+      margin-bottom: 4px;
+      font-weight: 500;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, transform 0.15s;
+      white-space: nowrap;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      transform: translateX(3px);
+    }
+
+    .nav-item.active {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border-left: 3px solid var(--orange);
+    }
+
+    .nav-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 13px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    .sidebar.collapsed .nav-item span:not(.nav-icon) { display: none; }
+    .sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; }
+    .sidebar.collapsed .nav-icon { width: 36px; height: 36px; font-size: 15px; }
+
+    /* Main Content Wrapper */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 25px;
+      width: calc(100% - var(--sidebar-width));
+      transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+
+    .main-content.expanded {
+      margin-left: 70px;
+      width: calc(100% - 70px);
+    }
+
+    /* Header Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--header-bg);
+      padding: 10px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+
+    .nav-toggle {
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+    }
+
+    /* Common Card Styling */
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      margin-bottom: 20px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #fff;
+      background: var(--orange);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #d04f0a; }
+    .btn-secondary { background: #7f8c8d; }
+    .btn-secondary:hover { background: #6c7a7b; }
+    .btn-success { background: #2ecc40; }
+    .btn-success:hover { background: #27ae60; }
+    .btn-danger { background: #ff4136; }
+    .btn-danger:hover { background: #e02d22; }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13.5px;
+    }
+
+    th {
+      font-weight: bold;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    /* Slide-over Modal Layout */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .modal-content {
+      width: 500px;
+      max-width: 100%;
+      background: var(--card);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+      animation: slideIn 0.25s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: var(--bg);
+    }
+
+    /* Dynamic stats widgets */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .small-box {
+      border-radius: 8px;
+      position: relative;
+      display: block;
+      color: #fff;
+      overflow: hidden;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+
+    .small-box h3 { font-size: 28px; font-weight: bold; margin-bottom: 6px; }
+    .small-box p { font-size: 13px; opacity: 0.9; }
+    .small-box .icon {
+      position: absolute;
+      top: 10px; right: 15px;
+      font-size: 50px;
+      color: rgba(0,0,0,0.15);
+    }
+
+    .bg-orange { background: linear-gradient(135deg, #e8590c, #f39c12); }
+    .bg-green { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+    .bg-red { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+    .bg-blue { background: linear-gradient(135deg, #2980b9, #3498db); }
+
+    /* Login Screen Container */
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2c3e50, #1e282c);
+      padding: 15px;
+    }
+
+    .login-box {
+      width: 400px;
+      background: var(--card);
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+    }
+
+    /* Print styling rules */
+    @media print {
+      body * { visibility: hidden; }
+      .print-area, .print-area * { visibility: visible; }
+      .print-area {
+        position: absolute;
+        left: 0; top: 0;
+        width: 100%;
+        color: #000;
+        background: #fff;
+      }
+      .sidebar, .top-bar, .btn, .modal-overlay { display: none !important; }
+    }
+
+    /* Mobile Adaptations */
+    @media (max-width: 768px) {
+      .sidebar { display: none !important; }
+      .main-content { margin-left: 0 !important; width: 100% !important; padding: 15px !important; }
+      .form-grid { grid-template-columns: 1fr; }
+      .top-bar { padding: 10px 15px; }
+      .nav-toggle { display: none !important; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="main-content">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0;"><i class="fas fa-home"></i> <span id="lbl_dashboard">Dashboard</span></h2>
-        <button class="btn btn-dark" onclick="syncData()"><i class="fas fa-sync"></i> Sync Data</button>
-    </div>
+  <div id="root"></div>
 
-    <!-- Stats Grid -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <h3 id="stat_donation">₹0.00</h3>
-            <p id="lbl_total_donation">Total Donation</p>
-            <i class="fas fa-hand-holding-usd"></i>
-        </div>
-        <div class="kpi-card">
-            <h3 id="stat_expense" style="color:#ff4136;">₹0.00</h3>
-            <p id="lbl_total_expense">Total Expense</p>
-            <i class="fas fa-tags"></i>
-        </div>
-        <div class="kpi-card">
-            <h3 id="stat_balance" style="color:#2ecc40;">₹0.00</h3>
-            <p id="lbl_balance">Balance</p>
-            <i class="fas fa-wallet"></i>
-        </div>
-        <div class="kpi-card">
-            <h3 id="stat_my_collection">₹0.00</h3>
-            <p id="lbl_my_collection">My Collection</p>
-            <i class="fas fa-user-shield"></i>
-        </div>
-    </div>
+  <!-- Loading config functions -->
+  <script src="config.js"></script>
 
-    <!-- Charts Layout -->
-    <div class="charts-grid">
-        <div class="chart-container">
-            <h3 id="lbl_village_wise">Village-wise Collection</h3>
-            <canvas id="villageChart" style="max-height: 280px;"></canvas>
-        </div>
-        <div class="chart-container">
-            <h3 id="lbl_category_wise">Category-wise Expenses</h3>
-            <canvas id="categoryChart" style="max-height: 280px;"></canvas>
-        </div>
-    </div>
+  <!-- React code compiled with Babel -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-    <!-- Recent Donations -->
-    <div class="chart-container" style="margin-bottom: 20px;">
-        <h3 id="lbl_recent_donations">Recent Donations</h3>
-        <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
-                <thead>
-                    <tr style="border-bottom:2px solid var(--border); font-weight:bold; color:var(--muted);">
-                        <th style="padding:10px;">Receipt No</th>
-                        <th style="padding:10px;">Date</th>
-                        <th style="padding:10px;">Donor Name</th>
-                        <th style="padding:10px;">Village</th>
-                        <th style="padding:10px;">Amount</th>
-                        <th style="padding:10px;">Collected By</th>
-                    </tr>
-                </thead>
-                <tbody id="recent_donations_tbody">
-                    <!-- Dynamic -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    // React SPA Main Application Component
+    function ChandaApp() {
+      const [currentUser, setCurrentUser] = useState(getCurrentUser());
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [systemData, setSystemData] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [sidebarCollapsed, setSidebarCollapsed] = useState(localStorage.getItem("sidebar_collapsed") === "true");
+      const [darkMode, setDarkMode] = useState(localStorage.getItem("dark_mode") === "true");
+      
+      // Modal triggers
+      const [showDonationModal, setShowDonationModal] = useState(false);
+      const [showExpenseModal, setShowExpenseModal] = useState(false);
+      const [currentRecord, setCurrentRecord] = useState(null);
+      
+      // Print layouts
+      const [printRecord, setPrintRecord] = useState(null);
+      const [printType, setPrintType] = useState(''); // 'receipt' or 'voucher'
 
-<script src="config.js"></script>
-<script src="includes/header.js"></script>
-<script>
-    let villageChartInstance = null;
-    let categoryChartInstance = null;
-
-    document.addEventListener("DOMContentLoaded", async () => {
-        translateLabels();
-        await loadDashboard(false);
-    });
-
-    function translateLabels() {
-        document.getElementById("lbl_dashboard").innerText = __("dashboard");
-        document.getElementById("lbl_total_donation").innerText = __("total_donation");
-        document.getElementById("lbl_total_expense").innerText = __("total_expense");
-        document.getElementById("lbl_balance").innerText = __("balance");
-        document.getElementById("lbl_my_collection").innerText = __("my_collection");
-        document.getElementById("lbl_village_wise").innerText = __("village_wise");
-        document.getElementById("lbl_category_wise").innerText = __("category_wise");
-        document.getElementById("lbl_recent_donations").innerText = __("recent_donations");
-    }
-
-    async function syncData() {
-        await loadDashboard(true);
-    }
-
-    async function loadDashboard(forceSync = false) {
-        const sysData = await getSystemData(forceSync);
-        if (!sysData) return;
-
-        const donations = sysData.donations || [];
-        const expenses = sysData.expenses || [];
-        const user = getCurrentUser();
-
-        // 1. Calculate KPI Values
-        let totalDonation = 0;
-        donations.forEach(d => totalDonation += parseFloat(d.amount || 0));
-
-        let totalExpense = 0;
-        expenses.forEach(e => {
-            if (e.status === 'Approved' || e.status === 'approved') {
-                totalExpense += parseFloat(e.amount || 0);
-            }
-        });
-
-        const netBalance = totalDonation - totalExpense;
-
-        let myCollection = 0;
-        if (user) {
-            donations.forEach(d => {
-                if (d.collected_by_mobile === user.mobile) {
-                    myCollection += parseFloat(d.amount || 0);
-                }
-            });
+      useEffect(() => {
+        if (currentUser) {
+          fetchInitData();
         }
+      }, [currentUser]);
 
-        // Render KPIs
-        document.getElementById("stat_donation").innerText = '₹' + totalDonation.toLocaleString('en-IN', {minimumFractionDigits: 2});
-        document.getElementById("stat_expense").innerText = '₹' + totalExpense.toLocaleString('en-IN', {minimumFractionDigits: 2});
-        document.getElementById("stat_balance").innerText = '₹' + netBalance.toLocaleString('en-IN', {minimumFractionDigits: 2});
-        document.getElementById("stat_my_collection").innerText = '₹' + myCollection.toLocaleString('en-IN', {minimumFractionDigits: 2});
-
-        // 2. Render Recent Donations Table
-        const recentTbody = document.getElementById("recent_donations_tbody");
-        recentTbody.innerHTML = "";
-        
-        // Sort donations by date / timestamp descending, take top 5
-        const sortedDonations = [...donations].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
-        
-        if (sortedDonations.length === 0) {
-            recentTbody.innerHTML = `<tr><td colspan="6" style="padding:15px; text-align:center; color:var(--muted);">${__('no_records_found')}</td></tr>`;
+      useEffect(() => {
+        if (darkMode) {
+          document.body.classList.add("dark-mode");
         } else {
-            sortedDonations.forEach(d => {
-                recentTbody.innerHTML += `
-                    <tr style="border-bottom: 1px solid var(--border);">
-                        <td style="padding:10px;">#${d.receipt_no}</td>
-                        <td style="padding:10px;">${new Date(d.timestamp).toLocaleDateString('en-IN')}</td>
-                        <td style="padding:10px;"><strong>${d.donor_name}</strong></td>
-                        <td style="padding:10px;">${d.village}</td>
-                        <td style="padding:10px; font-weight:600; color:#27ae60;">₹${parseFloat(d.amount).toFixed(2)}</td>
-                        <td style="padding:10px;">${d.collected_by_name}</td>
-                    </tr>
-                `;
-            });
+          document.body.classList.remove("dark-mode");
         }
+        localStorage.setItem("dark_mode", darkMode ? "true" : "false");
+      }, [darkMode]);
 
-        // 3. Render Village Wise Pie Chart
-        const villageSums = {};
-        donations.forEach(d => {
+      // Call API to fetch fresh initialize database state
+      const fetchInitData = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(`${API_URL}?action=getInitData&festival_id=${getViewingFestivalId()}`);
+          const data = await res.json();
+          if (data.success) {
+            setSystemData(data);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+          } else {
+            showToast("डेटा सिंक करने में विफल: " + data.message, "error");
+          }
+        } catch(e) {
+          showToast("नेटवर्क त्रुटि: " + e.message, "error");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleLogin = async (mobile, password) => {
+        setLoading(true);
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ action: "login", mobile, password })
+          });
+          const data = await res.json();
+          if (data.success) {
+            localStorage.setItem("currentUser", JSON.stringify(data.user));
+            setCurrentUser(data.user);
+            showToast("लॉगिन सफल!");
+          } else {
+            Swal.fire({ text: data.message, icon: 'error', confirmButtonColor: '#ff851b' });
+          }
+        } catch(e) {
+          Swal.fire({ text: "कनेक्शन एरर: " + e.message, icon: 'error', confirmButtonColor: '#ff851b' });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem("currentUser");
+        invalidateCache();
+        setCurrentUser(null);
+        setSystemData(null);
+      };
+
+      // Perform unified write operations to App Sheets
+      const handleSaveRecord = async (action, payload) => {
+        setLoading(true);
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+              action: action,
+              currentUser: currentUser,
+              ...payload
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast("रिकॉर्ड सफलतापूर्वक सुरक्षित किया गया!");
+            fetchInitData(); // refresh state
+            return true;
+          } else {
+            Swal.fire({ text: "सुरक्षित करने में त्रुटि: " + data.message, icon: 'error', confirmButtonColor: '#ff851b' });
+            return false;
+          }
+        } catch (e) {
+          Swal.fire({ text: "नेटवर्क त्रुटि: " + e.message, icon: 'error', confirmButtonColor: '#ff851b' });
+          return false;
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleDeleteRecord = (table, keyColumn, value) => {
+        confirmAction(
+          "क्या आप वाकई इसे हटाना चाहते हैं?",
+          "यह कार्रवाई पूर्ववत नहीं की जा सकती।",
+          async () => {
+            setLoading(true);
+            try {
+              const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                  action: "deleteRecord",
+                  currentUser: currentUser,
+                  table: table,
+                  keyColumn: keyColumn,
+                  value: value
+                })
+              });
+              const data = await res.json();
+              if (data.success) {
+                showToast("सफलतापूर्वक हटा दिया गया!");
+                fetchInitData();
+              } else {
+                Swal.fire({ text: "हटाने में त्रुटि: " + data.message, icon: 'error' });
+              }
+            } catch(e) {
+              Swal.fire({ text: "नेटवर्क त्रुटि: " + e.message, icon: 'error' });
+            } finally {
+              setLoading(false);
+            }
+          }
+        );
+      };
+
+      if (!currentUser) {
+        return <LoginScreen onLogin={handleLogin} loading={loading} />;
+      }
+
+      if (!systemData) {
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div className="sync-loader" style={{ width: '40px', height: '40px', borderWidth: '4px', marginBottom: '15px' }}></div>
+              <h4 style={{ color: 'var(--orange)' }}>लोड हो रहा है... कृपया प्रतीक्षा करें</h4>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="app-container">
+          {/* Main Layout Navigation Components */}
+          <Sidebar 
+            collapsed={sidebarCollapsed} 
+            setCollapsed={(val) => { setSidebarCollapsed(val); localStorage.setItem("sidebar_collapsed", val ? "true" : "false"); }} 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            user={currentUser}
+            onLogout={handleLogout}
+          />
+          
+          <div className={`main-content ${sidebarCollapsed ? 'expanded' : ''}`}>
+            <Topbar 
+              user={currentUser} 
+              loading={loading} 
+              onRefresh={fetchInitData} 
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
+              systemData={systemData}
+            />
+
+            {activeTab === 'dashboard' && <DashboardView systemData={systemData} user={currentUser} setActiveTab={setActiveTab} />}
+            {activeTab === 'donations' && (
+              <DonationsView 
+                systemData={systemData} 
+                onDelete={handleDeleteRecord} 
+                onEdit={(rec) => { setCurrentRecord(rec); setShowDonationModal(true); }}
+                onAdd={() => { setCurrentRecord(null); setShowDonationModal(true); }}
+                onPrint={(rec) => { setPrintRecord(rec); setPrintType('receipt'); setTimeout(() => window.print(), 100); }}
+              />
+            )}
+            {activeTab === 'expenses' && (
+              <ExpensesView 
+                systemData={systemData} 
+                onDelete={handleDeleteRecord} 
+                onEdit={(rec) => { setCurrentRecord(rec); setShowExpenseModal(true); }}
+                onAdd={() => { setCurrentRecord(null); setShowExpenseModal(true); }}
+                onPrint={(rec) => { setPrintRecord(rec); setPrintType('voucher'); setTimeout(() => window.print(), 100); }}
+              />
+            )}
+            {activeTab === 'handovers' && <HandoversView systemData={systemData} user={currentUser} onAction={handleSaveRecord} />}
+            {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
+            {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
+            {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
+            {activeTab === 'users' && <UsersView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
+            {activeTab === 'roles' && <RbacView systemData={systemData} onAction={handleSaveRecord} />}
+            {activeTab === 'festivals' && <FestivalsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
+            {activeTab === 'settings' && <SettingsView systemData={systemData} user={currentUser} onAction={handleSaveRecord} onRefresh={fetchInitData} />}
+            {activeTab === 'profile' && <ProfileView user={currentUser} onAction={handleSaveRecord} onLogout={handleLogout} />}
+          </div>
+
+          {/* Modal Components */}
+          {showDonationModal && (
+            <DonationFormModal 
+              record={currentRecord} 
+              villages={systemData.villages} 
+              onClose={() => setShowDonationModal(false)} 
+              onSave={async (payload) => {
+                const ok = await handleSaveRecord(currentRecord ? "updateDonation" : "addDonation", { donation: payload });
+                if (ok) setShowDonationModal(false);
+              }}
+            />
+          )}
+
+          {showExpenseModal && (
+            <ExpenseFormModal 
+              record={currentRecord} 
+              categories={systemData.categories} 
+              accounts={systemData.accounts}
+              onClose={() => setShowExpenseModal(false)} 
+              onSave={async (payload) => {
+                const ok = await handleSaveRecord(currentRecord ? "updateExpense" : "addExpense", { expense: payload });
+                if (ok) setShowExpenseModal(false);
+              }}
+            />
+          )}
+
+          {/* Print Render Container overlays */}
+          {printRecord && (
+            <div className="print-area">
+              {printType === 'receipt' ? (
+                <PrintReceipt slip={printRecord} settings={systemData.settings} />
+              ) : (
+                <PrintVoucher slip={printRecord} settings={systemData.settings} />
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ==========================================
+    // SUB-COMPONENTS & RENDER SCREENS
+    // ==========================================
+
+    // LOGIN SCREEN
+    function LoginScreen({ onLogin, loading }) {
+      const [mobile, setMobile] = useState('');
+      const [password, setPassword] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!mobile || !password) return alert("कृपया मोबाइल और पासवर्ड दर्ज करें।");
+        onLogin(mobile, password);
+      };
+
+      return (
+        <div className="login-container">
+          <div className="login-box">
+            <div style={{ textAlignment: 'center', marginBottom: '20px' }}>
+              <i className="fas fa-om" style={{ fontSize: '40px', color: '#ff851b' }}></i>
+              <h2 style={{ marginTop: '10px', color: '#e8590c', fontWeight: 'bold' }}>गणेश उत्सव समिति</h2>
+              <p style={{ fontSize: '12px', color: '#8a7a6d' }}>चंदा एवं व्यय प्रबंधन प्रणाली (ERP)</p>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label><i className="fas fa-phone-alt"></i> मोबाइल नंबर (Mobile Number)</label>
+                <input type="text" placeholder="दर्ज करें" value={mobile} onChange={e => setMobile(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label><i className="fas fa-lock"></i> पासवर्ड (Password)</label>
+                <input type="password" placeholder="दर्ज करें" value={password} onChange={e => setPassword(e.target.value)} required />
+              </div>
+              <button type="submit" className="btn" style={{ width: '100%', marginTop: '10px' }} disabled={loading}>
+                {loading ? 'प्रमाणित किया जा रहा है...' : 'लॉगिन करें'}
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // NAVIGATION SIDEBAR
+    function Sidebar({ collapsed, setCollapsed, activeTab, setActiveTab, user, onLogout }) {
+      const isSuper = user.role === "Super Admin" || user.role === "admin";
+      
+      const menu = [
+        { key: 'dashboard', label: 'डैशबोर्ड', icon: 'fa-chart-pie', color: '#e8590c', bg: 'linear-gradient(135deg,#e8590c,#f39c12)' },
+        { key: 'donations', label: 'चंदा प्रविष्टि', icon: 'fa-hand-holding-usd', color: '#27ae60', bg: 'linear-gradient(135deg,#27ae60,#2ecc71)' },
+        { key: 'expenses', label: 'खर्चा प्रविष्टि', icon: 'fa-tags', color: '#c0392b', bg: 'linear-gradient(135deg,#c0392b,#e74c3c)' },
+        { key: 'handovers', label: 'जमा व हैंडओवर', icon: 'fa-wallet', color: '#2980b9', bg: 'linear-gradient(135deg,#2980b9,#3498db)' },
+        { key: 'villages', label: 'गाँव सूची', icon: 'fa-map-marked-alt', color: '#8e44ad', bg: 'linear-gradient(135deg,#8e44ad,#9b59b6)' },
+      ];
+
+      return (
+        <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-brand">
+            <i className="fas fa-om" style={{ color: '#f39c12' }}></i>
+            <span>Ganesh ERP</span>
+            <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
+              <i className={`fas ${collapsed ? 'fa-angle-right' : 'fa-angle-left'}`}></i>
+            </button>
+          </div>
+          
+          <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '1px solid #2c3b41', paddingBottom: '15px' }}>
+            <div style={{ width: collapsed ? '40px' : '60px', height: collapsed ? '40px' : '60px', borderRadius: '50%', background: '#ff851b', color: '#fff', display: 'inline-flex', alignItems: 'center', justifySpace: 'center', fontWeight: 'bold', fontSize: '20px', margin: '0 auto 8px', justifyContent: 'center' }}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            {!collapsed && (
+              <div>
+                <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>{user.name}</div>
+                <div style={{ color: '#8a7a6d', fontSize: '10px' }}>{user.role}</div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ flex: 1 }}>
+            {menu.map(item => (
+              <div 
+                key={item.key} 
+                className={`nav-item ${activeTab === item.key ? 'active' : ''}`}
+                onClick={() => setActiveTab(item.key)}
+              >
+                <span className="nav-icon" style={{ background: item.bg }}><i className={`fas ${item.icon}`}></i></span>
+                <span>{item.label}</span>
+              </div>
+            ))}
+
+            {isSuper && (
+              <>
+                <div style={{ padding: '10px 12px 5px', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+                  {!collapsed && 'प्रणाली नियंत्रण'}
+                </div>
+                <div className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
+                  <span className="nav-icon" style={{ background: '#d35400' }}><i className="fas fa-list-ul"></i></span>
+                  <span>व्यय श्रेणियां</span>
+                </div>
+                <div className={`nav-item ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => setActiveTab('accounts')}>
+                  <span className="nav-icon" style={{ background: '#7f8c8d' }}><i className="fas fa-piggy-bank"></i></span>
+                  <span>बैंक व वॉलेट्स</span>
+                </div>
+                <div className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+                  <span className="nav-icon" style={{ background: '#1a5276' }}><i className="fas fa-users-cog"></i></span>
+                  <span>कलेक्टर्स प्रबंधन</span>
+                </div>
+                <div className={`nav-item ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => setActiveTab('roles')}>
+                  <span className="nav-icon" style={{ background: '#6a1b9a' }}><i className="fas fa-key"></i></span>
+                  <span>अनुमति मैट्रिक्स (RBAC)</span>
+                </div>
+                <div className={`nav-item ${activeTab === 'festivals' ? 'active' : ''}`} onClick={() => setActiveTab('festivals')}>
+                  <span className="nav-icon" style={{ background: '#f1c40f' }}><i className="fas fa-calendar-alt"></i></span>
+                  <span>उत्सव सत्र</span>
+                </div>
+                <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+                  <span className="nav-icon" style={{ background: '#5d6d7e' }}><i className="fas fa-sliders-h"></i></span>
+                  <span>समिति सेटिंग्स</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div style={{ borderTop: '1px solid #2c3b41', paddingTop: '15px' }}>
+            <div className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+              <span className="nav-icon" style={{ background: '#6c3483' }}><i className="fas fa-user-cog"></i></span>
+              <span>प्रोफ़ाइल संपादित करें</span>
+            </div>
+            <div className="nav-item" onClick={onLogout}>
+              <span className="nav-icon" style={{ background: '#c0392b' }}><i className="fas fa-sign-out-alt"></i></span>
+              <span>लॉगआउट</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // TOPBAR HEADER
+    function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, systemData }) {
+      const settings = systemData.settings || {};
+      return (
+        <div className="top-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <div style={{ lineHeight: '1.2' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: 'var(--orange)', display: 'flex', alignItems: 'center' }}>
+                {settings.committee_name || 'युवा गणेश उत्सव समिति'}
+                {loading && <span className="sync-loader" title="Syncing data..."></span>}
+              </h4>
+              <small style={{ fontSize: '10px', color: 'var(--muted)' }}>{settings.committee_address || 'ग्राम - बालोद'}</small>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={onRefresh} style={{ minHeight: '34px', padding: '5px 10px' }}>
+              <i className="fas fa-sync-alt"></i> {!loading && 'सिंक करें'}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={() => setDarkMode(!darkMode)} style={{ minHeight: '34px', padding: '5px 10px', background: 'none', border: '1px solid var(--border)', color: 'var(--text)' }}>
+              <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+            </button>
+            <select 
+              value={getViewingFestivalId()} 
+              onChange={(e) => setViewingFestivalId(e.target.value)}
+              style={{ padding: '5px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)', fontSize: '12px', cursor: 'pointer' }}
+            >
+              {systemData.festivals && systemData.festivals.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      );
+    }
+
+    // DASHBOARD VIEW SCREEN
+    function DashboardView({ systemData, user, setActiveTab }) {
+      const donations = systemData.donations || [];
+      const expenses = systemData.expenses || [];
+      
+      let totalDonation = 0;
+      donations.forEach(d => totalDonation += parseFloat(d.amount || 0));
+
+      let totalExpense = 0;
+      expenses.forEach(e => {
+        if (e.status === 'Approved') {
+          totalExpense += parseFloat(e.amount || 0);
+        }
+      });
+
+      const netBalance = totalDonation - totalExpense;
+
+      let myCollection = 0;
+      donations.forEach(d => {
+        if (d.collected_by_mobile == user.mobile) {
+          myCollection += parseFloat(d.amount || 0);
+        }
+      });
+
+      // Render chart
+      const chartRef = useRef(null);
+      useEffect(() => {
+        if (chartRef.current) {
+          // Village-wise calculation
+          const villageSums = {};
+          donations.forEach(d => {
             villageSums[d.village] = (villageSums[d.village] || 0) + parseFloat(d.amount || 0);
-        });
+          });
+          const labels = Object.keys(villageSums);
+          const values = Object.values(villageSums);
 
-        const vLabels = Object.keys(villageSums);
-        const vValues = Object.values(villageSums);
-
-        if (villageChartInstance) villageChartInstance.destroy();
-        const ctxV = document.getElementById("villageChart").getContext("2d");
-        villageChartInstance = new Chart(ctxV, {
+          const myChart = new Chart(chartRef.current, {
             type: 'pie',
             data: {
-                labels: vLabels,
-                datasets: [{
-                    data: vValues,
-                    backgroundColor: ['#2ecc40', '#ff851b', '#0074d9', '#ff4136', '#b10dc9', '#ffdc00', '#39cccc', '#01ff70']
-                }]
+              labels: labels,
+              datasets: [{
+                data: values,
+                backgroundColor: ['#2ecc40', '#ff851b', '#0074d9', '#ff4136', '#b10dc9', '#ffdc00', '#39cccc']
+              }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false
+              responsive: true,
+              maintainAspectRatio: false
             }
-        });
+          });
+          return () => myChart.destroy();
+        }
+      }, [donations]);
 
-        // 4. Render Category Wise Expenses Bar Chart
-        const catSums = {};
-        expenses.forEach(e => {
-            if (e.status === 'Approved' || e.status === 'approved') {
-                catSums[e.category] = (catSums[e.category] || 0) + parseFloat(e.amount || 0);
-            }
-        });
+      return (
+        <div className="dashboard-view">
+          <div className="stats-grid">
+            <div className="small-box bg-orange" onClick={() => setActiveTab('donations')} style={{ cursor: 'pointer' }}>
+              <h3>₹{totalDonation.toLocaleString('en-IN')}</h3>
+              <p>कुल चंदा संग्रह (Total Donations)</p>
+              <i className="fas fa-hand-holding-usd icon"></i>
+            </div>
+            <div className="small-box bg-red" onClick={() => setActiveTab('expenses')} style={{ cursor: 'pointer' }}>
+              <h3>₹{totalExpense.toLocaleString('en-IN')}</h3>
+              <p>कुल स्वीकृत खर्चे (Total Approved Expenses)</p>
+              <i className="fas fa-tags icon"></i>
+            </div>
+            <div className="small-box bg-blue">
+              <h3>₹{netBalance.toLocaleString('en-IN')}</h3>
+              <p>कुल बचत बैलेंस (Available Balance)</p>
+              <i className="fas fa-piggy-bank icon"></i>
+            </div>
+            <div className="small-box bg-green" onClick={() => setActiveTab('donations')} style={{ cursor: 'pointer' }}>
+              <h3>₹{myCollection.toLocaleString('en-IN')}</h3>
+              <p>मेरा चंदा संग्रह (My Collection)</p>
+              <i className="fas fa-user-check icon"></i>
+            </div>
+          </div>
 
-        const cLabels = Object.keys(catSums);
-        const cValues = Object.values(catSums);
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
+            <div className="card">
+              <h3 style={{ marginBottom: '15px', color: 'var(--orange)' }}><i className="fas fa-chart-bar"></i> गाँव के अनुसार संग्रह (Village-wise Collections)</h3>
+              <div style={{ height: '250px' }}>
+                <canvas ref={chartRef}></canvas>
+              </div>
+            </div>
 
-        if (categoryChartInstance) categoryChartInstance.destroy();
-        const ctxC = document.getElementById("categoryChart").getContext("2d");
-        categoryChartInstance = new Chart(ctxC, {
-            type: 'bar',
-            data: {
-                labels: cLabels,
-                datasets: [{
-                    label: 'Expenses (₹)',
-                    data: cValues,
-                    backgroundColor: '#ff851b',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
+            <div className="card">
+              <h3 style={{ marginBottom: '15px', color: 'var(--orange)' }}><i className="fas fa-history"></i> हालिया चंदा संग्रह (Recent Contributions)</h3>
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>रसीद</th>
+                      <th>दाता का नाम</th>
+                      <th>राशि</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {donations.slice(0, 5).map(d => (
+                      <tr key={d.receipt_no}>
+                        <td>#{d.receipt_no}</td>
+                        <td>{d.donor_name}</td>
+                        <td style={{ fontWeight: 'bold', color: '#2ecc40' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    {donations.length === 0 && (
+                      <tr><td colSpan="3" style={{ textAlign: 'center' }}>कोई रिकॉर्ड नहीं मिला</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
     }
-</script>
+
+    // DONATIONS LIST VIEW
+    function DonationsView({ systemData, onDelete, onEdit, onAdd, onPrint }) {
+      const [search, setSearch] = useState('');
+      const [village, setVillage] = useState('All');
+      const donations = systemData.donations || [];
+
+      const filtered = donations.filter(d => {
+        const matchesSearch = d.donor_name.toLowerCase().includes(search.toLowerCase()) || 
+                              d.donor_mobile.includes(search) || 
+                              d.receipt_no.includes(search);
+        const matchesVillage = village === 'All' || d.village === village;
+        return matchesSearch && matchesVillage;
+      });
+
+      return (
+        <div className="card">
+          <div className="section-header">
+            <h2><i className="fas fa-hand-holding-usd"></i> चंदा संग्रह रसीदें ({filtered.length})</h2>
+            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> नया चंदा प्रविष्ट करें</button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '15px', margin: '15px 0' }}>
+            <input 
+              type="text" 
+              placeholder="खोजें: नाम, मोबाइल या रसीद क्र..." 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)' }}
+            />
+            <select 
+              value={village} 
+              onChange={e => setVillage(e.target.value)}
+              style={{ width: '200px', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)' }}
+            >
+              <option value="All">सभी गाँव (All Villages)</option>
+              {systemData.villages && systemData.villages.map(v => (
+                <option key={v.id} value={v.name}>{v.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>रसीद क्रमांक</th>
+                  <th>दिनांक</th>
+                  <th>दाता का नाम</th>
+                  <th>गाँव</th>
+                  <th>चंदा राशि</th>
+                  <th>भुगतान प्रकार</th>
+                  <th>प्राप्तकर्ता</th>
+                  <th>कार्रवाई</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(d => (
+                  <tr key={d.receipt_no}>
+                    <td>#{d.receipt_no}</td>
+                    <td>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
+                    <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--muted)' }}>{d.donor_mobile}</small></td>
+                    <td>{d.village}</td>
+                    <td style={{ fontWeight: 'bold', color: '#2ecc40' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                    <td><span style={{ padding: '3px 8px', borderRadius: '20px', background: d.mode === 'Cash' ? '#e2e8f0' : '#d2f4ea', color: d.mode === 'Cash' ? '#4a5568' : '#0f766e', fontSize: '11px', fontWeight: 'bold' }}>{d.mode}</span></td>
+                    <td>{d.collected_by_name}</td>
+                    <td>
+                      <button className="action-icon edit-icon" onClick={() => onEdit(d)} title="Edit"><i className="fas fa-edit"></i></button>
+                      <button className="action-icon receipt-icon" onClick={() => onPrint(d)} title="Print"><i className="fas fa-print"></i></button>
+                      <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} title="Delete"><i className="fas fa-trash-alt"></i></button>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई चंदा रसीद नहीं मिली।</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // EXPENSES LIST VIEW
+    function ExpensesView({ systemData, onDelete, onEdit, onAdd, onPrint }) {
+      const [search, setSearch] = useState('');
+      const [category, setCategory] = useState('All');
+      const expenses = systemData.expenses || [];
+
+      const filtered = expenses.filter(e => {
+        const matchesSearch = e.title.toLowerCase().includes(search.toLowerCase()) || 
+                              e.expense_no.includes(search);
+        const matchesCategory = category === 'All' || e.category === category;
+        return matchesSearch && matchesCategory;
+      });
+
+      return (
+        <div className="card">
+          <div className="section-header">
+            <h2><i className="fas fa-tags"></i> समिति के व्यय (Expenses Log) ({filtered.length})</h2>
+            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> नया खर्च दर्ज करें</button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '15px', margin: '15px 0' }}>
+            <input 
+              type="text" 
+              placeholder="खोजें: खर्च नाम या वाउचर क्र..." 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)' }}
+            />
+            <select 
+              value={category} 
+              onChange={e => setCategory(e.target.value)}
+              style={{ width: '200px', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)' }}
+            >
+              <option value="All">सभी श्रेणियां (All Categories)</option>
+              {systemData.categories && systemData.categories.map(c => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>वाउचर क्रमांक</th>
+                  <th>दिनांक</th>
+                  <th>खर्च विवरण</th>
+                  <th>श्रेणी</th>
+                  <th>राशि</th>
+                  <th>भुगतान प्रकार</th>
+                  <th>स्थिति</th>
+                  <th>कार्रवाई</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(ex => (
+                  <tr key={ex.expense_no}>
+                    <td>#{ex.expense_no}</td>
+                    <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
+                    <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--muted)' }}>{ex.note}</small></td>
+                    <td>{ex.category}</td>
+                    <td style={{ fontWeight: 'bold', color: '#c0392b' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
+                    <td>{ex.mode}</td>
+                    <td>
+                      <span style={{ 
+                        padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
+                        background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3',
+                        color: ex.status === 'Approved' ? '#0f766e' : '#a46000'
+                      }}>{ex.status}</span>
+                    </td>
+                    <td>
+                      <button className="action-icon edit-icon" onClick={() => onEdit(ex)} title="Edit"><i className="fas fa-edit"></i></button>
+                      <button className="action-icon receipt-icon" onClick={() => onPrint(ex)} title="Print"><i className="fas fa-print"></i></button>
+                      <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} title="Delete"><i className="fas fa-trash-alt"></i></button>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई खर्चा प्रविष्टि नहीं मिली।</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // HANDOVERS VIEW SCREEN
+    function HandoversView({ systemData, user, onAction }) {
+      const [amount, setAmount] = useState('');
+      const [accountId, setAccountId] = useState('1');
+      const [remark, setRemark] = useState('');
+      const isSuper = user.role === "Super Admin" || user.role === "admin";
+
+      const handovers = systemData.handovers || [];
+      const accounts = systemData.accounts || [];
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!amount || parseFloat(amount) <= 0) return alert("कृपया सही राशि डालें।");
+        
+        const ok = await onAction("submitHandover", {
+          handover: {
+            collector_name: user.name,
+            collector_mobile: user.mobile,
+            amount: parseFloat(amount),
+            mode: "Cash",
+            transfer_date: new Date().toISOString().slice(0, 10),
+            account_id: accountId,
+            festival_id: getViewingFestivalId(),
+            remark: remark
+          }
+        });
+        if (ok) {
+          setAmount('');
+          setRemark('');
+        }
+      };
+
+      const handleApprove = async (id) => {
+        confirmAction(
+          "क्या आप वाकई इस हैंडओवर को मंजूरी देना चाहते हैं?",
+          "इससे आपके चुने हुए खाते में राशि जमा हो जाएगी।",
+          () => {
+            onAction("approveHandover", { handover_id: id });
+          }
+        );
+      };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-paper-plane"></i> हैंडओवर सबमिट करें</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>हैंडओवर राशि (Amount to Handover)</label>
+                <input type="number" placeholder="₹ दर्ज करें" value={amount} onChange={e => setAmount(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>जमा करने का माध्यम (Destination Account)</label>
+                <select value={accountId} onChange={e => setAccountId(e.target.value)}>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.account_name} (Bal: ₹{parseFloat(acc.balance).toFixed(2)})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>रिमार्क / टिप्पणी (Remark)</label>
+                <textarea rows="3" placeholder="वैकल्पिक टिप्पणी" value={remark} onChange={e => setRemark(e.target.value)}></textarea>
+              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>सबमिट करें</button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-wallet"></i> हैंडओवर इतिहास और अनुमोदन</h3>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>कलेक्टर का नाम</th>
+                    <th>राशि</th>
+                    <th>खाता</th>
+                    <th>स्थिति</th>
+                    <th>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {handovers.map(h => {
+                    const accName = accounts.find(a => a.id == h.account_id)?.account_name || h.account_id;
+                    return (
+                      <tr key={h.id}>
+                        <td><strong>{h.collector_name}</strong><br/><small style={{ color: 'var(--muted)' }}>{h.collector_mobile}</small></td>
+                        <td style={{ fontWeight: 'bold' }}>₹{parseFloat(h.amount).toFixed(2)}</td>
+                        <td>{accName}</td>
+                        <td>
+                          <span style={{ 
+                            padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
+                            background: h.status === 'Approved' ? '#d2f4ea' : '#fff0d3',
+                            color: h.status === 'Approved' ? '#0f766e' : '#a46000'
+                          }}>{h.status}</span>
+                        </td>
+                        <td>
+                          {isSuper && h.status === "Pending" && (
+                            <button className="btn btn-success btn-sm" onClick={() => handleApprove(h.id)} style={{ minHeight: '28px', padding: '3px 8px', fontSize: '11px' }}>
+                              मंजूर करें
+                            </button>
+                          )}
+                          {h.status === "Approved" && <small style={{ color: 'var(--muted)' }}>Approved by {h.approved_by}</small>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {handovers.length === 0 && (
+                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई हैंडओवर अनुरोध नहीं मिला।</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // VILLAGES MASTER VIEW
+    function VillagesView({ systemData, onAction, onDelete }) {
+      const [name, setName] = useState('');
+      const [editId, setEditId] = useState(null);
+      const villages = systemData.villages || [];
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        const ok = await onAction("saveVillage", { village: { id: editId, name: name.trim() } });
+        if (ok) {
+          setName('');
+          setEditId(null);
+        }
+      };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-map-marker-alt"></i> {editId ? 'गाँव का नाम बदलें' : 'नया गाँव जोड़ें'}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>गाँव का नाम (Village Name)</label>
+                <input type="text" placeholder="गाँव का नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
+                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
+              </div>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-map-marked-alt"></i> गाँव की सूची</h3>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>गाँव क्रमांक</th>
+                    <th>गाँव का नाम</th>
+                    <th>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {villages.map((v, idx) => (
+                    <tr key={v.id}>
+                      <td>#{idx + 1}</td>
+                      <td><strong>{v.name}</strong></td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(v.id); setName(v.name); }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("villages", "id", v.id)}><i className="fas fa-trash-alt"></i></button>
+                      </td>
+                    </tr>
+                  ))}
+                  {villages.length === 0 && (
+                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई गाँव दर्ज नहीं है।</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // EXPENSE CATEGORIES VIEW
+    function CategoriesView({ systemData, onAction, onDelete }) {
+      const [name, setName] = useState('');
+      const [editId, setEditId] = useState(null);
+      const categories = systemData.categories || [];
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        const ok = await onAction("saveCategory", { category: { id: editId, name: name.trim() } });
+        if (ok) {
+          setName('');
+          setEditId(null);
+        }
+      };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-list-ul"></i> {editId ? 'खर्च श्रेणी बदलें' : 'नई खर्च श्रेणी जोड़ें'}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>श्रेणी का नाम (Category Name)</label>
+                <input type="text" placeholder="श्रेणी नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
+                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
+              </div>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-folder-open"></i> खर्चे की श्रेणियां</h3>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>क्रमांक</th>
+                    <th>श्रेणी नाम</th>
+                    <th>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.map((c, idx) => (
+                    <tr key={c.id}>
+                      <td>#{idx + 1}</td>
+                      <td><strong>{c.name}</strong></td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(c.id); setName(c.name); }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("categories", "id", c.id)}><i className="fas fa-trash-alt"></i></button>
+                      </td>
+                    </tr>
+                  ))}
+                  {categories.length === 0 && (
+                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई व्यय श्रेणी दर्ज नहीं है।</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // BANK & WALLETS VIEW SCREEN
+    function AccountsView({ systemData, onAction, onDelete }) {
+      const [name, setName] = useState('');
+      const [balance, setBalance] = useState('');
+      const [editId, setEditId] = useState(null);
+      const accounts = systemData.accounts || [];
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        const ok = await onAction("saveAccount", {
+          account: {
+            id: editId,
+            account_name: name.trim(),
+            balance: editId ? undefined : parseFloat(balance || 0) // Balance set on creation only
+          }
+        });
+        if (ok) {
+          setName('');
+          setBalance('');
+          setEditId(null);
+        }
+      };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-piggy-bank"></i> {editId ? 'खाता बदलें' : 'नया बैंक/वॉलेट जोड़ें'}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>खाते का नाम (Wallet Name)</label>
+                <input type="text" placeholder="जैसे: SBI बैंक, PhonePe" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              {!editId && (
+                <div className="form-group">
+                  <label>प्रारंभिक जमा राशि (Opening Balance)</label>
+                  <input type="number" placeholder="₹0.00" value={balance} onChange={e => setBalance(e.target.value)} />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
+                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
+              </div>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-university"></i> पंजीकृत बैंक एवं वॉलेट्स</h3>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>क्रमांक</th>
+                    <th>खाते का नाम</th>
+                    <th>वर्तमान बैलेंस</th>
+                    <th>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {accounts.map((acc, idx) => (
+                    <tr key={acc.id}>
+                      <td>#{idx + 1}</td>
+                      <td><strong>{acc.account_name}</strong></td>
+                      <td style={{ fontWeight: 'bold', color: '#0f766e' }}>₹{parseFloat(acc.balance).toFixed(2)}</td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(acc.id); setName(acc.account_name); }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("accounts", "id", acc.id)}><i className="fas fa-trash-alt"></i></button>
+                      </td>
+                    </tr>
+                  ))}
+                  {accounts.length === 0 && (
+                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई बैंक खाता दर्ज नहीं है।</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // USERS / COLLECTORS VIEW SCREEN
+    function UsersView({ systemData, onAction, onDelete }) {
+      const [name, setName] = useState('');
+      const [mobile, setMobile] = useState('');
+      const [password, setPassword] = useState('');
+      const [role, setRole] = useState('Collector');
+      const [village, setVillage] = useState('');
+      const [targetDonation, setTargetDonation] = useState('');
+      const [status, setStatus] = useState('active');
+      const [editId, setEditId] = useState(null);
+
+      const users = systemData.users || [];
+      const villages = systemData.villages || [];
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim() || !mobile.trim()) return;
+        const ok = await onAction("saveUser", {
+          user: {
+            id: editId,
+            name: name.trim(),
+            mobile: mobile.trim(),
+            password: password ? password : (editId ? undefined : "123"), // Defaults to 123
+            role: role,
+            village: village,
+            target_donation: targetDonation ? parseFloat(targetDonation) : 0,
+            status: status,
+            allow_login: 1
+          }
+        });
+        if (ok) {
+          handleReset();
+        }
+      };
+
+      const handleReset = () => {
+        setName('');
+        setMobile('');
+        setPassword('');
+        setRole('Collector');
+        setVillage('');
+        setTargetDonation('');
+        setStatus('active');
+        setEditId(null);
+      };
+
+      const handleEdit = (u) => {
+        setEditId(u.id);
+        setName(u.name);
+        setMobile(u.mobile);
+        setPassword(''); // keep blank unless changing password
+        setRole(u.role || 'Collector');
+        setVillage(u.village || '');
+        setTargetDonation(u.target_donation || '');
+        setStatus(u.status || 'active');
+      };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-user-plus"></i> {editId ? 'कलेक्टर संपादित करें' : 'नया कलेक्टर / सदस्य जोड़ें'}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>पूरा नाम (Full Name)</label>
+                <input type="text" placeholder="कलेक्टर का नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>मोबाइल नंबर (यह लॉगिन ID होगी)</label>
+                <input type="text" placeholder="10 अंकों का मोबाइल दर्ज करें" value={mobile} onChange={e => setMobile(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>पासवर्ड (Password) {editId && '(बदलने के लिए ही भरें)'}</label>
+                <input type="password" placeholder={editId ? "अपरिवर्तित रहने दें" : "डिफ़ॉल्ट 123 है"} value={password} onChange={e => setPassword(e.target.value)} />
+              </div>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>भूमिका (Role)</label>
+                  <select value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="Collector">Collector (संग्रहकर्ता)</option>
+                    <option value="Admin">Admin (प्रबंधक)</option>
+                    <option value="Super Admin">Super Admin (मुख्य प्रशासक)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>स्थिति (Status)</label>
+                  <select value={status} onChange={e => setStatus(e.target.value)}>
+                    <option value="active">Active (सक्रिय)</option>
+                    <option value="inactive">Inactive (निष्क्रिय)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>असाइन किया गया गाँव</label>
+                  <select value={village} onChange={e => setVillage(e.target.value)}>
+                    <option value="">कोई भी नहीं (None)</option>
+                    {villages.map(v => (
+                      <option key={v.id} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>लक्ष्य संग्रह (Target Collection)</label>
+                  <input type="number" placeholder="₹0.00" value={targetDonation} onChange={e => setTargetDonation(e.target.value)} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
+                <button type="button" className="btn btn-secondary" onClick={handleReset}>साफ़ करें</button>
+              </div>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-users"></i> पंजीकृत कलेक्टर्स सूची</h3>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>कलेक्टर विवरण</th>
+                    <th>भूमिका (Role)</th>
+                    <th>असाइन गाँव</th>
+                    <th>स्थिति</th>
+                    <th>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.id}>
+                      <td><strong>{u.name}</strong><br/><small style={{ color: 'var(--muted)' }}>{u.mobile}</small></td>
+                      <td>{u.role}</td>
+                      <td>{u.village || 'N/A'}</td>
+                      <td>
+                        <span style={{ 
+                          padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
+                          background: u.status === 'active' ? '#d2f4ea' : '#f8d7da',
+                          color: u.status === 'active' ? '#0f766e' : '#721c24'
+                        }}>{u.status}</span>
+                      </td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => handleEdit(u)}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("users", "id", u.id)}><i className="fas fa-trash-alt"></i></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // RBAC PERMISSIONS MATRIX SCREEN
+    function RbacView({ systemData, onAction }) {
+      const roles = systemData.roles || [];
+      const pages = systemData.rbacPages || [];
+
+      const handleToggle = (roleKey, pageKey, permKey, currentValue) => {
+        onAction("toggleRbac", {
+          roleKey: roleKey,
+          pageKey: pageKey,
+          permKey: permKey,
+          value: !currentValue
+        });
+      };
+
+      return (
+        <div className="card">
+          <h2 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-key"></i> अनुमतियां मैट्रिक्स (Role-Based Access Control)</h2>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '20px' }}>
+            प्रत्येक भूमिका (Role) के लिए विशिष्ट पृष्ठों के अनुमतियों (View, Add, Edit, Delete) को यहां से नियंत्रित करें। Super Admin अनुमतियां हमेशा के लिए लॉक हैं।
+          </p>
+
+          {roles.map(role => {
+            let perms = {};
+            try {
+              perms = JSON.parse(role.permissions || '{}');
+            } catch(e) {}
+
+            return (
+              <div key={role.role_key} style={{ marginBottom: '30px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ background: role.color || '#2c3e50', color: '#fff', padding: '10px 15px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{role.label}</span>
+                  {Number(role.is_super) === 1 && <span style={{ background: 'rgba(255,255,255,0.2)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px' }}>Locked (Super Owner)</span>}
+                </div>
+                <div className="table-container" style={{ marginTop: 0 }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>मॉड्यूल / पृष्ठ (Screen)</th>
+                        <th style={{ textAlign: 'center' }}>देखें (View)</th>
+                        <th style={{ textAlign: 'center' }}>जोड़ें (Add)</th>
+                        <th style={{ textAlign: 'center' }}>सुधारें (Edit)</th>
+                        <th style={{ textAlign: 'center' }}>मिटाएं (Delete)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pages.map(page => {
+                        const pPerm = perms[page.key] || { v: 0, a: 0, e: 0, d: 0 };
+                        const isLocked = Number(role.is_super) === 1;
+
+                        return (
+                          <tr key={page.key}>
+                            <td>
+                              <strong>{page.label}</strong><br/>
+                              <small style={{ color: 'var(--muted)' }}>{page.group}</small>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={!!pPerm.v} 
+                                disabled={isLocked}
+                                onChange={() => handleToggle(role.role_key, page.key, 'v', pPerm.v)} 
+                              />
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={!!pPerm.a} 
+                                disabled={isLocked}
+                                onChange={() => handleToggle(role.role_key, page.key, 'a', pPerm.a)} 
+                              />
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={!!pPerm.e} 
+                                disabled={isLocked}
+                                onChange={() => handleToggle(role.role_key, page.key, 'e', pPerm.e)} 
+                              />
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={!!pPerm.d} 
+                                disabled={isLocked}
+                                onChange={() => handleToggle(role.role_key, page.key, 'd', pPerm.d)} 
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // FESTIVAL SESSIONS VIEW
+    function FestivalsView({ systemData, onAction, onDelete }) {
+      const [name, setName] = useState('');
+      const [status, setStatus] = useState('archived');
+      const [editId, setEditId] = useState(null);
+      
+      const festivals = systemData.festivals || [];
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        const ok = await onAction("saveFestival", { festival: { id: editId, name: name.trim(), status: status } });
+        if (ok) {
+          setName('');
+          setStatus('archived');
+          setEditId(null);
+        }
+      };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-calendar-plus"></i> {editId ? 'सत्र संपादित करें' : 'नया उत्सव सत्र जोड़ें'}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>उत्सव का नाम (Session Name)</label>
+                <input type="text" placeholder="जैसे: गणेश उत्सव 2026" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>स्थिति (Status)</label>
+                <select value={status} onChange={e => setStatus(e.target.value)}>
+                  <option value="active">Active (चालू)</option>
+                  <option value="archived">Archived (पुराना/संग्रहीत)</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="btn" style={{ flex: 1 }}>सहेजें</button>
+                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
+              </div>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-history"></i> उत्सव सत्र सूची</h3>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>सत्र नाम</th>
+                    <th>स्थिति</th>
+                    <th>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {festivals.map(f => (
+                    <tr key={f.id}>
+                      <td><strong>{f.name}</strong></td>
+                      <td>
+                        <span style={{ 
+                          padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
+                          background: f.status === 'active' ? '#d2f4ea' : '#e2e8f0',
+                          color: f.status === 'active' ? '#0f766e' : '#4a5568'
+                        }}>{f.status}</span>
+                      </td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(f.id); setName(f.name); setStatus(f.status); }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("festivals", "id", f.id)}><i className="fas fa-trash-alt"></i></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // SYSTEM MAINTENANCE & SETTINGS VIEW
+    function SettingsView({ systemData, user, onAction, onRefresh }) {
+      const [committeeName, setCommitteeName] = useState('');
+      const [committeeAddress, setCommitteeAddress] = useState('');
+      const [smsApiKey, setSmsApiKey] = useState('');
+      const [smsSenderId, setSmsSenderId] = useState('');
+      const [smsAutoSend, setSmsAutoSend] = useState(false);
+      
+      const settings = systemData.settings || {};
+
+      useEffect(() => {
+        setCommitteeName(settings.committee_name || '');
+        setCommitteeAddress(settings.committee_address || '');
+        setSmsApiKey(settings.sms_api_key || '');
+        setSmsSenderId(settings.sms_sender_id || '');
+        setSmsAutoSend(settings.sms_auto_send === 'true');
+      }, [settings]);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        onAction("saveSettings", {
+          settings: {
+            committee_name: committeeName.trim(),
+            committee_address: committeeAddress.trim(),
+            sms_api_key: smsApiKey.trim(),
+            sms_sender_id: smsSenderId.trim(),
+            sms_auto_send: smsAutoSend ? 'true' : 'false'
+          }
+        });
+      };
+
+      const handleLoadDemo = () => {
+        confirmAction(
+          "क्या आप वाकई डेमो डेटा लोड करना चाहते हैं?",
+          "इससे आपका वर्तमान सारा डेटा साफ हो जाएगा और डेमो डेटा लोड हो जाएगा।",
+          async () => {
+            const ok = await onAction("loadDemoData", {});
+            if (ok) {
+              onRefresh();
+            }
+          }
+        );
+      };
+
+      const handleClearAll = () => {
+        confirmAction(
+          "क्या आप वाकई सारा डेटा हटाना चाहते हैं?",
+          "इससे आपका सारा डेटा (चंदा, खर्चे, वॉलेट बैलेंस) स्थायी रूप से साफ हो जाएगा।",
+          async () => {
+            const ok = await onAction("clearAllData", {});
+            if (ok) {
+              onRefresh();
+            }
+          }
+        );
+      };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
+          <div className="card">
+            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-cogs"></i> समिति एवं गेटवे सेटिंग्स</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>समिति का नाम (Committee Name)</label>
+                <input type="text" value={committeeName} onChange={e => setCommitteeName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>समिति का पता (Address)</label>
+                <input type="text" value={committeeAddress} onChange={e => setCommitteeAddress(e.target.value)} />
+              </div>
+              
+              <h4 style={{ margin: '20px 0 10px', color: 'var(--orange)', borderBottom: '1px solid var(--border)', paddingBottom: '5px' }}>
+                <i className="fab fa-whatsapp"></i> WhatsApp Gateway Settings (UltraMsg)
+              </h4>
+              <div className="form-group">
+                <label>UltraMsg API Instance ID (Sender ID)</label>
+                <input type="text" placeholder="e.g. instance1234" value={smsSenderId} onChange={e => setSmsSenderId(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>UltraMsg API Token</label>
+                <input type="text" placeholder="Enter API auth token" value={smsApiKey} onChange={e => setSmsApiKey(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input type="checkbox" id="sms_auto" checked={smsAutoSend} onChange={e => setSmsAutoSend(e.target.checked)} style={{ width: 'auto' }} />
+                <label htmlFor="sms_auto" style={{ margin: 0, cursor: 'pointer' }}>चंदा प्राप्ति पर व्हाट्सएप रसीद स्वतः भेजें (Auto-send WhatsApp)</label>
+              </div>
+
+              <button type="submit" className="btn" style={{ width: '100%', marginTop: '10px' }}>सेटिंग्स सुरक्षित करें</button>
+            </form>
+          </div>
+
+          <div className="card" style={{ borderTop: '4px solid #ff4136' }}>
+            <h3 style={{ color: '#ff4136', marginBottom: '15px' }}><i className="fas fa-tools"></i> सिस्टम मेंटेनेंस टूल्स</h3>
+            <p style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.5', marginBottom: '20px' }}>
+              इन टूल्स का उपयोग केवल परीक्षण या नए साल की शुरुआत के दौरान करें। डेटा डिलीट होने पर वापस नहीं लाया जा सकता।
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button className="btn btn-success" onClick={handleLoadDemo}><i className="fas fa-database"></i> डेमो डेटा लोड करें</button>
+              <button className="btn btn-danger" onClick={handleClearAll}><i className="fas fa-trash-alt"></i> सारा डेटा साफ करें</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // PROFILE EDIT VIEW
+    function ProfileView({ user, onAction, onLogout }) {
+      const [name, setName] = useState(user.name);
+      const [password, setPassword] = useState('');
+      
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        const payload = { name: name.trim() };
+        if (password.trim()) {
+          payload.password = password;
+        }
+        
+        const ok = await onAction("updateMyProfile", { profile: payload });
+        if (ok) {
+          setPassword('');
+          Swal.fire({ text: "प्रोफ़ाइल सफलतापूर्वक अपडेट की गई! कृपया नए क्रेडेंशियल लागू करने के लिए फिर से लॉगिन करें।", icon: 'success' })
+            .then(() => onLogout());
+        }
+      };
+
+      return (
+        <div className="card" style={{ maxWidth: '500px', margin: '0 auto' }}>
+          <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-user-cog"></i> प्रोफ़ाइल संपादित करें</h3>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>मेरा नाम</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>लॉगिन मोबाइल (बदला नहीं जा सकता)</label>
+              <input type="text" value={user.mobile} disabled />
+            </div>
+            <div className="form-group">
+              <label>नया पासवर्ड (बदलने के लिए ही भरें)</label>
+              <input type="password" placeholder="अपरिवर्तित रहने दें" value={password} onChange={e => setPassword(e.target.value)} />
+            </div>
+            <button type="submit" className="btn" style={{ width: '100%', marginTop: '10px' }}>अपडेट करें</button>
+          </form>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // FORM MODALS (SLIDE-OVERS)
+    // ==========================================
+
+    // ADD/EDIT DONATION MODAL
+    function DonationFormModal({ record, villages, onClose, onSave }) {
+      const [donorName, setDonorName] = useState(record?.donor_name || '');
+      const [donorMobile, setDonorMobile] = useState(record?.donor_mobile || '');
+      const [village, setVillage] = useState(record?.village || (villages[0]?.name || ''));
+      const [amount, setAmount] = useState(record?.amount || '');
+      const [mode, setMode] = useState(record?.mode || 'Cash');
+      const [promisedAmount, setPromisedAmount] = useState(record?.promised_amount || '');
+      const [arrangementType, setArrangementType] = useState(record?.promised_amount && record.promised_amount != record.amount ? 'installment' : 'one_time');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!donorName.trim() || !amount || parseFloat(amount) <= 0) return alert("कृपया सभी आवश्यक फ़ील्ड भरें।");
+
+        const payload = {
+          donor_name: donorName.trim(),
+          donor_mobile: donorMobile.trim(),
+          village: village,
+          amount: parseFloat(amount),
+          mode: mode,
+          promised_amount: arrangementType === 'one_time' ? parseFloat(amount) : parseFloat(promisedAmount || amount),
+          festival_id: getViewingFestivalId(),
+          collected_by_name: record ? record.collected_by_name : JSON.parse(localStorage.getItem("currentUser")).name,
+          collected_by_mobile: record ? record.collected_by_mobile : JSON.parse(localStorage.getItem("currentUser")).mobile,
+          date: record ? record.date : new Date().toISOString().slice(0, 10),
+          receipt_no: record?.receipt_no
+        };
+        onSave(payload);
+      };
+
+      return (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3><i className="fas fa-hand-holding-usd"></i> {record ? 'चंदा रसीद संपादित करें' : 'नया चंदा सहेजें'}</h3>
+              <button className="close-btn" onClick={onClose}>&times;</button>
+            </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>दाता का नाम (Donor Name)*</label>
+                  <input type="text" value={donorName} onChange={e => setDonorName(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>दाता का मोबाइल नंबर (Donor Mobile)</label>
+                  <input type="text" value={donorMobile} onChange={e => setDonorMobile(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>गाँव (Village)*</label>
+                  <select value={village} onChange={e => setVillage(e.target.value)}>
+                    {villages.map(v => (
+                      <option key={v.id} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>भुगतान व्यवस्था प्रकार (Payment Arrangement)</label>
+                  <select value={arrangementType} onChange={e => setArrangementType(e.target.value)}>
+                    <option value="one_time">एक बार भुगतान (One-time)</option>
+                    <option value="installment">किस्त/प्रतिबद्ध भुगतान (Promised Deal)</option>
+                  </select>
+                </div>
+                {arrangementType === 'installment' && (
+                  <div className="form-group">
+                    <label>कुल प्रतिबद्ध राशि (Total Deal Amount)</label>
+                    <input type="number" placeholder="₹" value={promisedAmount} onChange={e => setPromisedAmount(e.target.value)} required />
+                  </div>
+                )}
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>आज प्राप्त राशि (Amount)*</label>
+                    <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label>भुगतान माध्यम (Mode)</label>
+                    <select value={mode} onChange={e => setMode(e.target.value)}>
+                      <option value="Cash">Cash (नकद)</option>
+                      <option value="Online">Online (UPI / क्यूआर)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="submit" className="btn">सहेजें</button>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>रद्द करें</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // ADD/EDIT EXPENSE MODAL
+    function ExpenseFormModal({ record, categories, accounts, onClose, onSave }) {
+      const [title, setTitle] = useState(record?.title || '');
+      const [category, setCategory] = useState(record?.category || (categories[0]?.name || ''));
+      const [amount, setAmount] = useState(record?.amount || '');
+      const [mode, setMode] = useState(record?.mode || 'Cash');
+      const [accountId, setAccountId] = useState(record?.account_id || accounts[0]?.id || '1');
+      const [status, setStatus] = useState(record?.status || 'Pending');
+      const [note, setNote] = useState(record?.note || '');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!title.trim() || !amount || parseFloat(amount) <= 0) return alert("कृपया सभी आवश्यक फ़ील्ड भरें।");
+
+        const payload = {
+          title: title.trim(),
+          category: category,
+          amount: parseFloat(amount),
+          mode: mode,
+          account_id: accountId,
+          status: status,
+          note: note.trim(),
+          festival_id: getViewingFestivalId(),
+          added_by_name: record ? record.added_by_name : JSON.parse(localStorage.getItem("currentUser")).name,
+          added_by_mobile: record ? record.added_by_mobile : JSON.parse(localStorage.getItem("currentUser")).mobile,
+          date: record ? record.date : new Date().toISOString().slice(0, 10),
+          expense_no: record?.expense_no
+        };
+        onSave(payload);
+      };
+
+      return (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3><i className="fas fa-tags"></i> {record ? 'खर्च विवरण संपादित करें' : 'नया खर्च सहेजें'}</h3>
+              <button className="close-btn" onClick={onClose}>&times;</button>
+            </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>खर्च का शीर्षक (Title)*</label>
+                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>खर्च श्रेणी (Category)*</label>
+                  <select value={category} onChange={e => setCategory(e.target.value)}>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>खर्च राशि (Amount)*</label>
+                    <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label>भुगतान माध्यम (Mode)</label>
+                    <select value={mode} onChange={e => setMode(e.target.value)}>
+                      <option value="Cash">Cash (नकद)</option>
+                      <option value="Online">Online (बैंक / क्यूआर)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>खाता/वॉलेट (Account source)</label>
+                    <select value={accountId} onChange={e => setAccountId(e.target.value)}>
+                      {accounts.map(a => (
+                        <option key={a.id} value={a.id}>{a.account_name} (₹{parseFloat(a.balance).toFixed(2)})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>अनुमोदन स्थिति (Status)</label>
+                    <select value={status} onChange={e => setStatus(e.target.value)}>
+                      <option value="Pending">Pending (लंबित)</option>
+                      <option value="Approved">Approved (स्वीकृत)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>रिमार्क / टिप्पणी (Remark)</label>
+                  <textarea rows="3" placeholder="वैकल्पिक विवरण" value={note} onChange={e => setNote(e.target.value)}></textarea>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="submit" className="btn">सहेजें</button>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>रद्द करें</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // PRINT FORM TEMPLATES (Zero-Reload Page Slips)
+    // ==========================================
+
+    // PRINT RECEIPT SLIP
+    function PrintReceipt({ slip, settings }) {
+      const remainingDues = parseFloat(slip.promised_amount || slip.amount) - parseFloat(slip.amount);
+      return (
+        <div style={{ maxWidth: '300px', margin: '0 auto', padding: '15px', border: '1px solid #ccc', background: '#fff', fontSize: '12px', lineHeight: '1.4', color: '#000' }}>
+          <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '10px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
+            <p style={{ margin: '2px 0 0', fontSize: '10px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
+          </div>
+
+          <div style={{ textAlign: 'center', margin: '10px 0' }}>
+            <span style={{ border: '1px solid #000', padding: '3px 8px', fontWeight: 'bold', fontSize: '11px' }}>चंदा रसीद (CHANDA SLIP)</span>
+          </div>
+
+          <div style={{ margin: '10px 0' }}>
+            <p><strong>रसीद क्र:</strong> #{slip.receipt_no}</p>
+            <p><strong>दिनांक:</strong> {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
+            <p><strong>दाता का नाम:</strong> {slip.donor_name}</p>
+            <p><strong>मोबाइल:</strong> {slip.donor_mobile || 'N/A'}</p>
+            <p><strong>ग्राम:</strong> {slip.village}</p>
+          </div>
+
+          <table style={{ width: '100%', borderTop: '1px solid #000', borderBottom: '1px solid #000', margin: '10px 0', borderCollapse: 'collapse' }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: '5px 0' }}>प्राप्त राशि (Received)</td>
+                <td style={{ textAlign: 'right', padding: '5px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
+              </tr>
+              {remainingDues > 0 && (
+                <>
+                  <tr>
+                    <td style={{ padding: '5px 0' }}>कुल स्वीकृत राशि (Promised)</td>
+                    <td style={{ textAlign: 'right', padding: '5px 0' }}>₹{parseFloat(slip.promised_amount).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '5px 0', color: 'red' }}>शेष राशि (Dues Baki)</td>
+                    <td style={{ textAlign: 'right', padding: '5px 0', fontWeight: 'bold', color: 'red' }}>₹{remainingDues.toFixed(2)}</td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+
+          <p style={{ fontStyle: 'italic', fontSize: '10px', textAlign: 'center' }}>भुगतान माध्यम: {slip.mode}</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
+            <span>हस्ताक्षर (कलेक्टर)</span>
+            <span>हस्ताक्षर (प्रबंधक)</span>
+          </div>
+          
+          <p style={{ fontSize: '9px', color: '#777', textAlign: 'center', marginTop: '20px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
+            {settings.receipt_note || 'गणेश जी की कृपा आप पर बनी रहे। धन्यवाद! 🙏'}
+          </p>
+        </div>
+      );
+    }
+
+    // PRINT VOUCHER SLIP
+    function PrintVoucher({ slip, settings }) {
+      return (
+        <div style={{ maxWidth: '300px', margin: '0 auto', padding: '15px', border: '1px solid #ccc', background: '#fff', fontSize: '12px', lineHeight: '1.4', color: '#000' }}>
+          <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '10px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
+            <p style={{ margin: '2px 0 0', fontSize: '10px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
+          </div>
+
+          <div style={{ textAlign: 'center', margin: '10px 0' }}>
+            <span style={{ border: '1px solid #000', padding: '3px 8px', fontWeight: 'bold', fontSize: '11px' }}>व्यय वाउचर (EXPENSE VOUCHER)</span>
+          </div>
+
+          <div style={{ margin: '10px 0' }}>
+            <p><strong>वाउचर क्र:</strong> #{slip.expense_no}</p>
+            <p><strong>दिनांक:</strong> {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
+            <p><strong>खर्च नाम:</strong> {slip.title}</p>
+            <p><strong>व्यय श्रेणी:</strong> {slip.category}</p>
+            <p><strong>नोट:</strong> {slip.note || 'N/A'}</p>
+          </div>
+
+          <table style={{ width: '100%', borderTop: '1px solid #000', borderBottom: '1px solid #000', margin: '10px 0', borderCollapse: 'collapse' }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: '5px 0' }}>भुगतान राशि (Amount Paid)</td>
+                <td style={{ textAlign: 'right', padding: '5px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p style={{ fontStyle: 'italic', fontSize: '10px', textAlign: 'center' }}>भुगतान माध्यम: {slip.mode} | स्थिति: {slip.status}</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
+            <span>हस्ताक्षर (कलेक्टर)</span>
+            <span>स्वीकृतकर्ता (Admin)</span>
+          </div>
+          
+          <p style={{ fontSize: '9px', color: '#777', textAlign: 'center', marginTop: '20px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
+            यह एक कंप्यूटर-जनरेटेड आधिकारिक व्यय रसीद पर्ची है।
+          </p>
+        </div>
+      );
+    }
+
+    // Render components on page shell DOM
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<ChandaApp />);
+  </script>
 </body>
 </html>
