@@ -546,7 +546,7 @@
     const { useState, useEffect, useRef } = React;
 
     // Language Pack Translation Engine
-    const TRANSLATIONS = {
+    const APP_TRANSLATIONS = {
       'en': {
         'dashboard': 'Dashboard',
         'chanda': 'Chanda Collection',
@@ -855,7 +855,7 @@
       };
 
       const translate = (key) => {
-        return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en']?.[key] || key;
+        return APP_TRANSLATIONS[language]?.[key] || APP_TRANSLATIONS['en']?.[key] || key;
       };
 
       if (!currentUser) {
