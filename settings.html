@@ -123,6 +123,20 @@
             <button type="submit" class="btn" style="width:100%; margin-top:20px;" id="lbl_save_settings"><i class="fas fa-save"></i> Save Settings</button>
         </form>
     </div>
+
+    <!-- Maintenance and Demo Tools Card -->
+    <div class="form-card" style="margin-top: 25px; border-top: 4px solid #ff4136;">
+        <h3 style="margin-top:0; color:#ff4136; border-bottom:2px solid #ff4136; padding-bottom:10px;">
+            <i class="fas fa-tools"></i> System Maintenance & Demo Tools
+        </h3>
+        <p style="font-size:12px; color:var(--muted); line-height:1.5;">
+            Use these tools to load a sample dataset for testing or to clear all existing collections and records to reset the system.
+        </p>
+        <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+            <button class="btn" style="background:#2ecc40; flex:1; min-width:140px;" onclick="triggerLoadDemo()"><i class="fas fa-database"></i> Load Demo Data</button>
+            <button class="btn" style="background:#ff4136; flex:1; min-width:140px;" onclick="triggerClearAll()"><i class="fas fa-trash-alt"></i> Clear All Data</button>
+        </div>
+    </div>
 </div>
 
 <script src="config.js"></script>
@@ -238,6 +252,66 @@
             errDiv.style.display = "block";
         }
     });
+
+    async function triggerLoadDemo() {
+        confirmAction(
+            "क्या आप वाकई डेमो डेटा लोड करना चाहते हैं?",
+            "इससे आपका वर्तमान सारा डेटा साफ हो जाएगा और डेमो डेटा लोड हो जाएगा।",
+            async () => {
+                showToast("Loading demo data...");
+                try {
+                    const res = await fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain" },
+                        body: JSON.stringify({
+                            action: "loadDemoData",
+                            currentUser: getCurrentUser()
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        invalidateCache();
+                        showToast("डेमो डेटा सफलतापूर्वक लोड हो गया!");
+                        setTimeout(() => window.location.href = "index.html", 1500);
+                    } else {
+                        alert("त्रुटि: " + data.message);
+                    }
+                } catch(e) {
+                    alert("नेटवर्क त्रुटि: " + e.message);
+                }
+            }
+        );
+    }
+
+    async function triggerClearAll() {
+        confirmAction(
+            "क्या आप वाकई सारा डेटा हटाना चाहते हैं?",
+            "इससे आपका सारा डेटा (चंदा, खर्चे, वॉलेट बैलेंस) स्थायी रूप से साफ हो जाएगा।",
+            async () => {
+                showToast("Clearing all data...");
+                try {
+                    const res = await fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain" },
+                        body: JSON.stringify({
+                            action: "clearAllData",
+                            currentUser: getCurrentUser()
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        invalidateCache();
+                        showToast("डेटा सफलतापूर्वक साफ कर दिया गया है!");
+                        setTimeout(() => window.location.href = "index.html", 1500);
+                    } else {
+                        alert("त्रुटि: " + data.message);
+                    }
+                } catch(e) {
+                    alert("नेटवर्क त्रुटि: " + e.message);
+                }
+            }
+        );
+    }
 </script>
 </body>
 </html>
