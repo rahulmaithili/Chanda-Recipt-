@@ -489,13 +489,9 @@
     }
 
     function printVoucher() {
-        const printContent = document.getElementById("voucher_print_area").innerHTML;
-        const originalContent = document.body.innerHTML;
-        
-        document.body.innerHTML = `<div style="width:300px; margin:0 auto; padding:20px;">${printContent}</div>`;
+        document.body.classList.add("voucher-printing");
         window.print();
-        document.body.innerHTML = originalContent;
-        window.location.reload();
+        document.body.classList.remove("voucher-printing");
     }
 
     function downloadVoucherPDF() {

@@ -3,6 +3,7 @@
 document.write(`
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
       --bg: #f4f7f6;
@@ -240,6 +241,123 @@ document.write(`
       to { transform: rotate(360deg); }
     }
     
+    /* Print media styles */
+    @media print {
+      #app-sidebar, #app-top-bar, .btn, .nav-toggle, select, input, form, button, .mobile-bottom-nav, .modal-content button, .modal-content > div:last-child {
+        display: none !important;
+      }
+      
+      body, .main-content {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        box-shadow: none !important;
+      }
+      
+      .table-card, .card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      
+      th, td {
+        border: 1px solid #ddd !important;
+        padding: 8px !important;
+      }
+
+      /* Receipt printing body */
+      body.receipt-printing * {
+        visibility: hidden !important;
+      }
+      body.receipt-printing #receiptModal,
+      body.receipt-printing #receiptModal *,
+      body.receipt-printing #receipt_print_area,
+      body.receipt-printing #receipt_print_area * {
+        visibility: visible !important;
+      }
+      body.receipt-printing #receiptModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: none !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+      }
+      body.receipt-printing #receipt_print_area {
+        border: none !important;
+        width: 300px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+
+      /* Voucher printing body */
+      body.voucher-printing * {
+        visibility: hidden !important;
+      }
+      body.voucher-printing #voucherModal,
+      body.voucher-printing #voucherModal *,
+      body.voucher-printing #voucher_print_area,
+      body.voucher-printing #voucher_print_area * {
+        visibility: visible !important;
+      }
+      body.voucher-printing #voucherModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: none !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+      }
+      body.voucher-printing #voucher_print_area {
+        border: none !important;
+        width: 300px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+
+      /* ID Card printing body */
+      body.id-card-active * {
+        visibility: hidden !important;
+      }
+      body.id-card-active #idCardModal,
+      body.id-card-active #idCardModal *,
+      body.id-card-active #idCardPrintArea,
+      body.id-card-active #idCardPrintArea * {
+        visibility: visible !important;
+      }
+      body.id-card-active #idCardModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: none !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+      }
+      body.id-card-active #idCardPrintArea {
+        border: none !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+    }
+    
     @media (max-width: 768px) {
       .sidebar {
         display: none !important;
@@ -250,10 +368,10 @@ document.write(`
       .main-content, .main-content.expanded {
         margin-left: 0 !important;
         width: 100% !important;
-        padding-bottom: 80px; /* Padding for bottom bar */
+        padding-bottom: 80px;
       }
       .nav-toggle {
-        display: none !important; /* Hide hamburger on mobile, not needed due to bottom nav */
+        display: none !important;
       }
     }
   </style>
@@ -266,6 +384,43 @@ if ('serviceWorker' in navigator) {
       .then(reg => console.log('Service Worker registered', reg))
       .catch(err => console.error('Service worker registration failed', err));
   });
+}
+
+// Global SweetAlert2 Alert Overrides
+window.alert = function(msg) {
+  if (typeof Swal !== "undefined") {
+    Swal.fire({
+      text: msg,
+      icon: 'info',
+      confirmButtonColor: '#ff851b'
+    });
+  } else {
+    // Fallback if sweetalert fails to load
+    console.log(msg);
+  }
+};
+
+// Global confirm action helper
+function confirmAction(title, text, callback) {
+  if (typeof Swal !== "undefined") {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ff851b',
+      cancelButtonColor: '#7f8c8d',
+      confirmButtonText: 'Yes, proceed!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        callback();
+      }
+    });
+  } else {
+    if (confirm(text)) {
+      callback();
+    }
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
