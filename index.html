@@ -1827,6 +1827,7 @@
             setActiveTab={setActiveTab} 
             user={currentUser} 
             onLogout={handleLogout}
+            hasPermission={hasPermission}
             t={translate}
           />
           
@@ -2002,21 +2003,29 @@
 
           {/* Mobile Bottom Navigation Bar */}
           <div className="mobile-bottom-nav">
-            <button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => { setActiveTab('dashboard'); setShowMobileFabMenu(false); }}>
-              <i className="fas fa-chart-pie"></i>
-              <span>Dashboard</span>
-            </button>
-            <button className={activeTab === 'donations' ? 'active' : ''} onClick={() => { setActiveTab('donations'); setShowMobileFabMenu(false); }}>
-              <i className="fas fa-hand-holding-usd"></i>
-              <span>Chanda</span>
-            </button>
-            <button className="fab-trigger" onClick={() => setShowMobileFabMenu(!showMobileFabMenu)}>
-              <i className="fas fa-plus"></i>
-            </button>
-            <button className={activeTab === 'reports' ? 'active' : ''} onClick={() => { setActiveTab('reports'); setShowMobileFabMenu(false); }}>
-              <i className="fas fa-chart-line"></i>
-              <span>Reports</span>
-            </button>
+            {hasPermission('dashboard', 'v') && (
+              <button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => { setActiveTab('dashboard'); setShowMobileFabMenu(false); }}>
+                <i className="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+              </button>
+            )}
+            {hasPermission('donations', 'v') && (
+              <button className={activeTab === 'donations' ? 'active' : ''} onClick={() => { setActiveTab('donations'); setShowMobileFabMenu(false); }}>
+                <i className="fas fa-hand-holding-usd"></i>
+                <span>Chanda</span>
+              </button>
+            )}
+            {(hasPermission('donations', 'a') || hasPermission('expenses', 'a')) && (
+              <button className="fab-trigger" onClick={() => setShowMobileFabMenu(!showMobileFabMenu)}>
+                <i className="fas fa-plus"></i>
+              </button>
+            )}
+            {hasPermission('reports', 'v') && (
+              <button className={activeTab === 'reports' ? 'active' : ''} onClick={() => { setActiveTab('reports'); setShowMobileFabMenu(false); }}>
+                <i className="fas fa-chart-line"></i>
+                <span>Reports</span>
+              </button>
+            )}
             <button className="menu-trigger" onClick={() => { setShowMobileMenu(true); setShowMobileFabMenu(false); }}>
               <i className="fas fa-bars"></i>
               <span>Menu</span>
@@ -2026,12 +2035,16 @@
           {/* Mobile Quick Action FAB Menu */}
           {showMobileFabMenu && (
             <div className="mobile-fab-menu">
-              <button onClick={() => { setShowMobileFabMenu(false); setInstallmentParent(null); setCurrentRecord(null); setShowDonationForm(true); }}>
-                <i className="fas fa-hand-holding-usd" style={{ color: 'var(--success)' }}></i> {translate('add_donation')}
-              </button>
-              <button onClick={() => { setShowMobileFabMenu(false); setCurrentRecord(null); setShowExpenseForm(true); }}>
-                <i className="fas fa-tags" style={{ color: 'var(--danger)' }}></i> {translate('add_expense')}
-              </button>
+              {hasPermission('donations', 'a') && (
+                <button onClick={() => { setShowMobileFabMenu(false); setInstallmentParent(null); setCurrentRecord(null); setShowDonationForm(true); }}>
+                  <i className="fas fa-hand-holding-usd" style={{ color: 'var(--success)' }}></i> {translate('add_donation')}
+                </button>
+              )}
+              {hasPermission('expenses', 'a') && (
+                <button onClick={() => { setShowMobileFabMenu(false); setCurrentRecord(null); setShowExpenseForm(true); }}>
+                  <i className="fas fa-tags" style={{ color: 'var(--danger)' }}></i> {translate('add_expense')}
+                </button>
+              )}
             </div>
           )}
 
@@ -2044,33 +2057,51 @@
                   <button className="hamburger-btn" onClick={() => setShowMobileMenu(false)} style={{ fontSize: '20px' }}>&times;</button>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button className={`btn btn-secondary ${activeTab === 'dues' ? 'active' : ''}`} onClick={() => { setActiveTab('dues'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-search-dollar"></i> {translate('dues_tracker')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'handovers' ? 'active' : ''}`} onClick={() => { setActiveTab('handovers'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-wallet"></i> {translate('handovers')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'villages' ? 'active' : ''}`} onClick={() => { setActiveTab('villages'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-map-marker-alt"></i> {translate('villages')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-list-ul"></i> {translate('categories')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-piggy-bank"></i> {translate('accounts')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-users-cog"></i> {translate('users')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-key"></i> {translate('roles')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'festivals' ? 'active' : ''}`} onClick={() => { setActiveTab('festivals'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-calendar-alt"></i> {translate('festivals')}
-                  </button>
-                  <button className={`btn btn-secondary ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
-                    <i className="fas fa-sliders-h"></i> {translate('settings')}
-                  </button>
+                  {hasPermission('dues', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'dues' ? 'active' : ''}`} onClick={() => { setActiveTab('dues'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-search-dollar"></i> {translate('dues_tracker')}
+                    </button>
+                  )}
+                  {hasPermission('handovers', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'handovers' ? 'active' : ''}`} onClick={() => { setActiveTab('handovers'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-wallet"></i> {translate('handovers')}
+                    </button>
+                  )}
+                  {hasPermission('villages', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'villages' ? 'active' : ''}`} onClick={() => { setActiveTab('villages'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-map-marker-alt"></i> {translate('villages')}
+                    </button>
+                  )}
+                  {hasPermission('categories', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => { setActiveTab('categories'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-list-ul"></i> {translate('categories')}
+                    </button>
+                  )}
+                  {hasPermission('accounts', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-piggy-bank"></i> {translate('accounts')}
+                    </button>
+                  )}
+                  {hasPermission('users', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-users-cog"></i> {translate('users')}
+                    </button>
+                  )}
+                  {hasPermission('roles', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-key"></i> {translate('roles')}
+                    </button>
+                  )}
+                  {hasPermission('festivals', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'festivals' ? 'active' : ''}`} onClick={() => { setActiveTab('festivals'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-calendar-alt"></i> {translate('festivals')}
+                    </button>
+                  )}
+                  {hasPermission('settings', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-sliders-h"></i> {translate('settings')}
+                    </button>
+                  )}
                   <button className={`btn btn-secondary ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => { setActiveTab('profile'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
                     <i className="fas fa-user-cog"></i> {translate('profile')}
                   </button>
@@ -2216,8 +2247,14 @@
       );
     }
 
-    function Sidebar({ collapsed, setCollapsed, activeTab, setActiveTab, user, onLogout, t }) {
-      const isSuper = user.role === "Super Admin" || user.role === "admin";
+    function Sidebar({ collapsed, setCollapsed, activeTab, setActiveTab, user, onLogout, hasPermission, t }) {
+      const showControlPanel = 
+        hasPermission('categories', 'v') || 
+        hasPermission('accounts', 'v') || 
+        hasPermission('users', 'v') || 
+        hasPermission('roles', 'v') || 
+        hasPermission('festivals', 'v') || 
+        hasPermission('settings', 'v');
 
       return (
         <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -2245,90 +2282,116 @@
           </div>
 
           <ul className="sidebar-menu">
-            <li>
-              <button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>
-                <i className="fas fa-chart-pie sidebar-icon"></i>
-                <span>{t('dashboard')}</span>
-              </button>
-            </li>
-            <li>
-              <button className={activeTab === 'donations' ? 'active' : ''} onClick={() => setActiveTab('donations')}>
-                <i className="fas fa-hand-holding-usd sidebar-icon"></i>
-                <span>{t('chanda')}</span>
-              </button>
-            </li>
-            <li>
-              <button className={activeTab === 'dues' ? 'active' : ''} onClick={() => setActiveTab('dues')}>
-                <i className="fas fa-search-dollar sidebar-icon"></i>
-                <span>{t('dues_tracker')}</span>
-              </button>
-            </li>
-            <li>
-              <button className={activeTab === 'expenses' ? 'active' : ''} onClick={() => setActiveTab('expenses')}>
-                <i className="fas fa-tags sidebar-icon"></i>
-                <span>{t('expenses')}</span>
-              </button>
-            </li>
-            <li>
-              <button className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>
-                <i className="fas fa-chart-line sidebar-icon"></i>
-                <span>{t('reports')}</span>
-              </button>
-            </li>
-            <li>
-              <button className={activeTab === 'handovers' ? 'active' : ''} onClick={() => setActiveTab('handovers')}>
-                <i className="fas fa-wallet sidebar-icon"></i>
-                <span>{t('handovers')}</span>
-              </button>
-            </li>
-            <li>
-              <button className={activeTab === 'villages' ? 'active' : ''} onClick={() => setActiveTab('villages')}>
-                <i className="fas fa-map-marker-alt sidebar-icon"></i>
-                <span>{t('villages')}</span>
-              </button>
-            </li>
+            {hasPermission('dashboard', 'v') && (
+              <li>
+                <button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>
+                  <i className="fas fa-chart-pie sidebar-icon"></i>
+                  <span>{t('dashboard')}</span>
+                </button>
+              </li>
+            )}
+            {hasPermission('donations', 'v') && (
+              <li>
+                <button className={activeTab === 'donations' ? 'active' : ''} onClick={() => setActiveTab('donations')}>
+                  <i className="fas fa-hand-holding-usd sidebar-icon"></i>
+                  <span>{t('chanda')}</span>
+                </button>
+              </li>
+            )}
+            {hasPermission('dues', 'v') && (
+              <li>
+                <button className={activeTab === 'dues' ? 'active' : ''} onClick={() => setActiveTab('dues')}>
+                  <i className="fas fa-search-dollar sidebar-icon"></i>
+                  <span>{t('dues_tracker')}</span>
+                </button>
+              </li>
+            )}
+            {hasPermission('expenses', 'v') && (
+              <li>
+                <button className={activeTab === 'expenses' ? 'active' : ''} onClick={() => setActiveTab('expenses')}>
+                  <i className="fas fa-tags sidebar-icon"></i>
+                  <span>{t('expenses')}</span>
+                </button>
+              </li>
+            )}
+            {hasPermission('reports', 'v') && (
+              <li>
+                <button className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>
+                  <i className="fas fa-chart-line sidebar-icon"></i>
+                  <span>{t('reports')}</span>
+                </button>
+              </li>
+            )}
+            {hasPermission('handovers', 'v') && (
+              <li>
+                <button className={activeTab === 'handovers' ? 'active' : ''} onClick={() => setActiveTab('handovers')}>
+                  <i className="fas fa-wallet sidebar-icon"></i>
+                  <span>{t('handovers')}</span>
+                </button>
+              </li>
+            )}
+            {hasPermission('villages', 'v') && (
+              <li>
+                <button className={activeTab === 'villages' ? 'active' : ''} onClick={() => setActiveTab('villages')}>
+                  <i className="fas fa-map-marker-alt sidebar-icon"></i>
+                  <span>{t('villages')}</span>
+                </button>
+              </li>
+            )}
             
-            {isSuper && (
+            {showControlPanel && (
               <>
                 <li style={{ padding: '10px 15px 5px', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                   {!collapsed && 'Control Panel'}
                 </li>
-                <li>
-                  <button className={activeTab === 'categories' ? 'active' : ''} onClick={() => setActiveTab('categories')}>
-                    <i className="fas fa-list-ul sidebar-icon"></i>
-                    <span>{t('categories')}</span>
-                  </button>
-                </li>
-                <li>
-                  <button className={activeTab === 'accounts' ? 'active' : ''} onClick={() => setActiveTab('accounts')}>
-                    <i className="fas fa-piggy-bank sidebar-icon"></i>
-                    <span>{t('accounts')}</span>
-                  </button>
-                </li>
-                <li>
-                  <button className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}>
-                    <i className="fas fa-users-cog sidebar-icon"></i>
-                    <span>{t('users')}</span>
-                  </button>
-                </li>
-                <li>
-                  <button className={activeTab === 'roles' ? 'active' : ''} onClick={() => setActiveTab('roles')}>
-                    <i className="fas fa-key sidebar-icon"></i>
-                    <span>{t('roles')}</span>
-                  </button>
-                </li>
-                <li>
-                  <button className={activeTab === 'festivals' ? 'active' : ''} onClick={() => setActiveTab('festivals')}>
-                    <i className="fas fa-calendar-alt sidebar-icon"></i>
-                    <span>{t('festivals')}</span>
-                  </button>
-                </li>
-                <li>
-                  <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>
-                    <i className="fas fa-sliders-h sidebar-icon"></i>
-                    <span>{t('settings')}</span>
-                  </button>
-                </li>
+                {hasPermission('categories', 'v') && (
+                  <li>
+                    <button className={activeTab === 'categories' ? 'active' : ''} onClick={() => setActiveTab('categories')}>
+                      <i className="fas fa-list-ul sidebar-icon"></i>
+                      <span>{t('categories')}</span>
+                    </button>
+                  </li>
+                )}
+                {hasPermission('accounts', 'v') && (
+                  <li>
+                    <button className={activeTab === 'accounts' ? 'active' : ''} onClick={() => setActiveTab('accounts')}>
+                      <i className="fas fa-piggy-bank sidebar-icon"></i>
+                      <span>{t('accounts')}</span>
+                    </button>
+                  </li>
+                )}
+                {hasPermission('users', 'v') && (
+                  <li>
+                    <button className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}>
+                      <i className="fas fa-users-cog sidebar-icon"></i>
+                      <span>{t('users')}</span>
+                    </button>
+                  </li>
+                )}
+                {hasPermission('roles', 'v') && (
+                  <li>
+                    <button className={activeTab === 'roles' ? 'active' : ''} onClick={() => setActiveTab('roles')}>
+                      <i className="fas fa-key sidebar-icon"></i>
+                      <span>{t('roles')}</span>
+                    </button>
+                  </li>
+                )}
+                {hasPermission('festivals', 'v') && (
+                  <li>
+                    <button className={activeTab === 'festivals' ? 'active' : ''} onClick={() => setActiveTab('festivals')}>
+                      <i className="fas fa-calendar-alt sidebar-icon"></i>
+                      <span>{t('festivals')}</span>
+                    </button>
+                  </li>
+                )}
+                {hasPermission('settings', 'v') && (
+                  <li>
+                    <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>
+                      <i className="fas fa-sliders-h sidebar-icon"></i>
+                      <span>{t('settings')}</span>
+                    </button>
+                  </li>
+                )}
               </>
             )}
           </ul>
