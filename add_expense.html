@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chanda System - Record Expense</title>
+    <style>
+        .form-card {
+            max-width: 600px;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .radio-label {
+            flex: 1;
+            min-width: 130px;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--bg);
+            transition: 0.2s;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .radio-label input {
+            margin-right: 5px;
+        }
+
+        .info-card {
+            background: rgba(0,0,0,0.02);
+            border: 1px dashed var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <div class="form-card">
+        <h3 style="margin-top:0; color:var(--orange); border-bottom:2px solid var(--orange); padding-bottom:10px;" id="lbl_form_title">
+            <i class="fas fa-tags"></i> Record Expense
+        </h3>
+        
+        <div id="error" style="color:red; font-weight:bold; margin-bottom:15px; display:none;"></div>
+
+        <form id="expenseForm">
+            <!-- Arrangement Type -->
+            <div class="form-group">
+                <label id="lbl_arrangement_type">Payment Arrangement</label>
+                <div class="radio-group">
+                    <label class="radio-label" id="lbl_full">
+                        <input type="radio" name="payment_type" value="full" checked onclick="togglePaymentFields('full')"> 
+                        <span id="lbl_full_text">One-time Payment</span>
+                    </label>
+                    <label class="radio-label" id="lbl_new_contract">
+                        <input type="radio" name="payment_type" value="new_contract" onclick="togglePaymentFields('new_contract')"> 
+                        <span id="lbl_new_contract_text">New Contract / Deal</span>
+                    </label>
+                    <label class="radio-label" id="lbl_installment">
+                        <input type="radio" name="payment_type" value="installment" onclick="togglePaymentFields('installment')"> 
+                        <span id="lbl_installment_text">Pay Installment</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Installment Selector -->
+            <div id="installment_section" style="display:none;" class="form-group">
+                <label id="lbl_select_promise">Select Active Contract / Deal *</label>
+                <select id="parent_expense_no" onchange="updateContractInfo(this.value)">
+                    <option value="">-- Choose Contract --</option>
+                </select>
+            </div>
+
+            <!-- Info card for Selected Contract -->
+            <div id="contract_info_card" style="display:none;" class="info-card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>Total Agreed Deal Amount:</span>
+                    <strong id="info_total">₹0.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>Total Paid So Far:</span>
+                    <strong id="info_paid" style="color:#27ae60;">₹0.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-top: 1px dotted var(--border); padding-top: 5px; margin-top: 5px;">
+                    <span>Remaining Balance Due:</span>
+                    <strong id="info_due" style="color:#e74c3c;">₹0.00</strong>
+                </div>
+            </div>
+
+            <!-- Expense Title -->
+            <div id="title_section" class="form-group">
+                <label id="lbl_title">Expense Title *</label>
+                <input type="text" id="title" required placeholder="e.g. Sound Rent, Tent Booking">
+            </div>
+            
+            <!-- Category -->
+            <div id="category_section" class="form-group">
+                <label id="lbl_category">Category *</label>
+                <select id="category" required>
+                    <option value="">Select Category</option>
+                </select>
+            </div>
+
+            <!-- Total Contract Amount -->
+            <div id="total_contract_section" style="display:none;" class="form-group">
+                <label id="lbl_total_contract">Total Deal / Contract Amount *</label>
+                <input type="number" step="0.01" id="total_contract_amount" placeholder="e.g. 50000">
+            </div>
+            
+            <!-- Amount Paid Now -->
+            <div class="form-group">
+                <label id="amount_label">Amount Paid Now *</label>
+                <input type="number" step="0.01" id="amount" required placeholder="e.g. 5000">
+            </div>
+            
+            <!-- Payment Mode -->
+            <div class="form-group">
+                <label id="lbl_mode">Payment Mode *</label>
+                <select id="mode" required>
+                    <option value="Cash" id="opt_cash">Cash</option>
+                    <option value="Online">Online</option>
+                </select>
+            </div>
+            
+            <!-- Note -->
+            <div class="form-group">
+                <label id="lbl_note">Additional Note / Description</label>
+                <textarea id="note" rows="3" placeholder="Enter specifications or installment details..."></textarea>
+            </div>
+            
+            <!-- Buttons -->
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn" style="flex:1;" id="lbl_save_expense">Save Expense</button>
+                <a href="expenses.php" class="btn btn-secondary" id="lbl_cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="includes/header.js"></script>
+<script>
+    let activeContracts = [];
+    let labelAmountToday = "";
+    let labelAdvance = "";
+    let labelInstallment = "";
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        translateLabels();
+        await loadFormMetadata();
+    });
+
+    function translateLabels() {
+        document.getElementById("lbl_form_title").innerText = __("expense_entry");
+        document.getElementById("lbl_arrangement_type").innerText = __("arrangement_type");
+        document.getElementById("lbl_full_text").innerText = __("one_time");
+        document.getElementById("lbl_new_contract_text").innerText = __("new_promise");
+        document.getElementById("lbl_installment_text").innerText = __("installment");
+        document.getElementById("lbl_select_promise").innerText = __("select_promise") + " *";
+        document.getElementById("lbl_title").innerText = __("title") + " *";
+        document.getElementById("lbl_category").innerText = __("category") + " *";
+        document.getElementById("lbl_total_contract").innerText = __("total_contract") + " *";
+        document.getElementById("lbl_mode").innerText = __("mode") + " *";
+        document.getElementById("lbl_note").innerText = __("note");
+        document.getElementById("lbl_save_expense").innerText = __("save_expense");
+        document.getElementById("lbl_cancel").innerText = __("cancel");
+        document.getElementById("opt_cash").innerText = __("cash");
+
+        labelAmountToday = __("amount_today") + " *";
+        labelAdvance = __("amount_today") + " *";
+        labelInstallment = __("installment") + " *";
+
+        document.getElementById("amount_label").innerText = labelAmountToday;
+    }
+
+    async function loadFormMetadata() {
+        const sysData = await getSystemData();
+        if (!sysData) return;
+
+        // Populate Categories
+        const catSelect = document.getElementById("category");
+        catSelect.innerHTML = `<option value="">-- ${__('category')} --</option>`;
+        
+        const defaultCategories = ["Tent & Stage", "Sound & DJ", "Prasad & Bhojan", "Pooja Samagri", "Lightings", "Decoration", "Misc"];
+        defaultCategories.forEach(c => {
+            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+
+        // Parse pending contracts
+        const expenses = sysData.expenses || [];
+        const parents = expenses.filter(e => parseFloat(e.total_contract_amount || 0) > 0 && !e.parent_expense_no);
+
+        activeContracts = parents.map(p => {
+            let paid = parseFloat(p.amount);
+            expenses.forEach(inst => {
+                if (inst.parent_expense_no === p.expense_no) {
+                    paid += parseFloat(inst.amount);
+                }
+            });
+            const due = parseFloat(p.total_contract_amount) - paid;
+            return {
+                expense_no: p.expense_no,
+                title: p.title,
+                category: p.category,
+                total: parseFloat(p.total_contract_amount),
+                paid: paid,
+                due: due
+            };
+        }).filter(p => p.due > 0);
+
+        // Populate Select Contract
+        const parentSelect = document.getElementById("parent_expense_no");
+        parentSelect.innerHTML = `<option value="">-- ${__('select_promise')} --</option>`;
+        activeContracts.forEach(c => {
+            parentSelect.innerHTML += `<option value="${c.expense_no}">${c.title} (Bal: ₹${c.due.toFixed(2)})</option>`;
+        });
+    }
+
+    function togglePaymentFields(type) {
+        const titleSec = document.getElementById('title_section');
+        const catSec = document.getElementById('category_section');
+        const totalSec = document.getElementById('total_contract_section');
+        const instSec = document.getElementById('installment_section');
+        const infoCard = document.getElementById('contract_info_card');
+        
+        const titleInp = document.getElementById('title');
+        const catInp = document.getElementById('category');
+        const totalInp = document.getElementById('total_contract_amount');
+        const parentSelect = document.getElementById('parent_expense_no');
+        
+        const amtLabel = document.getElementById('amount_label');
+
+        if (type === 'full') {
+            titleSec.style.display = 'block';
+            catSec.style.display = 'block';
+            totalSec.style.display = 'none';
+            instSec.style.display = 'none';
+            infoCard.style.display = 'none';
+            
+            titleInp.required = true;
+            catInp.required = true;
+            totalInp.required = false;
+            parentSelect.required = false;
+            
+            amtLabel.innerText = labelAmountToday;
+        } else if (type === 'new_contract') {
+            titleSec.style.display = 'block';
+            catSec.style.display = 'block';
+            totalSec.style.display = 'block';
+            instSec.style.display = 'none';
+            infoCard.style.display = 'none';
+            
+            titleInp.required = true;
+            catInp.required = true;
+            totalInp.required = true;
+            parentSelect.required = false;
+            
+            amtLabel.innerText = labelAdvance;
+        } else if (type === 'installment') {
+            titleSec.style.display = 'none';
+            catSec.style.display = 'none';
+            totalSec.style.display = 'none';
+            instSec.style.display = 'block';
+            
+            titleInp.required = false;
+            catInp.required = false;
+            totalInp.required = false;
+            parentSelect.required = true;
+            
+            amtLabel.innerText = labelInstallment;
+            updateContractInfo(parentSelect.value);
+        }
+    }
+
+    function updateContractInfo(expenseNo) {
+        const card = document.getElementById("contract_info_card");
+        const amountInput = document.getElementById("amount");
+
+        if (!expenseNo) {
+            card.style.display = "none";
+            return;
+        }
+
+        const c = activeContracts.find(con => con.expense_no === expenseNo);
+        if (c) {
+            document.getElementById("info_total").innerText = "₹" + c.total.toFixed(2);
+            document.getElementById("info_paid").innerText = "₹" + c.paid.toFixed(2);
+            document.getElementById("info_due").innerText = "₹" + c.due.toFixed(2);
+
+            amountInput.max = c.due;
+            amountInput.placeholder = `Max allowed: ₹${c.due.toFixed(2)}`;
+
+            card.style.display = "block";
+        }
+    }
+
+    document.getElementById("expenseForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const errDiv = document.getElementById("error");
+        errDiv.style.display = "none";
+
+        const paymentType = document.querySelector('input[name="payment_type"]:checked').value;
+        const currentUser = getCurrentUser();
+        const viewingFestId = getViewingFestivalId();
+
+        const expenseData = {
+            date: new Date().toLocaleDateString('en-CA'),
+            title: document.getElementById("title").value.trim(),
+            category: document.getElementById("category").value,
+            amount: parseFloat(document.getElementById("amount").value),
+            mode: document.getElementById("mode").value,
+            note: document.getElementById("note").value.trim(),
+            added_by_name: currentUser.name,
+            added_by_mobile: currentUser.mobile,
+            status: "Approved", // Auto-approved in static apps for simplicity
+            festival_id: viewingFestId
+        };
+
+        if (paymentType === "new_contract") {
+            expenseData.total_contract_amount = parseFloat(document.getElementById("total_contract_amount").value);
+            if (expenseData.total_contract_amount < expenseData.amount) {
+                errDiv.innerText = "Error: Today's payment cannot exceed total contract value!";
+                errDiv.style.display = "block";
+                return;
+            }
+        } else if (paymentType === "installment") {
+            expenseData.parent_expense_no = document.getElementById("parent_expense_no").value;
+            // Get parent contract title & category
+            const parent = activeContracts.find(con => con.expense_no === expenseData.parent_expense_no);
+            if (parent) {
+                expenseData.title = `Installment for: ${parent.title}`;
+                expenseData.category = parent.category;
+            }
+        }
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    action: "addExpense",
+                    expense: expenseData,
+                    currentUser: currentUser
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                invalidateCache();
+                alert("खर्च एंट्री सफलतापूर्वक दर्ज की गई!");
+                window.location.href = "expenses.html";
+            } else {
+                errDiv.innerText = "Error: " + data.message;
+                errDiv.style.display = "block";
+            }
+        } catch(e) {
+            console.error(e);
+            errDiv.innerText = "Network Error saving entry.";
+            errDiv.style.display = "block";
+        }
+    });
+</script>
+</body>
+</html>

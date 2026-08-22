@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chanda System - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f4f7f6;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --muted: #7f8c8d;
+            --border: #e2e8f0;
+            --orange: #ff851b;
+            --orange-hover: #e07310;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #001f3f 0%, #002d5c 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        .login-container {
+            width: 400px;
+            max-width: 90%;
+            background: var(--card);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .login-header h2 {
+            margin: 10px 0;
+            color: #001f3f;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            background: var(--orange);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .btn-block:hover {
+            background: var(--orange-hover);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            margin: 15px auto 0 auto;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--orange);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <div class="login-header">
+        <i class="fas fa-dharmachakra" style="font-size: 48px; color: var(--orange); margin-bottom: 10px;"></i>
+        <h2>Chanda System</h2>
+        <p style="color: var(--muted); font-size:13px; margin-top:0;">Secure Multi-Festival Portal</p>
+    </div>
+
+    <div id="error" class="error-message"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label>Mobile Number (मोबाइल नंबर)</label>
+            <input type="text" id="mobile" required maxlength="10" placeholder="Enter 10-digit number">
+        </div>
+        <div class="form-group">
+            <label>Password (पासवर्ड)</label>
+            <input type="password" id="password" required placeholder="Enter password">
+        </div>
+        <button type="submit" class="btn-block">Sign In / लॉगिन करें</button>
+        <div id="spinner" class="loading-spinner"></div>
+    </form>
+    
+    <div style="margin-top: 20px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 15px;">
+        Demo login details: <strong>1234567890</strong> / password: <strong>password</strong>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+    // Redirect if already logged in
+    if (getCurrentUser()) {
+        window.location.href = "index.html";
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const errorDiv = document.getElementById("error");
+        const spinner = document.getElementById("spinner");
+        const mobile = document.getElementById("mobile").value.trim();
+        const password = document.getElementById("password").value;
+        
+        errorDiv.style.display = "none";
+        spinner.style.display = "block";
+        
+        if (API_URL.includes("YOUR_DEPLOYED_APPS_SCRIPT_URL")) {
+            errorDiv.innerText = "Error: Please edit config.js and add your Google Apps Script Web App URL first!";
+            errorDiv.style.display = "block";
+            spinner.style.display = "none";
+            return;
+        }
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                mode: "no-cors", // Use standard POST form submit redirects. Apps Script returns CORS issues with direct POST JSON unless handled.
+                // Wait! Since Apps Script returns JSON, to avoid CORS block with POST, we submit as plain text and let Apps Script execute.
+                body: JSON.stringify({
+                    action: "login",
+                    mobile: mobile,
+                    password: password
+                })
+            });
+            
+            // To fetch safely across CORS redirects with Google Web Apps, we use standard GET/POST methods or read responses.
+            // Let's do a trick: Apps Script allows GET requests. But since this is a login with password, we POST.
+            // Wait, we can fetch securely by sending JSON payloads using content-type text/plain to avoid pre-flight CORS, and returning JSON.
+            // Let's make a real POST request to the API:
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain" // Prevents CORS preflight pre-check issues in browsers
+                },
+                body: JSON.stringify({
+                    action: "login",
+                    mobile: mobile,
+                    password: password
+                })
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                localStorage.setItem("currentUser", JSON.stringify(data.user));
+                // Trigger background fetch to populate local Cache
+                await getSystemData(true);
+                window.location.href = "index.html";
+            } else {
+                errorDiv.innerText = data.message || "Invalid credentials.";
+                errorDiv.style.display = "block";
+            }
+        } catch(err) {
+            console.error(err);
+            errorDiv.innerText = "Network error. Please verify Apps Script Web App URL.";
+            errorDiv.style.display = "block";
+        } finally {
+            spinner.style.display = "none";
+        }
+    });
+</script>
+</body>
+</html>

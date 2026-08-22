@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chanda System - Year / Festival Closing</title>
+    <style>
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--text);
+            border-bottom: 2px solid var(--orange);
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="margin:0;"><i class="fas fa-calendar-alt"></i> Year / Festival Master</h2>
+    </div>
+
+    <div class="layout-grid">
+        <!-- Add New Festival -->
+        <div class="card">
+            <h3>Add New Year / Festival Session</h3>
+            <form id="festForm">
+                <div class="form-group">
+                    <label>Session / Festival Name *</label>
+                    <input type="text" id="fest_name" required placeholder="e.g. Ganesh Utsav 2027">
+                </div>
+                <button type="submit" class="btn" style="width:100%;"><i class="fas fa-plus"></i> Create Session</button>
+            </form>
+        </div>
+
+        <!-- List of Festivals -->
+        <div class="card">
+            <h3>Existing Sessions</h3>
+            <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border); font-weight:bold; color:var(--muted);">
+                        <th style="padding:10px;">Festival Name</th>
+                        <th style="padding:10px;">Status</th>
+                        <th style="padding:10px; text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fests_tbody">
+                    <!-- Dynamic -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="includes/header.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        if (!isAdmin()) {
+            alert("Access denied.");
+            window.location.href = "index.html";
+            return;
+        }
+        await loadFestivals();
+    });
+
+    async function loadFestivals() {
+        const sysData = await getSystemData();
+        if (!sysData) return;
+
+        const fests = sysData.festivals || [];
+        const tbody = document.getElementById("fests_tbody");
+        tbody.innerHTML = "";
+
+        if (fests.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="padding:15px; text-align:center; color:var(--muted)">No sessions found.</td></tr>`;
+            return;
+        }
+
+        fests.forEach(f => {
+            const isActive = f.status === "active";
+            const badgeColor = isActive ? "#2ecc40" : "#7f8c8d";
+            
+            let actionHtml = '-';
+            if (!isActive) {
+                actionHtml = `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="activateFest('${f.id}')"><i class="fas fa-toggle-on"></i> Set Active</button>`;
+            }
+
+            tbody.innerHTML += `
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:10px;"><strong>${f.name}</strong></td>
+                    <td style="padding:10px;"><span class="erp-badge" style="background:${badgeColor}">${f.status}</span></td>
+                    <td style="padding:10px; text-align:right;">${actionHtml}</td>
+                </tr>
+            `;
+        });
+    }
+
+    document.getElementById("festForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = document.getElementById("fest_name").value.trim();
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    action: "saveFestival",
+                    festival: { name: name, status: "archived" },
+                    currentUser: getCurrentUser()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                invalidateCache();
+                alert("नई उत्सव/सत्र सफलतापूर्वक बनाया गया!");
+                window.location.reload();
+            } else {
+                alert("त्रुटि: " + data.message);
+            }
+        } catch(err) {
+            console.error(err);
+            alert("कनेक्शन एरर!");
+        }
+    });
+
+    async function activateFest(festId) {
+        if (!confirm("क्या आप वाकई इस उत्सव सत्र को सक्रिय (Active) करना चाहते हैं? बाकी सभी सत्र ऑटोमैटिकली आर्काइव हो जाएंगे।")) return;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    action: "saveFestival",
+                    festival: { id: festId, status: "active" },
+                    currentUser: getCurrentUser()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                invalidateCache();
+                alert("चयनित सत्र को सक्रिय कर दिया गया है!");
+                window.location.reload();
+            } else {
+                alert("त्रुटि: " + data.message);
+            }
+        } catch(e) {
+            console.error(e);
+            alert("त्रुटि आई।");
+        }
+    }
+</script>
+</body>
+</html>

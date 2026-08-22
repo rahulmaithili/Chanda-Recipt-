@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chanda System - Users Management</title>
+    <style>
+        .summary-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .summary-item {
+            flex: 1;
+            min-width: 120px;
+            background: var(--card);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .summary-item strong {
+            display: block;
+            font-size: 18px;
+            color: var(--orange);
+        }
+
+        .summary-item span {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .table-card {
+            background: var(--card);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: rgba(0,0,0,0.01);
+            font-weight: bold;
+            color: var(--muted);
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border-radius: 8px;
+            width: 650px;
+            max-width: 95%;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 5px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        /* Action Menu */
+        .action-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--muted);
+            padding: 5px;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: var(--card);
+            min-width: 160px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 6px;
+            z-index: 50;
+            border: 1px solid var(--border);
+        }
+
+        .dropdown-menu a {
+            color: var(--text);
+            padding: 10px 15px;
+            text-decoration: none;
+            display: block;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dropdown-menu a:hover {
+            background: rgba(0,0,0,0.02);
+        }
+        
+        .show { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="margin:0;"><i class="fas fa-users-cog"></i> <span id="lbl_users_management">Users Management</span></h2>
+        <button class="btn btn-dark" onclick="openAddModal()"><i class="fas fa-plus"></i> <span id="lbl_add_user">Add User</span></button>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="summary-row">
+        <div class="summary-item">
+            <strong id="sum_collectors">0</strong>
+            <span>Total Collectors</span>
+        </div>
+        <div class="summary-item">
+            <strong id="sum_target">₹0.00</strong>
+            <span>Active Targets</span>
+        </div>
+        <div class="summary-item">
+            <strong id="sum_achieved" style="color:#2ecc40;">₹0.00</strong>
+            <span>Achieved Total</span>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div style="overflow-x:auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member Details</th>
+                        <th>Mobile</th>
+                        <th>Village</th>
+                        <th>Role</th>
+                        <th>Target</th>
+                        <th>Achieved</th>
+                        <th>Status</th>
+                        <th>Web Login</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="members_tbody">
+                    <!-- Dynamic -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <div style="background:#001f3f; color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+            <span id="modal_title">Add User</span>
+            <span style="cursor:pointer; font-size:20px;" onclick="closeModal()">&times;</span>
+        </div>
+        <form id="userForm">
+            <input type="hidden" id="user_id">
+            <div class="modal-grid">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="name" required placeholder="e.g. Ritesh">
+                </div>
+                <div class="form-group">
+                    <label>Mobile *</label>
+                    <input type="text" id="mobile" required maxlength="10" placeholder="10-digit number">
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" id="password" required placeholder="Login password">
+                </div>
+                <div class="form-group">
+                    <label>Role *</label>
+                    <select id="role" required>
+                        <option value="member">Collector</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status *</label>
+                    <select id="status" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Village *</label>
+                    <select id="village" required>
+                        <option value="">Select Village</option>
+                        <option value="गणेशखपरी">गणेशखपरी</option>
+                        <option value="बालोद">बालोद</option>
+                        <option value="लाटाबोड़">लाटाबोड़</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Target Donation (तय लक्ष्य - ₹)</label>
+                    <input type="number" id="target_donation" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Profile Picture (सदस्य फोटो)</label>
+                    <input type="file" id="profile_pic" accept="image/*">
+                </div>
+                
+                <div style="grid-column: span 2; display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                    <input type="checkbox" id="allow_login" value="1">
+                    <label for="allow_login" style="font-weight:600; cursor:pointer;">वेब लॉगिन की अनुमति दें (Allow Web Login)</label>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; padding:15px; border-top: 1px solid var(--border); background:#fdfdfd;">
+                <button type="submit" class="btn"><i class="fas fa-save"></i> Save</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="includes/header.js"></script>
+<script>
+    let rawUsers = [];
+    let rawDonations = [];
+    let profilePicBase64 = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        translateLabels();
+        await loadMembers();
+        
+        // Setup FileReader base64 converter
+        document.getElementById("profile_pic").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    profilePicBase64 = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    function translateLabels() {
+        document.getElementById("lbl_users_management").innerText = __("users_management");
+        document.getElementById("lbl_add_user").innerText = __("add_user");
+    }
+
+    async function loadMembers() {
+        const sysData = await getSystemData();
+        if (!sysData) return;
+
+        rawUsers = sysData.users || [];
+        rawDonations = sysData.donations || [];
+
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById("members_tbody");
+        tbody.innerHTML = "";
+
+        let activeTargetSum = 0;
+        let activeAchievedSum = 0;
+
+        rawUsers.forEach(u => {
+            // Calculate achieved collections for this member
+            let achieved = 0;
+            rawDonations.forEach(d => {
+                if (d.collected_by_mobile === u.mobile) {
+                    achieved += parseFloat(d.amount);
+                }
+            });
+            u.paid_donation = achieved;
+            
+            if (u.status === "active") {
+                activeTargetSum += parseFloat(u.target_donation || 0);
+                activeAchievedSum += achieved;
+            }
+
+            const picHtml = u.profile_pic ? 
+                `<img src="${u.profile_pic}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid var(--border);">` :
+                `<div style="width:32px; height:32px; border-radius:50%; background:var(--orange)22; color:var(--orange); display:inline-flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; border:1px solid var(--border);">${u.name.charAt(0).toUpperCase()}</div>`;
+
+            tbody.innerHTML += `
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="display:flex; align-items:center; gap:8px;">
+                        ${picHtml}
+                        <strong>${u.name}</strong>
+                    </td>
+                    <td>${u.mobile}</td>
+                    <td>${u.village || '-'}</td>
+                    <td><span class="erp-badge" style="background:${u.role === 'admin' ? '#0074d9' : '#39cccc'}">${u.role}</span></td>
+                    <td style="font-weight:600;">₹${parseFloat(u.target_donation || 0).toLocaleString()}</td>
+                    <td style="font-weight:600; color:#27ae60;">₹${achieved.toLocaleString()}</td>
+                    <td><span class="erp-badge" style="background:${u.status === 'active' ? '#2ecc40' : '#ff4136'}">${u.status}</span></td>
+                    <td><span class="erp-badge" style="background:${u.allow_login == 1 ? '#2ecc40' : '#7f8c8d'}">${u.allow_login == 1 ? 'Yes' : 'No'}</span></td>
+                    <td style="text-align:right;">
+                        <div class="action-dropdown">
+                            <button class="dropdown-btn" onclick="toggleDropdown(event, this)"><i class="fas fa-ellipsis-v"></i></button>
+                            <div class="dropdown-menu">
+                                <a href="#" onclick="openEditModal('${u.id}')"><i class="fas fa-edit"></i> Edit Details</a>
+                                <a href="#" onclick="deleteUser('${u.id}')" style="color:#ff4136;"><i class="fas fa-trash"></i> Delete User</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("sum_collectors").innerText = rawUsers.length;
+        document.getElementById("sum_target").innerText = '₹' + activeTargetSum.toLocaleString();
+        document.getElementById("sum_achieved").innerText = '₹' + activeAchievedSum.toLocaleString();
+    }
+
+    function toggleDropdown(e, btn) {
+        e.stopPropagation();
+        document.querySelectorAll(".dropdown-menu").forEach(m => m.classList.remove("show"));
+        btn.nextElementSibling.classList.toggle("show");
+    }
+
+    document.addEventListener("click", () => {
+        document.querySelectorAll(".dropdown-menu").forEach(m => m.classList.remove("show"));
+    });
+
+    function openAddModal() {
+        document.getElementById("user_id").value = "";
+        document.getElementById("name").value = "";
+        document.getElementById("mobile").value = "";
+        document.getElementById("password").value = "";
+        document.getElementById("role").value = "member";
+        document.getElementById("status").value = "active";
+        document.getElementById("village").value = "";
+        document.getElementById("target_donation").value = "0";
+        document.getElementById("allow_login").checked = false;
+        profilePicBase64 = null;
+        
+        document.getElementById("modal_title").innerText = "Add User";
+        document.getElementById("userModal").style.display = "flex";
+    }
+
+    function openEditModal(userId) {
+        const u = rawUsers.find(user => user.id == userId);
+        if (!u) return;
+
+        document.getElementById("user_id").value = u.id;
+        document.getElementById("name").value = u.name;
+        document.getElementById("mobile").value = u.mobile;
+        document.getElementById("password").value = ""; // Empty to keep same
+        document.getElementById("password").required = false;
+        document.getElementById("role").value = u.role;
+        document.getElementById("status").value = u.status;
+        document.getElementById("village").value = u.village || "";
+        document.getElementById("target_donation").value = u.target_donation || "0";
+        document.getElementById("allow_login").checked = u.allow_login == 1;
+        profilePicBase64 = null;
+        
+        document.getElementById("modal_title").innerText = "Edit User";
+        document.getElementById("userModal").style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById("userModal").style.display = "none";
+    }
+
+    document.getElementById("userForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const userId = document.getElementById("user_id").value;
+        const password = document.getElementById("password").value;
+        
+        const userData = {
+            name: document.getElementById("name").value.trim(),
+            mobile: document.getElementById("mobile").value.trim(),
+            role: document.getElementById("role").value,
+            status: document.getElementById("status").value,
+            village: document.getElementById("village").value,
+            target_donation: parseFloat(document.getElementById("target_donation").value),
+            allow_login: document.getElementById("allow_login").checked ? 1 : 0
+        };
+
+        if (userId) userData.id = userId;
+        if (password) userData.password = password;
+        if (profilePicBase64) userData.profile_pic_base64 = profilePicBase64;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    action: "saveUser",
+                    user: userData,
+                    currentUser: getCurrentUser()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                invalidateCache();
+                alert("सदस्य विवरण सफलतापूर्वक सहेजा गया!");
+                window.location.reload();
+            } else {
+                alert("त्रुटि: " + data.message);
+            }
+        } catch(err) {
+            console.error(err);
+            alert("नेटवर्क कनेक्शन एरर!");
+        }
+    });
+
+    async function deleteUser(userId) {
+        if (!confirm("क्या आप वाकई इस यूजर को हटाना चाहते हैं?")) return;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    action: "deleteRecord",
+                    table: "users",
+                    keyColumn: "id",
+                    value: userId,
+                    currentUser: getCurrentUser()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                invalidateCache();
+                alert("यूजर सफलतापूर्वक हटा दिया गया!");
+                window.location.reload();
+            } else {
+                alert("त्रुटि: " + data.message);
+            }
+        } catch(e) {
+            console.error(e);
+            alert("त्रुटि आई।");
+        }
+    }
+</script>
+</body>
+</html>

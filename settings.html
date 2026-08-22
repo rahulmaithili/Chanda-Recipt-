@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chanda System - Committee Settings</title>
+    <style>
+        .form-card {
+            max-width: 600px;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .preview-box {
+            width: 100px;
+            height: 100px;
+            border: 1px dashed var(--border);
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fbfbfb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <div class="form-card">
+        <h3 style="margin-top:0; color:var(--orange); border-bottom:2px solid var(--orange); padding-bottom:10px;" id="lbl_settings_title">
+            <i class="fas fa-cogs"></i> Committee Settings
+        </h3>
+        
+        <div id="error" style="color:red; font-weight:bold; margin-bottom:15px; display:none;"></div>
+
+        <form id="settingsForm">
+            <div class="form-group">
+                <label>Committee Name (समिति का नाम) *</label>
+                <input type="text" id="committee_name" required placeholder="e.g. युवा गणेश उत्सव समिति">
+            </div>
+
+            <div class="form-group">
+                <label>Committee Address (पता) *</label>
+                <input type="text" id="committee_address" required placeholder="e.g. ग्राम - गणेशखपरी, जिला - बालोद">
+            </div>
+
+            <!-- Deity Photo -->
+            <div class="form-group">
+                <label>Deity / Lord Photo (भगवान की फोटो)</label>
+                <input type="file" id="lord_photo" accept="image/*">
+                <div id="deity_preview" class="preview-box">
+                    <span style="font-size:10px; color:var(--muted)">No Image</span>
+                </div>
+            </div>
+
+            <!-- Background Wallpaper -->
+            <div class="form-group">
+                <label>Background Wallpaper (पृष्ठभूमि वॉलपेपर)</label>
+                <input type="file" id="bg_wallpaper" accept="image/*">
+                <div id="wallpaper_preview" class="preview-box" style="width: 100%; height: 120px;">
+                    <span style="font-size:10px; color:var(--muted)">No Image</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Wallpaper Opacity (वॉलपेपर धुंधलापन)</label>
+                <select id="wallpaper_opacity">
+                    <option value="0.05">5% (Very Light)</option>
+                    <option value="0.1" selected>10% (Default)</option>
+                    <option value="0.2">20% (Medium)</option>
+                    <option value="0.3">30% (Darker)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn" style="width:100%; margin-top:10px;" id="lbl_save_settings"><i class="fas fa-save"></i> Save Settings</button>
+        </form>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="includes/header.js"></script>
+<script>
+    let lordPhotoBase64 = null;
+    let bgWallpaperBase64 = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        translateLabels();
+        await loadSettings();
+
+        // Bind Base64 converters
+        document.getElementById("lord_photo").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    lordPhotoBase64 = evt.target.result;
+                    document.getElementById("deity_preview").innerHTML = `<img src="${lordPhotoBase64}" style="width:100%; height:100%; object-fit:contain;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById("bg_wallpaper").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    bgWallpaperBase64 = evt.target.result;
+                    document.getElementById("wallpaper_preview").innerHTML = `<img src="${bgWallpaperBase64}" style="width:100%; height:100%; object-fit:cover;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    function translateLabels() {
+        document.getElementById("lbl_settings_title").innerText = __("committee_settings");
+    }
+
+    async function loadSettings() {
+        const sysData = await getSystemData();
+        if (!sysData) return;
+
+        const settings = sysData.settings || {};
+
+        document.getElementById("committee_name").value = settings.committee_name || "";
+        document.getElementById("committee_address").value = settings.committee_address || "";
+        document.getElementById("wallpaper_opacity").value = settings.wallpaper_opacity || "0.1";
+
+        if (settings.lord_photo) {
+            document.getElementById("deity_preview").innerHTML = `<img src="${settings.lord_photo}" style="width:100%; height:100%; object-fit:contain;">`;
+        }
+        if (settings.bg_wallpaper) {
+            document.getElementById("wallpaper_preview").innerHTML = `<img src="${settings.bg_wallpaper}" style="width:100%; height:100%; object-fit:cover;">`;
+        }
+    }
+
+    document.getElementById("settingsForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const errDiv = document.getElementById("error");
+        errDiv.style.display = "none";
+
+        const settingsData = {
+            committee_name: document.getElementById("committee_name").value.trim(),
+            committee_address: document.getElementById("committee_address").value.trim(),
+            wallpaper_opacity: document.getElementById("wallpaper_opacity").value
+        };
+
+        if (lordPhotoBase64) settingsData.lord_photo_base64 = lordPhotoBase64;
+        if (bgWallpaperBase64) settingsData.bg_wallpaper_base64 = bgWallpaperBase64;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    action: "saveSettings",
+                    settings: settingsData,
+                    currentUser: getCurrentUser()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                invalidateCache();
+                alert("समिति सेटिंग्स सफलतापूर्वक अपडेट की गई!");
+                window.location.reload();
+            } else {
+                errDiv.innerText = "Error: " + data.message;
+                errDiv.style.display = "block";
+            }
+        } catch(err) {
+            console.error(err);
+            errDiv.innerText = "Network Error.";
+            errDiv.style.display = "block";
+        }
+    });
+</script>
+</body>
+</html>
