@@ -593,7 +593,7 @@
       });
     }
 
-    // Language Pack Translation Engine (Fully localized system-wide!)
+    // Language Pack Translation Engine
     const APP_TRANSLATIONS = {
       'en': {
         'dashboard': 'Dashboard',
@@ -609,6 +609,9 @@
         'settings': 'Committee Settings',
         'profile': 'My Profile',
         'logs': 'Audit Logs',
+        'reports': 'Reports & Analytics',
+        'village_report': 'Village Slip Summary',
+        'top_donations': 'Top Contributions (High to Low)',
         
         'total_donation': 'Total Donations',
         'total_expense': 'Total Expenses',
@@ -709,6 +712,9 @@
         'settings': 'समिति सेटिंग्स',
         'profile': 'मेरी प्रोफ़ाइल',
         'logs': 'ऑडिट लॉग्स',
+        'reports': 'रिपोर्ट और विश्लेषण',
+        'village_report': 'गाँव अनुसार रसीदें',
+        'top_donations': 'उच्चतम चंदा संग्रह (अधिक से कम)',
         
         'total_donation': 'कुल चंदा संग्रह',
         'total_expense': 'कुल स्वीकृत खर्चे',
@@ -809,6 +815,9 @@
         'settings': 'Committee Settings',
         'profile': 'My Profile Edit',
         'logs': 'Audit Logs History',
+        'reports': 'Reports & Analytics',
+        'village_report': 'Village wise Slips',
+        'top_donations': 'Top Chanda List (High to Low)',
         
         'total_donation': 'Total Chanda Collection',
         'total_expense': 'Total Expense Logged',
@@ -946,7 +955,7 @@
         }
       }, [currentUser]);
 
-      // Automatically unmount print overlay after print action completes (Resolves print visibility issue!)
+      // Automatically unmount print overlay after print action completes
       useEffect(() => {
         const handleAfterPrint = () => {
           setPrintRecord(null);
@@ -1164,6 +1173,17 @@
                   t={translate}
                 />
               )}
+              {activeTab === 'dues' && (
+                <DuesTrackerView 
+                  systemData={systemData} 
+                  onPayInstallment={(parentRec) => { 
+                    setInstallmentParent(parentRec); 
+                    setCurrentRecord(null); 
+                    setShowDonationForm(true); 
+                  }}
+                  t={translate}
+                />
+              )}
               {activeTab === 'expenses' && (
                 <ExpensesView 
                   systemData={systemData} 
@@ -1175,14 +1195,9 @@
                   t={translate}
                 />
               )}
-              {activeTab === 'dues' && (
-                <DuesTrackerView 
+              {activeTab === 'reports' && (
+                <ReportsView 
                   systemData={systemData} 
-                  onPayInstallment={(parentRec) => { 
-                    setInstallmentParent(parentRec); 
-                    setCurrentRecord(null); 
-                    setShowDonationForm(true); 
-                  }}
                   t={translate}
                 />
               )}
@@ -1356,6 +1371,12 @@
               <button className={activeTab === 'expenses' ? 'active' : ''} onClick={() => setActiveTab('expenses')}>
                 <i className="fas fa-tags sidebar-icon"></i>
                 <span>{t('expenses')}</span>
+              </button>
+            </li>
+            <li>
+              <button className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>
+                <i className="fas fa-chart-line sidebar-icon"></i>
+                <span>{t('reports')}</span>
               </button>
             </li>
             <li>
@@ -1937,6 +1958,136 @@
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Modernized ReportsView Component (Resolves village slips & high-to-low printing requirements!)
+    function ReportsView({ systemData, t }) {
+      const donations = systemData.donations || [];
+      const villages = systemData.villages || [];
+
+      // Calculate village slip counts and collector details
+      const villageReport = villages.map(v => {
+        const slips = donations.filter(d => d.village === v.name);
+        const totalAmount = slips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
+        return {
+          villageName: v.name,
+          slipCount: slips.length,
+          totalAmount: totalAmount,
+          slips: slips
+        };
+      });
+
+      // Sort contributions from highest to lowest amount
+      const sortedDonations = [...donations].sort((a, b) => parseFloat(b.amount || 0) - parseFloat(a.amount || 0));
+
+      const handlePrintReport = (elementId, title) => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Print Report</title>');
+        printWindow.document.write('<style>body { font-family: sans-serif; padding: 20px; } table { width:100%; border-collapse:collapse; margin-top:15px; } th,td { border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; } th { background:#f4f6f9; }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(`<h2>${title}</h2>`);
+        printWindow.document.write(document.getElementById(elementId).outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+      };
+
+      return (
+        <div>
+          {/* Header */}
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-chart-line"></i> {t('reports')}</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / {t('reports')}</small>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '25px' }}>
+            {/* Village summary list */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3><i className="fas fa-map-marked-alt"></i> {t('village_report')}</h3>
+                <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('village-report-table', t('village_report'))}>
+                  <i className="fas fa-print"></i> {t('print')}
+                </button>
+              </div>
+              <div className="table-responsive">
+                <table id="village-report-table">
+                  <thead>
+                    <tr>
+                      <th>{t('village')}</th>
+                      <th>Total Slips</th>
+                      <th>Total Amount</th>
+                      <th>Donors List & Slips</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {villageReport.map(vr => (
+                      <tr key={vr.villageName} style={{ verticalAlign: 'top' }}>
+                        <td><strong>{vr.villageName}</strong></td>
+                        <td>{vr.slipCount}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{vr.totalAmount.toFixed(2)}</td>
+                        <td>
+                          {vr.slips.length > 0 ? (
+                            <ul style={{ paddingLeft: '15px', margin: 0, fontSize: '12px' }}>
+                              {vr.slips.map(s => (
+                                <li key={s.receipt_no} style={{ marginBottom: '4px' }}>
+                                  #{s.receipt_no} - {s.donor_name} (₹{parseFloat(s.amount).toFixed(2)})
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>No slips cut</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* High to Low contributions report */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3><i className="fas fa-sort-amount-down"></i> {t('top_donations')}</h3>
+                <button className="btn btn-secondary btn-sm" onClick={() => handlePrintReport('top-donations-table', t('top_donations'))}>
+                  <i className="fas fa-print"></i> {t('print')}
+                </button>
+              </div>
+              <div className="table-responsive">
+                <table id="top-donations-table">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>{t('receipt_no')}</th>
+                      <th>{t('donor_name')}</th>
+                      <th>{t('village')}</th>
+                      <th>{t('amount')}</th>
+                      <th>{t('mode')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedDonations.map((d, idx) => (
+                      <tr key={d.receipt_no}>
+                        <td><strong>#{idx + 1}</strong></td>
+                        <td>#{d.receipt_no}</td>
+                        <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
+                        <td>{d.village}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)', fontSize: '14px' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                        <td>{d.mode}</td>
+                      </tr>
+                    ))}
+                    {sortedDonations.length === 0 && (
+                      <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No data available.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -2699,7 +2850,6 @@
             </form>
           </div>
 
-          {/* Expanded 15-presets grid layout - matches Screenshot 4 */}
           <div className="card">
             <h3><i className="fas fa-palette"></i> Theme Gallery</h3>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '5px 0 15px' }}>
@@ -3062,6 +3212,7 @@
     // THERMAL SLIP TEMPLATES FOR PRINT VIEW
     // ==========================================
 
+    // Print template
     function PrintReceipt({ slip, settings }) {
       const remainingDues = parseFloat(slip.promised_amount || slip.amount) - parseFloat(slip.amount);
       return (
