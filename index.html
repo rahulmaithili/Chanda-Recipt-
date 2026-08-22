@@ -5245,7 +5245,14 @@
       const [name, setName] = useState(record?.name || '');
       const [mobile, setMobile] = useState(record?.mobile || '');
       const [password, setPassword] = useState('');
-      const [role, setRole] = useState(record?.role || 'Collector');
+      const getNormalizedRole = (r) => {
+        if (!r) return 'Collector';
+        const lower = r.toLowerCase();
+        if (lower === 'super admin') return 'Super Admin';
+        if (lower === 'admin') return 'Admin';
+        return 'Collector';
+      };
+      const [role, setRole] = useState(getNormalizedRole(record?.role));
       const [village, setVillage] = useState(record?.village || '');
       const [targetDonation, setTargetDonation] = useState(record?.target_donation || '');
       const [status, setStatus] = useState(record?.status || 'active');
