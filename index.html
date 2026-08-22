@@ -2011,6 +2011,26 @@
         return APP_TRANSLATIONS[language]?.[key] || APP_TRANSLATIONS['en']?.[key] || key;
       };
 
+      const getRoleDisplayName = (roleVal) => {
+        if (!roleVal) return '';
+        const lower = roleVal.toLowerCase();
+        if (lower === 'super admin') {
+          if (language === 'hi') return 'अध्यक्ष (President)';
+          if (language === 'hinglish') return 'President (Super Admin)';
+          return 'President';
+        }
+        if (lower === 'admin') {
+          if (language === 'hi') return 'कोषाध्यक्ष (Treasurer)';
+          if (language === 'hinglish') return 'Treasurer (Admin)';
+          return 'Treasurer';
+        }
+        if (lower === 'collector') {
+          if (language === 'hi') return 'प्राप्तकर्ता / सदस्य (Collector)';
+          if (language === 'hinglish') return 'Collector (Sadasya)';
+          return 'Collector';
+        }
+        return roleVal;
+      };
       const hasPermission = (pageKey, permissionType) => {
         if (!currentUser) return false;
         const currentRoleLower = (currentUser.role || "").toLowerCase();
@@ -2513,7 +2533,7 @@
             {!collapsed && (
               <div style={{ marginTop: '5px' }}>
                 <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{user.name}</div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>{user.role}</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>{getRoleDisplayName(user.role)}</div>
               </div>
             )}
           </div>
@@ -4377,9 +4397,9 @@
                 <label style={{ fontSize: '11px' }}>{t('role').toUpperCase()}</label>
                 <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
                   <option value="All">All {t('role')}s</option>
-                  <option value="Collector">Collector</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Super Admin">Super Admin</option>
+                  <option value="Collector">{getRoleDisplayName('Collector')}</option>
+                  <option value="Admin">{getRoleDisplayName('Admin')}</option>
+                  <option value="Super Admin">{getRoleDisplayName('Super Admin')}</option>
                 </select>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -4428,7 +4448,7 @@
                       </td>
                       <td><strong>{u.name}</strong></td>
                       <td>{u.mobile}</td>
-                      <td>{u.role}</td>
+                      <td>{getRoleDisplayName(u.role)}</td>
                       <td>
                         <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: u.status === 'active' ? '#d2f4ea' : '#f8d7da', color: u.status === 'active' ? '#0f766e' : '#721c24' }}>
                           {u.status === 'active' ? t('active') : t('inactive')}
@@ -5305,9 +5325,9 @@
                   <div className="form-group">
                     <label>{t('role')}</label>
                     <select value={role} onChange={e => setRole(e.target.value)}>
-                      <option value="Collector">Collector</option>
-                      <option value="Admin">Admin</option>
-                      <option value="Super Admin">Super Admin</option>
+                      <option value="Collector">{getRoleDisplayName('Collector')}</option>
+                      <option value="Admin">{getRoleDisplayName('Admin')}</option>
+                      <option value="Super Admin">{getRoleDisplayName('Super Admin')}</option>
                     </select>
                   </div>
                   <div className="form-group">
