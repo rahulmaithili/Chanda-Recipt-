@@ -478,7 +478,7 @@
     }
 
     .modal-slideover {
-      width: 480px;
+      width: 860px;
       max-width: 100%;
       background: var(--c-card);
       height: 100%;
@@ -517,12 +517,14 @@
       background: rgba(0,0,0,0.02);
     }
 
-    /* Print styles */
+    /* Print styles - Hide print-box on screen and render correctly during print */
+    .print-box {
+      display: none;
+    }
     @media print {
-      body * { visibility: hidden; }
-      .print-box, .print-box * { visibility: visible; }
-      .print-box { position: absolute; left: 0; top: 0; width: 100%; }
-      .app-container { display: none !important; }
+      body * { display: none !important; }
+      .print-box, .print-box * { display: block !important; visibility: visible !important; }
+      .print-box { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
     }
 
     /* Responsive adjustments */
@@ -531,6 +533,7 @@
       .sidebar-overlay.show { display: block; }
       .stats-grid { grid-template-columns: 1fr; }
       .global-search { display: none; }
+      .modal-slideover { width: 100%; }
     }
   </style>
 </head>
@@ -545,12 +548,30 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
+    // Global Confirm Action Helper using SweetAlert2 (Resolves delete ReferenceError!)
+    function confirmAction(title, text, callback) {
+      Swal.fire({
+        title: title,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff851b',
+        cancelButtonColor: '#7f8c8d',
+        confirmButtonText: 'हाँ (Yes)',
+        cancelButtonText: 'रद्द करें (Cancel)'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          callback();
+        }
+      });
+    }
+
     // Language Pack Translation Engine
     const APP_TRANSLATIONS = {
       'en': {
         'dashboard': 'Dashboard',
         'chanda': 'Chanda Collection',
-        'expenses': 'Expenses',
+        'expenses': 'Expenses / Kharcha',
         'handovers': 'Deposits & Handovers',
         'villages': 'Villages',
         'categories': 'Expense Categories',
@@ -713,6 +734,16 @@
         }
       }, [currentUser]);
 
+      // Automatically unmount print overlay after print action completes (Resolves print visibility issue!)
+      useEffect(() => {
+        const handleAfterPrint = () => {
+          setPrintRecord(null);
+          setPrintType('');
+        };
+        window.addEventListener('afterprint', handleAfterPrint);
+        return () => window.removeEventListener('afterprint', handleAfterPrint);
+      }, []);
+
       useEffect(() => {
         if (darkMode) {
           document.body.classList.add("dark-mode");
@@ -817,7 +848,7 @@
       const handleDeleteRecord = (table, keyColumn, value) => {
         confirmAction(
           "क्या आप वाकई इसे हटाना चाहते हैं?",
-          "यह डेटा स्थायी रूप से हटा दिया जाएगा।",
+          "यह डेटा हमेशा के लिए हटा दिया जाएगा।",
           async () => {
             setLoading(true);
             try {
@@ -994,7 +1025,7 @@
             />
           )}
 
-          {/* Printing Overlays */}
+          {/* Hidden print render container overlays */}
           {printRecord && (
             <div className="print-box">
               {printType === 'receipt' ? (
@@ -1268,6 +1299,17 @@
 
       return (
         <div>
+          {/* Dashboard Header Bar */}
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / Dashboard</small>
+            </div>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--navy-accent)' }}>
+              <i className="fas fa-calendar-day"></i> {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+            </div>
+          </div>
+
           <div className="stats-grid">
             <div className="stat-widget bg-accent" onClick={() => setActiveTab('donations')}>
               <h3>₹{totalDonations.toLocaleString('en-IN')}</h3>
@@ -1336,17 +1378,28 @@
 
     function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, t }) {
       const [villageFilter, setVillageFilter] = useState('All');
+      const [modeFilter, setModeFilter] = useState('All');
+      const [searchLocal, setSearchLocal] = useState('');
+      
       const donations = systemData.donations || [];
 
+      // Unified search & filters matching Screenshot 3 design
       const filtered = donations.filter(d => {
-        const matchesSearch = d.donor_name.toLowerCase().includes(globalSearch.toLowerCase()) || 
-                              d.receipt_no.includes(globalSearch) ||
-                              d.donor_mobile.includes(globalSearch);
+        const query = (globalSearch || searchLocal).toLowerCase();
+        const matchesSearch = d.donor_name.toLowerCase().includes(query) || 
+                              d.receipt_no.includes(query) ||
+                              d.donor_mobile.includes(query);
         const matchesVillage = villageFilter === 'All' || d.village === villageFilter;
-        return matchesSearch && matchesVillage;
+        const matchesMode = modeFilter === 'All' || d.mode === modeFilter;
+        return matchesSearch && matchesVillage && matchesMode;
       });
 
-      // Export to CSV Helper
+      const handleClearFilters = () => {
+        setSearchLocal('');
+        setVillageFilter('All');
+        setModeFilter('All');
+      };
+
       const handleExportCSV = () => {
         let headers = ["Receipt No", "Date", "Donor Name", "Mobile", "Village", "Amount", "Mode", "Collected By"];
         let rows = filtered.map(d => [d.receipt_no, d.date, d.donor_name, d.donor_mobile, d.village, d.amount, d.mode, d.collected_by_name]);
@@ -1360,65 +1413,114 @@
         document.body.removeChild(link);
       };
 
+      // Native print table helper (Resolves print view requirements!)
+      const handlePrintTable = () => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Print Donations List</title>');
+        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<h2>चंदा संग्रह विवरण (Donations List)</h2>');
+        printWindow.document.write(document.getElementById('donations-data-table').outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+      };
+
       return (
-        <div className="card">
-          <div className="card-header">
-            <h2><i className="fas fa-hand-holding-usd"></i> चंदा रसीदें (Donations List) ({filtered.length})</h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-secondary" onClick={handleExportCSV}><i className="fas fa-file-csv"></i> Excel/CSV</button>
-              <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> {t('pay_installment')}</button>
+        <div>
+          {/* Screen Header */}
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-hand-holding-usd"></i> चंदा संग्रह रसीदें (Donation Records)</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / Chanda Entry</small>
+            </div>
+            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> नया चंदा प्रविष्ट करें</button>
+          </div>
+
+          {/* Unified Filter Controls Panel - From Screenshot 3 Layout */}
+          <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> FILTERS</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleClearFilters} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> Clear</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '15px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>SEARCH DONORS</label>
+                <input 
+                  type="text" 
+                  placeholder="खोजें: नाम, मोबाइल या रसीद..." 
+                  value={searchLocal} 
+                  onChange={e => setSearchLocal(e.target.value)} 
+                  style={{ padding: '8px', fontSize: '13px' }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>VILLAGE</label>
+                <select value={villageFilter} onChange={e => setVillageFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                  <option value="All">सभी गाँव (All Villages)</option>
+                  {systemData.villages && systemData.villages.map(v => (
+                    <option key={v.id} value={v.name}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px', letterSpacing: '0.5px' }}>PAYMENT MODE</label>
+                <select value={modeFilter} onChange={e => setModeFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                  <option value="All">सभी माध्यम (All Modes)</option>
+                  <option value="Cash">Cash (नकद)</option>
+                  <option value="Online">Online (यूपीआई)</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div style={{ marginBottom: '15px', width: '220px' }}>
-            <select 
-              value={villageFilter} 
-              onChange={e => setVillageFilter(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.15)', background: 'var(--c-card)', color: 'var(--text-primary)' }}
-            >
-              <option value="All">सभी गाँव (All Villages)</option>
-              {systemData.villages && systemData.villages.map(v => (
-                <option key={v.id} value={v.name}>{v.name}</option>
-              ))}
-            </select>
+          {/* Export & Action Buttons */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+            <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> CSV</button>
+            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> Print Table</button>
           </div>
 
-          <div className="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>रसीद क्र</th>
-                  <th>दिनांक</th>
-                  <th>दाता विवरण</th>
-                  <th>गाँव</th>
-                  <th>प्राप्त राशि</th>
-                  <th>शेष (Dues)</th>
-                  <th>भुगतान माध्यम</th>
-                  <th>कार्रवाई</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(d => {
-                  const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
-                  return (
-                    <tr key={d.receipt_no}>
-                      <td>#{d.receipt_no}</td>
-                      <td>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
-                      <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
-                      <td>{d.village}</td>
-                      <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
-                      <td style={{ color: remaining > 0 ? 'red' : 'inherit' }}>₹{remaining.toFixed(2)}</td>
-                      <td>{d.mode}</td>
-                      <td>
-                        <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="card">
+            <div className="table-responsive">
+              <table id="donations-data-table">
+                <thead>
+                  <tr>
+                    <th>रसीद क्र</th>
+                    <th>दिनांक</th>
+                    <th>दाता विवरण</th>
+                    <th>गाँव</th>
+                    <th>प्राप्त राशि</th>
+                    <th>शेष (Dues)</th>
+                    <th>भुगतान माध्यम</th>
+                    <th>कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(d => {
+                    const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
+                    return (
+                      <tr key={d.receipt_no}>
+                        <td>#{d.receipt_no}</td>
+                        <td>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
+                        <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
+                        <td>{d.village}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                        <td style={{ color: remaining > 0 ? 'red' : 'inherit' }}>₹{remaining.toFixed(2)}</td>
+                        <td>{d.mode}</td>
+                        <td>
+                          <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
+                          <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
+                          <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filtered.length === 0 && (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>कोई रसीद नहीं मिली।</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       );
@@ -1427,7 +1529,6 @@
     function DuesTrackerView({ systemData, onPayInstallment, t }) {
       const donations = systemData.donations || [];
       
-      // Calculate dues per parent promised deal
       const dueRecords = donations.filter(d => {
         const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
         return remaining > 0 && !d.parent_receipt_no;
@@ -1453,7 +1554,6 @@
               </thead>
               <tbody>
                 {dueRecords.map(d => {
-                  // Find all installments related to this donation
                   const installments = donations.filter(x => x.parent_receipt_no === d.receipt_no);
                   let totalPaid = parseFloat(d.amount);
                   installments.forEach(ins => totalPaid += parseFloat(ins.amount));
@@ -1488,52 +1588,121 @@
     }
 
     function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, t }) {
+      const [categoryFilter, setCategoryFilter] = useState('All');
+      const [searchLocal, setSearchLocal] = useState('');
+      
       const expenses = systemData.expenses || [];
-      const filtered = expenses.filter(e => e.title.toLowerCase().includes(globalSearch.toLowerCase()) || e.expense_no.includes(globalSearch));
+      const filtered = expenses.filter(e => {
+        const query = (globalSearch || searchLocal).toLowerCase();
+        const matchesSearch = e.title.toLowerCase().includes(query) || e.expense_no.includes(query);
+        const matchesCategory = categoryFilter === 'All' || e.category === categoryFilter;
+        return matchesSearch && matchesCategory;
+      });
+
+      const handleClear = () => {
+        setSearchLocal('');
+        setCategoryFilter('All');
+      };
+
+      const handlePrintTable = () => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Print Expenses List</title>');
+        printWindow.document.write('<style>table {width:100%; border-collapse:collapse; margin-top:20px;} th,td {border:1px solid #ccc; padding:8px; text-align:left; font-size:12px; font-family:sans-serif;} th {background:#f4f6f9;}</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<h2>समिति व्यय विवरण (Expenses List)</h2>');
+        printWindow.document.write(document.getElementById('expenses-data-table').outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+      };
 
       return (
-        <div className="card">
-          <div className="card-header">
-            <h2><i className="fas fa-tags"></i> समिति के व्यय विवरण ({filtered.length})</h2>
+        <div>
+          {/* Header */}
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tags"></i> समिति के व्यय विवरण</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / Expenses</small>
+            </div>
             <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> नया व्यय दर्ज करें</button>
           </div>
-          <div className="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>वाउचर क्रमांक</th>
-                  <th>दिनांक</th>
-                  <th>विवरण</th>
-                  <th>श्रेणी</th>
-                  <th>राशि</th>
-                  <th>खाता</th>
-                  <th>स्थिति</th>
-                  <th>कार्रवाई</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(ex => (
-                  <tr key={ex.expense_no}>
-                    <td>#{ex.expense_no}</td>
-                    <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
-                    <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{ex.note}</small></td>
-                    <td>{ex.category}</td>
-                    <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
-                    <td>{ex.mode}</td>
-                    <td>
-                      <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                        {ex.status}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                      <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
-                      <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
-                    </td>
+
+          {/* Filters Row */}
+          <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> FILTERS</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> Clear</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '15px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px' }}>SEARCH VOUCHERS</label>
+                <input 
+                  type="text" 
+                  placeholder="खर्च का नाम या वाउचर क्र..." 
+                  value={searchLocal} 
+                  onChange={e => setSearchLocal(e.target.value)} 
+                  style={{ padding: '8px', fontSize: '13px' }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px' }}>EXPENSE CATEGORY</label>
+                <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                  <option value="All">सभी श्रेणियां (All Categories)</option>
+                  {systemData.categories && systemData.categories.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Print Options */}
+          <div style={{ marginBottom: '15px' }}>
+            <button className="btn btn-secondary" onClick={handlePrintTable} style={{ padding: '6px 12px', fontSize: '12px', background: '#34495e' }}><i className="fas fa-print"></i> Print Table</button>
+          </div>
+
+          <div className="card">
+            <div className="table-responsive">
+              <table id="expenses-data-table">
+                <thead>
+                  <tr>
+                    <th>वाउचर क्रमांक</th>
+                    <th>दिनांक</th>
+                    <th>विवरण</th>
+                    <th>श्रेणी</th>
+                    <th>राशि</th>
+                    <th>खाता</th>
+                    <th>स्थिति</th>
+                    <th>कार्रवाई</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map(ex => (
+                    <tr key={ex.expense_no}>
+                      <td>#{ex.expense_no}</td>
+                      <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
+                      <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{ex.note}</small></td>
+                      <td>{ex.category}</td>
+                      <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
+                      <td>{ex.mode}</td>
+                      <td>
+                        <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                          {ex.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>कोई खर्चा नहीं मिला।</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       );
@@ -2208,7 +2377,7 @@
     }
 
     // ==========================================
-    // MODAL DIALOGS
+    // MODAL DIALOGS WITH HORIZONTAL SPLIT VIEW (Matches Screenshot 4 layout style!)
     // ==========================================
 
     function DonationFormModal({ record, parentRecord, villages, donations, onClose, onSave, t }) {
@@ -2222,7 +2391,6 @@
 
       useEffect(() => {
         if (parentRecord) {
-          // If paying installment, load outstanding dues
           const installments = donations.filter(x => x.parent_receipt_no === parentRecord.receipt_no);
           let paid = parseFloat(parentRecord.amount);
           installments.forEach(ins => paid += parseFloat(ins.amount));
@@ -2250,6 +2418,8 @@
         onSave(payload);
       };
 
+      const remainingDues = isPromised ? (parseFloat(promisedAmount || 0) - parseFloat(amount || 0)) : 0;
+
       return (
         <div className="modal-slideover-overlay">
           <div className="modal-slideover">
@@ -2258,51 +2428,84 @@
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="slideover-body">
-                {parentRecord && (
-                  <div style={{ padding: '10px', background: '#fff0d3', borderRadius: '4px', marginBottom: '15px', fontSize: '12.5px', color: '#a46000' }}>
-                    <strong>किस्त भुगतान:</strong> रसीद #{parentRecord.receipt_no} के लिए शेष किस्त राशि जमा की जा रही है।
-                  </div>
-                )}
-                <div className="form-group">
-                  <label>दाता का नाम (Donor Name)*</label>
-                  <input type="text" value={donorName} onChange={e => setDonorName(e.target.value)} required disabled={!!parentRecord} />
-                </div>
-                <div className="form-group">
-                  <label>दाता का मोबाइल नंबर</label>
-                  <input type="text" value={donorMobile} onChange={e => setDonorMobile(e.target.value)} disabled={!!parentRecord} />
-                </div>
-                <div className="form-group">
-                  <label>गाँव (Village)*</label>
-                  <select value={village} onChange={e => setVillage(e.target.value)} disabled={!!parentRecord}>
-                    {villages.map(v => (
-                      <option key={v.id} value={v.name}>{v.name}</option>
-                    ))}
-                  </select>
-                </div>
-                {!parentRecord && (
-                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input type="checkbox" id="is_promised" checked={isPromised} onChange={e => setIsPromised(e.target.checked)} style={{ width: 'auto' }} />
-                    <label htmlFor="is_promised" style={{ margin: 0, cursor: 'pointer' }}>यह एक किस्त/तय राशि भुगतान है (Promised Deal)</label>
-                  </div>
-                )}
-                {isPromised && !parentRecord && (
+              {/* Horizontal split form view (Matches Add Student Screenshot 4 style!) */}
+              <div className="slideover-body" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
+                
+                {/* Form fields section */}
+                <div>
+                  {parentRecord && (
+                    <div style={{ padding: '10px', background: '#fff0d3', borderRadius: '4px', marginBottom: '15px', fontSize: '12.5px', color: '#a46000' }}>
+                      <strong>किस्त भुगतान:</strong> रसीद #{parentRecord.receipt_no} के लिए शेष किस्त राशि जमा की जा रही है।
+                    </div>
+                  )}
                   <div className="form-group">
-                    <label>कुल प्रतिबद्ध राशि (Total Deal Amount)*</label>
-                    <input type="number" placeholder="₹" value={promisedAmount} onChange={e => setPromisedAmount(e.target.value)} required />
+                    <label>दाता का नाम (Donor Name)*</label>
+                    <input type="text" value={donorName} onChange={e => setDonorName(e.target.value)} required disabled={!!parentRecord} />
                   </div>
-                )}
-                <div className="form-group">
-                  <label>{parentRecord ? 'किस्त भुगतान राशि' : 'आज प्राप्त राशि'} (Amount)*</label>
-                  <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+                  <div className="form-group">
+                    <label>दाता का मोबाइल नंबर</label>
+                    <input type="text" value={donorMobile} onChange={e => setDonorMobile(e.target.value)} disabled={!!parentRecord} />
+                  </div>
+                  <div className="form-group">
+                    <label>गाँव (Village)*</label>
+                    <select value={village} onChange={e => setVillage(e.target.value)} disabled={!!parentRecord}>
+                      {villages.map(v => (
+                        <option key={v.id} value={v.name}>{v.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {!parentRecord && (
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input type="checkbox" id="is_promised" checked={isPromised} onChange={e => setIsPromised(e.target.checked)} style={{ width: 'auto' }} />
+                      <label htmlFor="is_promised" style={{ margin: 0, cursor: 'pointer' }}>किस्त/तय राशि भुगतान (Promised Deal)</label>
+                    </div>
+                  )}
+                  {isPromised && !parentRecord && (
+                    <div className="form-group">
+                      <label>कुल तय राशि (Total Deal Amount)*</label>
+                      <input type="number" placeholder="₹" value={promisedAmount} onChange={e => setPromisedAmount(e.target.value)} required />
+                    </div>
+                  )}
+                  <div className="form-group">
+                    <label>{parentRecord ? 'किस्त भुगतान राशि' : 'आज प्राप्त राशि'} (Amount)*</label>
+                    <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label>भुगतान माध्यम (Mode)</label>
+                    <select value={mode} onChange={e => setMode(e.target.value)}>
+                      <option value="Cash">Cash (नकद)</option>
+                      <option value="Online">Online (UPI / क्यूआर)</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>भुगतान माध्यम (Mode)</label>
-                  <select value={mode} onChange={e => setMode(e.target.value)}>
-                    <option value="Cash">Cash (नकद)</option>
-                    <option value="Online">Online (UPI / क्यूआर)</option>
-                  </select>
+
+                {/* Live Preview Panel on the Right */}
+                <div style={{ background: 'rgba(0,0,0,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                  <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice-dollar"></i> रसीद पूर्वावलोकन (Live Slip Preview)</h4>
+                  <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
+                    <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px' }}>
+                      <strong style={{ fontSize: '13px' }}>गणेश उत्सव समिति</strong>
+                      <p style={{ margin: '2px 0 0', fontSize: '9px' }}>चंदा प्राप्ति रसीद</p>
+                    </div>
+                    <div style={{ margin: '15px 0', flex: 1 }}>
+                      <p><strong>रसीद क्र:</strong> #{record?.receipt_no || 'DRAFT'}</p>
+                      <p><strong>दाता:</strong> {donorName || '---'}</p>
+                      <p><strong>ग्राम:</strong> {village || '---'}</p>
+                      <p><strong>प्राप्त राशि:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
+                      {isPromised && (
+                        <>
+                          <p><strong>तय राशि:</strong> ₹{parseFloat(promisedAmount || 0).toFixed(2)}</p>
+                          <p style={{ color: 'red' }}><strong>बकाया:</strong> ₹{remainingDues.toFixed(2)}</p>
+                        </>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #000', paddingTop: '8px' }}>
+                      <span>कोषाध्यक्ष</span>
+                      <span>कलेक्टर</span>
+                    </div>
+                  </div>
                 </div>
+
               </div>
               <div className="slideover-footer">
                 <button type="submit" className="btn">सहेजें (Save)</button>
@@ -2326,7 +2529,6 @@
       const handleSubmit = (e) => {
         e.preventDefault();
         if (!title.trim() || !amount) return alert("सभी आवश्यक फील्ड भरें।");
-        
         onSave({
           title: title.trim(),
           category: category,
@@ -2351,49 +2553,77 @@
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="slideover-body">
-                <div className="form-group">
-                  <label>खर्च शीर्षक (Title)*</label>
-                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} required />
+              <div className="slideover-body" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
+                
+                {/* Form Inputs */}
+                <div>
+                  <div className="form-group">
+                    <label>खर्च शीर्षक (Title)*</label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label>व्यय श्रेणी (Category)*</label>
+                    <select value={category} onChange={e => setCategory(e.target.value)}>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>राशि (Amount)*</label>
+                    <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label>भुगतान माध्यम (Mode)</label>
+                    <select value={mode} onChange={e => setMode(e.target.value)}>
+                      <option value="Cash">Cash (नकद)</option>
+                      <option value="Online">Online (UPI / बैंक)</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>स्रोत खाता (Account source)</label>
+                    <select value={accountId} onChange={e => setAccountId(e.target.value)}>
+                      {accounts.map(a => (
+                        <option key={a.id} value={a.id}>{a.account_name} (Bal: ₹{parseFloat(a.balance).toFixed(2)})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>स्थिति (Status)</label>
+                    <select value={status} onChange={e => setStatus(e.target.value)}>
+                      <option value="Pending">Pending (लंबित)</option>
+                      <option value="Approved">Approved (स्वीकृत)</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>नोट/टिप्पणी</label>
+                    <textarea rows="3" placeholder="वैकल्पिक" value={note} onChange={e => setNote(e.target.value)}></textarea>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>व्यय श्रेणी (Category)*</label>
-                  <select value={category} onChange={e => setCategory(e.target.value)}>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.name}>{c.name}</option>
-                    ))}
-                  </select>
+
+                {/* Right Side Live Preview */}
+                <div style={{ background: 'rgba(0,0,0,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                  <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice"></i> व्यय पूर्वावलोकन (Voucher Preview)</h4>
+                  <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
+                    <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px' }}>
+                      <strong style={{ fontSize: '13px' }}>गणेश उत्सव समिति</strong>
+                      <p style={{ margin: '2px 0 0', fontSize: '9px' }}>व्यय भुगतान वाउचर</p>
+                    </div>
+                    <div style={{ margin: '15px 0', flex: 1 }}>
+                      <p><strong>वाउचर क्र:</strong> #{record?.expense_no || 'DRAFT'}</p>
+                      <p><strong>विवरण:</strong> {title || '---'}</p>
+                      <p><strong>श्रेणी:</strong> {category}</p>
+                      <p><strong>राशि:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
+                      <p><strong>माध्यम:</strong> {mode}</p>
+                      <p><strong>स्थिति:</strong> {status}</p>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #000', paddingTop: '8px' }}>
+                      <span>स्वीकृतकर्ता</span>
+                      <span>प्राप्तकर्ता</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>राशि (Amount)*</label>
-                  <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label>भुगतान माध्यम (Mode)</label>
-                  <select value={mode} onChange={e => setMode(e.target.value)}>
-                    <option value="Cash">Cash (नकद)</option>
-                    <option value="Online">Online (UPI / बैंक)</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>स्रोत खाता (Account source)</label>
-                  <select value={accountId} onChange={e => setAccountId(e.target.value)}>
-                    {accounts.map(a => (
-                      <option key={a.id} value={a.id}>{a.account_name} (Bal: ₹{parseFloat(a.balance).toFixed(2)})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>स्थिति (Status)</label>
-                  <select value={status} onChange={e => setStatus(e.target.value)}>
-                    <option value="Pending">Pending (लंबित)</option>
-                    <option value="Approved">Approved (स्वीकृत)</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>नोट/टिप्पणी</label>
-                  <textarea rows="3" placeholder="वैकल्पिक" value={note} onChange={e => setNote(e.target.value)}></textarea>
-                </div>
+
               </div>
               <div className="slideover-footer">
                 <button type="submit" className="btn">सहेजें</button>
