@@ -1421,7 +1421,7 @@
       }
     };
 
-    // 15 Gorgeous CSS Color Presets matching Screenshot 4 Theme Matrix
+    // 18 Gorgeous CSS Color Presets matching Screenshot 4 Theme Matrix
     const THEME_PRESETS = [
       { id: 'navy', name: 'Enterprise Navy', primary: '#001f3f', accent: '#0074D9', dark: '#001529', light: '#003366', hover: '#002a52' },
       { id: 'cyan', name: 'Graphite & Cyan', primary: '#2c3e50', accent: '#00bec4', dark: '#1a252f', light: '#34495e', hover: '#22303e' },
@@ -1437,8 +1437,35 @@
       { id: 'teal', name: 'Mineral Teal', primary: '#16a085', accent: '#1abc9c', dark: '#0e6251', light: '#45b39d', hover: '#117864' },
       { id: 'copper', name: 'Paper & Copper', primary: '#7e5109', accent: '#ba4a00', dark: '#563706', light: '#a06a14', hover: '#654107' },
       { id: 'mint', name: 'Obsidian & Mint', primary: '#1b2631', accent: '#2ecc71', dark: '#11171d', light: '#2c3e50', hover: '#151d26' },
-      { id: 'indigo', name: 'Cloud & Indigo Soft', primary: '#515a5a', accent: '#5b2c6f', dark: '#353b3b', light: '#7b8888', hover: '#424949' }
+      { id: 'indigo', name: 'Cloud & Indigo Soft', primary: '#515a5a', accent: '#5b2c6f', dark: '#353b3b', light: '#7b8888', hover: '#424949' },
+      { id: 'purple', name: 'Royal Purple', primary: '#4a154b', accent: '#e01e5a', dark: '#300d32', light: '#68246a', hover: '#3c113d' },
+      { id: 'orange', name: 'Sunset Orange', primary: '#d35400', accent: '#f39c12', dark: '#a04000', light: '#e67e22', hover: '#ba4a00' },
+      { id: 'crimson', name: 'Crimson Slate', primary: '#781c1c', accent: '#c0392b', dark: '#541414', light: '#962d2d', hover: '#631717' }
     ];
+
+    const sendWhatsAppReceipt = (d, settings) => {
+      const committeeName = settings?.committee_name || "श्री गणेश उत्सव समिति";
+      const text = `*${committeeName}*\n` +
+                   `-----------------------------\n` +
+                   `*चंदा रसीद (Donation Receipt)*\n` +
+                   `*रसीद संख्या (Receipt No):* #${d.receipt_no}\n` +
+                   `*दिनांक (Date):* ${new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}\n` +
+                   `*दाता का नाम (Donor):* ${d.donor_name}\n` +
+                   `*ग्राम/मोहल्ला (Village):* ${d.village}\n` +
+                   `*राशि (Amount):* ₹${parseFloat(d.amount).toFixed(2)}\n` +
+                   `*भुगतान माध्यम (Mode):* ${d.mode}\n` +
+                   `*प्राप्तकर्ता (Received By):* ${d.collected_by_name || 'कमिटी सदस्य'}\n` +
+                   `-----------------------------\n` +
+                   `*गणपति बाप्पा मोरया! मंगल मूर्ति मोरया!*`;
+                   
+      const encodedText = encodeURIComponent(text);
+      let phone = (d.donor_mobile || '').replace(/\D/g, '');
+      if (phone.length === 10) {
+        phone = '91' + phone;
+      }
+      const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedText}`;
+      window.open(url, '_blank');
+    };
 
     function ChandaApp() {
       const [currentUser, setCurrentUser] = useState(getCurrentUser());
@@ -1498,7 +1525,8 @@
       }, [language]);
 
       const applyActiveTheme = () => {
-        const activeThemeId = localStorage.getItem("app_theme_id") || "navy";
+        const userThemeKey = currentUser ? `app_theme_id_${currentUser.mobile}` : "app_theme_id";
+        const activeThemeId = localStorage.getItem(userThemeKey) || localStorage.getItem("app_theme_id") || "navy";
         const theme = THEME_PRESETS.find(t => t.id === activeThemeId) || THEME_PRESETS[0];
         const root = document.documentElement;
         root.style.setProperty('--navy-primary', theme.primary);
@@ -1744,7 +1772,9 @@
       };
 
       const changeThemePreset = (themeId) => {
-        localStorage.setItem("app_theme_id", themeId);
+        const userThemeKey = currentUser ? `app_theme_id_${currentUser.mobile}` : "app_theme_id";
+        localStorage.setItem(userThemeKey, themeId);
+        localStorage.setItem("app_theme_id", themeId); // set global default fallback
         applyActiveTheme();
         showToast("Theme changed successfully!");
       };
@@ -1812,6 +1842,7 @@
               globalSearch={globalSearch}
               setGlobalSearch={setGlobalSearch}
               systemData={systemData}
+              changeThemePreset={changeThemePreset}
               t={translate}
             />
 
@@ -1833,6 +1864,7 @@
                   onEdit={(rec) => { setCurrentRecord(rec); setInstallmentParent(null); setShowDonationForm(true); }}
                   onAdd={() => { setCurrentRecord(null); setInstallmentParent(null); setShowDonationForm(true); }}
                   onPrint={(rec) => { setPrintRecord(rec); setPrintType('receipt'); setTimeout(() => window.print(), 100); }}
+                  sendWhatsAppReceipt={sendWhatsAppReceipt}
                   hasPermission={hasPermission}
                   t={translate}
                 />
@@ -1907,8 +1939,32 @@
               donations={systemData.donations || []}
               onClose={() => setShowDonationForm(false)} 
               onSave={async (payload) => {
-                const ok = await handleSaveRecord(currentRecord ? "updateDonation" : "addDonation", { donation: payload });
-                if (ok) setShowDonationForm(false);
+                const action = currentRecord ? "updateDonation" : "addDonation";
+                const ok = await handleSaveRecord(action, { donation: payload });
+                if (ok) {
+                  setShowDonationForm(false);
+                  setTimeout(() => {
+                    Swal.fire({
+                      title: 'Send WhatsApp Receipt?',
+                      text: 'Would you like to send this digital receipt on WhatsApp to the donor?',
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonText: 'Yes, Send',
+                      cancelButtonText: 'No, Skip',
+                      confirmButtonColor: '#25d366',
+                      cancelButtonColor: '#888'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        let receiptNo = payload.receipt_no;
+                        if (!receiptNo) {
+                          receiptNo = (Math.max(0, ...(systemData.donations || []).map(d => parseInt(d.receipt_no) || 0)) + 1).toString();
+                        }
+                        const donationObj = { ...payload, receipt_no: receiptNo };
+                        sendWhatsAppReceipt(donationObj, systemData.settings);
+                      }
+                    });
+                  }, 400);
+                }
               }}
               settings={systemData.settings}
               t={translate}
@@ -2291,9 +2347,73 @@
       );
     }
 
-    function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, language, setLanguage, globalSearch, setGlobalSearch, systemData, t }) {
+    function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, language, setLanguage, globalSearch, setGlobalSearch, systemData, changeThemePreset, t }) {
       const settings = systemData.settings || {};
-      
+      const [showThemePanel, setShowThemePanel] = useState(false);
+      const [showNotifPanel, setShowNotifPanel] = useState(false);
+
+      const userThemeKey = user ? `app_theme_id_${user.mobile}` : "app_theme_id";
+      const initialTheme = localStorage.getItem(userThemeKey) || localStorage.getItem("app_theme_id") || "navy";
+      const [activeTheme, setActiveTheme] = useState(initialTheme);
+
+      useEffect(() => {
+        setActiveTheme(initialTheme);
+      }, [initialTheme]);
+
+      const previewTheme = (themeId) => {
+        setActiveTheme(themeId);
+        const theme = THEME_PRESETS.find(t => t.id === themeId) || THEME_PRESETS[0];
+        const root = document.documentElement;
+        root.style.setProperty('--navy-primary', theme.primary);
+        root.style.setProperty('--navy-accent', theme.accent);
+        root.style.setProperty('--navy-dark', theme.dark);
+        root.style.setProperty('--navy-light', theme.light);
+        root.style.setProperty('--navy-hover', theme.hover);
+      };
+
+      const handleApplyTheme = () => {
+        changeThemePreset(activeTheme);
+        setShowThemePanel(false);
+      };
+
+      const handleResetTheme = () => {
+        const originalTheme = localStorage.getItem(userThemeKey) || localStorage.getItem("app_theme_id") || "navy";
+        previewTheme(originalTheme);
+        setShowThemePanel(false);
+      };
+
+      const getNotifications = () => {
+        const donations = systemData.donations || [];
+        const expenses = systemData.expenses || [];
+        
+        const list = [];
+        donations.slice(0, 5).forEach(d => {
+          list.push({
+            id: 'don-' + d.receipt_no,
+            title: 'Chanda Received',
+            text: `₹${parseFloat(d.amount).toFixed(0)} from ${d.donor_name} (${d.village}) by ${d.collected_by_name || 'Collector'}.`,
+            time: new Date(d.date || d.timestamp),
+            icon: 'fa-hand-holding-usd',
+            color: '#2ecc71'
+          });
+        });
+        expenses.slice(0, 5).forEach(ex => {
+          list.push({
+            id: 'exp-' + ex.expense_no,
+            title: 'Expense Logged',
+            text: `₹${parseFloat(ex.amount).toFixed(0)} spent for ${ex.title} by ${ex.submitted_by || 'Admin'}.`,
+            time: new Date(ex.date || ex.timestamp),
+            icon: 'fa-tags',
+            color: '#e74c3c'
+          });
+        });
+        
+        list.sort((a, b) => b.time - a.time);
+        return list.slice(0, 5);
+      };
+
+      const notifs = getNotifications();
+
       return (
         <div className="header-bar">
           <div className="header-left">
@@ -2303,7 +2423,7 @@
             </h4>
           </div>
 
-          <div className="header-right">
+          <div className="header-right" style={{ gap: '12px' }}>
             {/* Global Search Bar */}
             <div className="global-search">
               <input 
@@ -2326,13 +2446,93 @@
               <option value="hinglish">Hinglish</option>
             </select>
 
-            {/* Dark Mode toggle */}
-            <button className="hamburger-btn" onClick={() => setDarkMode(!darkMode)} style={{ color: 'var(--text-primary)' }}>
-              <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
-            </button>
+            {/* Theme Dropdown Panel */}
+            <div className="header-dropdown-container">
+              <button className="icon-btn-round" onClick={() => { setShowThemePanel(!showThemePanel); setShowNotifPanel(false); }} title="Color Themes">
+                <i className="fas fa-palette"></i>
+              </button>
+              {showThemePanel && (
+                <div className="theme-panel-card">
+                  <div className="theme-panel-header">
+                    <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Theme Manager</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }} htmlFor="darkToggle">Dark Mode</label>
+                      <input 
+                        type="checkbox" 
+                        id="darkToggle" 
+                        checked={darkMode} 
+                        onChange={e => setDarkMode(e.target.checked)} 
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }} 
+                      />
+                    </div>
+                  </div>
+                  
+                  <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Color Palette</span>
+                  
+                  <div className="theme-palette-grid">
+                    {THEME_PRESETS.map(theme => (
+                      <span 
+                        key={theme.id}
+                        className={`theme-circle-btn ${activeTheme === theme.id ? 'active' : ''}`}
+                        style={{
+                          background: `linear-gradient(135deg, ${theme.primary} 50%, ${theme.accent} 50%)`,
+                          border: activeTheme === theme.id ? '2px solid var(--navy-accent)' : '1px solid rgba(0,0,0,0.15)'
+                        }}
+                        onClick={() => previewTheme(theme.id)}
+                        title={theme.name}
+                      />
+                    ))}
+                  </div>
+
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '8px 0 12px', lineHeight: '1.4' }}>
+                    Previews are shown instantly. Click Apply to save design permanently for your account.
+                  </p>
+
+                  <div className="theme-panel-footer">
+                    <button className="btn btn-secondary btn-sm" onClick={handleResetTheme} style={{ background: '#7f8c8d', fontSize: '11.5px', padding: '4px 10px' }}>Reset</button>
+                    <button className="btn btn-success btn-sm" onClick={handleApplyTheme} style={{ background: '#2ecc71', fontSize: '11.5px', padding: '4px 10px', border: 'none' }}>Apply</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Notification Dropdown Panel */}
+            <div className="header-dropdown-container">
+              <button className="icon-btn-round" onClick={() => { setShowNotifPanel(!showNotifPanel); setShowThemePanel(false); }} title="Recent Activities" style={{ position: 'relative' }}>
+                <i className="fas fa-bell"></i>
+                {notifs.length > 0 && (
+                  <span style={{ position: 'absolute', top: '2px', right: '2px', width: '8px', height: '8px', borderRadius: '50%', background: '#e74c3c' }}></span>
+                )}
+              </button>
+              {showNotifPanel && (
+                <div className="notif-panel-card">
+                  <div className="notif-panel-header">
+                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Recent Activities</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Real-Time</span>
+                  </div>
+                  <ul className="notif-list">
+                    {notifs.map(n => (
+                      <li key={n.id} className="notif-item">
+                        <div className="notif-item-icon" style={{ background: n.color }}>
+                          <i className={`fas ${n.icon}`}></i>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 'bold', display: 'block', fontSize: '11.5px' }}>{n.title}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '11px', lineHeight: '1.3', display: 'block', marginTop: '2px' }}>{n.text}</span>
+                          <small style={{ color: '#aaa', fontSize: '9.5px', marginTop: '3px', display: 'block' }}>{n.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+                        </div>
+                      </li>
+                    ))}
+                    {notifs.length === 0 && (
+                      <li style={{ padding: '25px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>No recent activity.</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             {/* Sync Refresh */}
-            <button className="btn btn-secondary" onClick={onRefresh} style={{ padding: '6px 12px', fontSize: '12.5px' }}>
+            <button className="icon-btn-round" onClick={onRefresh} title="Sync Sync">
               <i className="fas fa-sync-alt"></i>
             </button>
           </div>
@@ -2472,7 +2672,7 @@
       );
     }
 
-    function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, hasPermission, t }) {
+    function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, sendWhatsAppReceipt, hasPermission, t }) {
       const [villageFilter, setVillageFilter] = useState('All');
       const [modeFilter, setModeFilter] = useState('All');
       const [searchLocal, setSearchLocal] = useState('');
@@ -2630,6 +2830,7 @@
                               <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
                             )}
                             <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
+                            <button className="action-icon whatsapp-icon" onClick={() => sendWhatsAppReceipt(d, systemData.settings)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#25d366', marginRight: '10px' }} title="Send via WhatsApp"><i className="fab fa-whatsapp"></i></button>
                             {hasPermission('donations', 'd') && (
                               <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
                             )}
@@ -2683,6 +2884,7 @@
                         <button className="btn btn-secondary btn-sm" onClick={() => onEdit(d)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
                       )}
                       <button className="btn btn-success btn-sm" onClick={() => onPrint(d)}><i className="fas fa-print"></i> {t('print')}</button>
+                      <button className="btn btn-sm" onClick={() => sendWhatsAppReceipt(d, systemData.settings)} style={{ background: '#25d366', color: '#fff', border: 'none' }}><i className="fab fa-whatsapp"></i> WhatsApp</button>
                       {hasPermission('donations', 'd') && (
                         <button className="btn btn-danger btn-sm" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
                       )}
