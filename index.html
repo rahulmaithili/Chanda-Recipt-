@@ -1032,6 +1032,41 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
+    // Helper to convert number to Hindi words
+    function numberToHindiWords(num) {
+      const ones = ['', 'एक', 'दो', 'तीन', 'चार', 'पाँच', 'छह', 'सात', 'आठ', 'नौ', 'दस', 'ग्यारह', 'बारह', 'तेरह', 'चौदह', 'पन्द्रह', 'सोलह', 'सत्रह', 'अठारह', 'उन्नीस'];
+      const tens = ['', '', 'बीस', 'तीस', 'चालीस', 'पचास', 'साठ', 'सत्तर', 'अस्सी', 'नब्बे'];
+      
+      if (!num || isNaN(num) || num === 0) return 'शून्य';
+      
+      let words = '';
+      
+      if (num >= 10000000) {
+        words += numberToHindiWords(Math.floor(num / 10000000)) + ' करोड़ ';
+        num %= 10000000;
+      }
+      if (num >= 100000) {
+        words += numberToHindiWords(Math.floor(num / 100000)) + ' लाख ';
+        num %= 100000;
+      }
+      if (num >= 1000) {
+        words += numberToHindiWords(Math.floor(num / 1000)) + ' हजार ';
+        num %= 1000;
+      }
+      if (num >= 100) {
+        words += numberToHindiWords(Math.floor(num / 100)) + ' सौ ';
+        num %= 100;
+      }
+      if (num > 0) {
+        if (num < 20) {
+          words += ones[num];
+        } else {
+          words += tens[Math.floor(num / 10)] + ' ' + ones[num % 10];
+        }
+      }
+      return words.trim() + ' रुपये मात्र';
+    }
+
     // Global Confirm Action Helper using SweetAlert2
     function confirmAction(title, text, callback) {
       Swal.fire({
@@ -3834,21 +3869,47 @@
                 {/* Live Preview Panel on the Right */}
                 <div style={{ background: 'rgba(0,0,0,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
                   <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice-dollar"></i> {t('live_preview')}</h4>
-                  <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifycontent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
-                    <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px' }}>
-                      <strong style={{ fontSize: '13px' }}>{t('chanda')} Slip</strong>
+                  <div style={{
+                    width: '100%',
+                    padding: '15px',
+                    border: '3px double #d4af37',
+                    borderRadius: '8px',
+                    background: '#fff',
+                    fontFamily: 'serif',
+                    color: '#333',
+                    position: 'relative',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                      <img src="https://img.icons8.com/color/96/ganesh.png" alt="Ganesha" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+                      <div style={{ flex: 1, textAlign: 'center' }}>
+                        <h4 style={{ fontSize: '12.5px', color: '#c0392b', fontWeight: 'bold', margin: 0 }}>युवा गणेश उत्सव समिति</h4>
+                        <p style={{ fontSize: '9px', color: '#2980b9', margin: 0 }}>ग्राम-केशोपुर, जिला-मधुबनी</p>
+                      </div>
                     </div>
-                    <div style={{ margin: '15px 0', flex: 1 }}>
-                      <p><strong>{t('receipt_no')}:</strong> #{record?.receipt_no || 'DRAFT'}</p>
-                      <p><strong>{t('donor_name')}:</strong> {donorName || '---'}</p>
-                      <p><strong>{t('village')}:</strong> {village || '---'}</p>
-                      <p><strong>{t('amount')}:</strong> ₹{parseFloat(amount || 0).toFixed(2)}</p>
-                      {isPromised && (
-                        <>
-                          <p><strong>{t('promised_amount')}:</strong> ₹{parseFloat(promisedAmount || 0).toFixed(2)}</p>
-                          <p style={{ color: 'red' }}><strong>{t('remaining')}:</strong> ₹{remainingDues.toFixed(2)}</p>
-                        </>
-                      )}
+                    
+                    <hr style={{ border: 0, borderTop: '1px solid #e67e22', margin: '6px 0' }} />
+                    
+                    <div style={{ textAlign: 'center', margin: '8px 0' }}>
+                      <span style={{ background: '#c0392b', color: '#fff', padding: '3px 12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '9.5px' }}>दान पत्र</span>
+                    </div>
+
+                    <div style={{ fontSize: '10.5px', lineHeight: '1.6', margin: '10px 0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span><strong>क्रमांक:</strong> REC-{record?.receipt_no || 'DRAFT'}</span>
+                        <span><strong>दिनांक:</strong> {new Date().toLocaleDateString('en-IN')}</span>
+                      </div>
+                      <p style={{ margin: '3px 0' }}>श्रद्धेय श्री/श्रीमती: <strong style={{ color: '#2980b9' }}>{donorName || '---'}</strong></p>
+                      <p style={{ margin: '3px 0' }}>ग्राम: <strong style={{ color: '#2980b9' }}>{village || '---'}</strong></p>
+                      <p style={{ margin: '3px 0' }}>राशि (अक्षरी): <strong style={{ color: '#2980b9' }}>{numberToHindiWords(Math.round(parseFloat(amount || 0)))}</strong></p>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                      <span style={{ background: '#c0392b', color: '#fff', padding: '4px 12px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>
+                        ₹{parseFloat(amount || 0).toFixed(2)}
+                      </span>
+                      <span style={{ fontSize: '9px', borderTop: '1px solid #ccc', paddingTop: '2px', width: '80px', textAlign: 'center' }}>हस्ताक्षर</span>
                     </div>
                   </div>
                 </div>
@@ -4071,50 +4132,104 @@
     // Print template
     function PrintReceipt({ slip, settings }) {
       const remainingDues = parseFloat(slip.promised_amount || slip.amount) - parseFloat(slip.amount);
+      const amountInWords = numberToHindiWords(Math.round(parseFloat(slip.amount)));
+
       return (
-        <div style={{ maxWidth: '280px', margin: '0 auto', padding: '15px', border: '1px solid #000', background: '#fff', fontSize: '11.5px', lineHeight: '1.45', color: '#000', fontFamily: 'monospace' }}>
-          <div style={{ textAlign: 'center', borderBottom: '1.5px solid #000', paddingBottom: '8px', marginBottom: '8px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
-            <p style={{ margin: '2px 0 0', fontSize: '9.5px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
+        <div style={{
+          width: '650px',
+          margin: '20px auto',
+          padding: '25px',
+          border: '4px double #d4af37', // Gold border
+          borderRadius: '10px',
+          background: '#fff',
+          fontFamily: 'serif',
+          color: '#333',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+          position: 'relative'
+        }}>
+          {/* Top header Ganesha + Title */}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+            <div style={{ flex: '0 0 80px', textAlign: 'left' }}>
+              <img src="https://img.icons8.com/color/96/ganesh.png" alt="Ganesha" style={{ width: '65px', height: '65px', objectFit: 'contain' }} />
+            </div>
+            <div style={{ flex: 1, textAlign: 'center', marginRight: '80px' }}>
+              <h2 style={{ fontSize: '26px', color: '#c0392b', fontWeight: 'bold', margin: 0, letterSpacing: '1px' }}>
+                {settings.committee_name || 'युवा गणेश उत्सव समिति'}
+              </h2>
+              <p style={{ fontSize: '13px', color: '#2980b9', fontWeight: 'bold', margin: '4px 0 0' }}>
+                {settings.committee_address || 'ग्राम-केशोपुर, जिला-मधुबनी (बिहार)'}
+              </p>
+            </div>
           </div>
-          <div style={{ textAlign: 'center', margin: '8px 0' }}>
-            <span style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 'bold', fontSize: '10px' }}>चंदा प्राप्ति रसीद</span>
+
+          {/* Divider line */}
+          <hr style={{ border: 0, borderTop: '2px solid #e67e22', margin: '10px 0' }} />
+
+          {/* Pill Badge */}
+          <div style={{ textAlign: 'center', margin: '15px 0' }}>
+            <span style={{ background: '#c0392b', color: '#fff', padding: '5px 25px', borderRadius: '20px', fontWeight: 'bold', fontSize: '14px', letterSpacing: '1px', boxShadow: '0 2px 5px rgba(192,57,43,0.3)' }}>
+              दान पत्र
+            </span>
           </div>
-          <div style={{ margin: '8px 0' }}>
-            <p>रसीद क्र: #{slip.receipt_no}</p>
-            <p>दिनांक: {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
-            <p>दाता: {slip.donor_name}</p>
-            <p>मोबाइल: {slip.donor_mobile || 'N/A'}</p>
-            <p>ग्राम/शहर: {slip.village}</p>
+
+          {/* Info grid */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', margin: '15px 0' }}>
+            <div>
+              <strong>क्रमांक:</strong> <span style={{ borderBottom: '1px dotted #333', paddingBottom: '2px', minWidth: '100px', display: 'inline-block' }}>REC-{slip.receipt_no}</span>
+            </div>
+            <div>
+              <strong>दिनांक:</strong> <span style={{ borderBottom: '1px dotted #333', paddingBottom: '2px', minWidth: '100px', display: 'inline-block' }}>{new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</span>
+            </div>
           </div>
-          <table style={{ width: '100%', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', margin: '8px 0' }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: '4px 0' }}>प्राप्त राशि (Received)</td>
-                <td style={{ textAlign: 'right', padding: '4px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
-              </tr>
-              {remainingDues > 0 && (
-                <>
-                  <tr>
-                    <td style={{ padding: '4px 0' }}>तय कुल राशि (Promised)</td>
-                    <td style={{ textAlign: 'right', padding: '4px 0' }}>₹{parseFloat(slip.promised_amount).toFixed(2)}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '4px 0', color: 'red' }}>बकाया राशि (Outstanding)</td>
-                    <td style={{ textAlign: 'right', padding: '4px 0', fontWeight: 'bold', color: 'red' }}>₹{remainingDues.toFixed(2)}</td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-          <p style={{ fontSize: '9px', textAlign: 'center' }}>भुगतान प्रकार: {slip.mode}</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px' }}>
-            <span>हस्ताक्षर (कलेक्टर)</span>
-            <span>हस्ताक्षर (कोषाध्यक्ष)</span>
+
+          {/* Text rows */}
+          <div style={{ fontSize: '14px', lineHeight: '2', margin: '20px 0' }}>
+            <div style={{ marginBottom: '10px' }}>
+              श्रद्धेय श्री / श्रीमती &nbsp;
+              <span style={{ borderBottom: '1px dotted #333', fontWeight: 'bold', color: '#2980b9', padding: '0 10px', display: 'inline-block', minWidth: '400px' }}>
+                {slip.donor_name}
+              </span>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              ग्राम &nbsp;
+              <span style={{ borderBottom: '1px dotted #333', fontWeight: 'bold', color: '#2980b9', padding: '0 10px', display: 'inline-block', minWidth: '150px' }}>
+                {slip.village}
+              </span>
+              &nbsp; से आपके श्रद्धा सुमन अक्षरी रु. &nbsp;
+              <span style={{ borderBottom: '1px dotted #333', fontWeight: 'bold', color: '#2980b9', padding: '0 10px', display: 'inline-block', minWidth: '200px' }}>
+                {amountInWords}
+              </span>
+            </div>
+            <div style={{ textAlign: 'center', fontWeight: 'bold', marginTop: '15px', color: '#2c3e50' }}>
+              युवा गणेश उत्सव महोत्सव समिति को सधन्यवाद प्राप्त हुआ।
+            </div>
           </div>
-          <p style={{ fontSize: '8.5px', color: '#555', textAlign: 'center', marginTop: '15px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
-            {settings.receipt_note || 'गणेश जी की कृपा आप पर बनी रहे। धन्यवाद! 🙏'}
-          </p>
+
+          {/* Bottom section */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '25px' }}>
+            <div style={{ background: '#c0392b', color: '#fff', padding: '8px 25px', borderRadius: '30px', fontSize: '18px', fontWeight: 'bold', boxShadow: '0 3px 6px rgba(0,0,0,0.1)' }}>
+              ₹ {parseFloat(slip.amount).toFixed(2)}/-
+            </div>
+            <div style={{ textAlign: 'center', fontSize: '12px', color: '#555' }}>
+              <br /><br />
+              <span style={{ borderTop: '1px solid #777', paddingTop: '5px', display: 'inline-block', width: '120px' }}>हस्ताक्षर प्राप्तकर्ता</span>
+            </div>
+          </div>
+
+          {/* Footer stripe */}
+          <div style={{
+            background: 'linear-gradient(90deg, #8e1c12, #c0392b)',
+            color: '#fff',
+            textAlign: 'center',
+            padding: '6px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            marginTop: '25px',
+            letterSpacing: '0.5px'
+          }}>
+            विनीत:- {settings.committee_name || 'युवा गणेश उत्सव समिति'}
+          </div>
         </div>
       );
     }
