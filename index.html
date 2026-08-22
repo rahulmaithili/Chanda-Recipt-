@@ -4523,7 +4523,7 @@
                   <th style={{ width: '250px' }}>Page</th>
                   {roles.map(role => (
                     <th key={role.role_key} style={{ textAlign: 'center', background: 'rgba(0,0,0,0.01)', borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
-                      <span style={{ display: 'block', fontSize: '13px', fontWeight: 'bold' }}>{role.label}</span>
+                      <span style={{ display: 'block', fontSize: '13px', fontWeight: 'bold' }}>{getRoleDisplayName(role.role_key)}</span>
                       <small style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginTop: '2px' }}>V • A • E • D</small>
                     </th>
                   ))}
