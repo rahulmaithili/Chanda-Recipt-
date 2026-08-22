@@ -17,221 +17,298 @@
 
   <style>
     :root {
-      --orange: #e8590c;
-      --gold: #f39c12;
-      --bg: #f4f6f9;
-      --card: #ffffff;
-      --text: #2b2320;
-      --muted: #8a7a6d;
-      --border: #e8e1d7;
-      --sidebar-bg: #1e282c;
-      --sidebar-color: #b8c7ce;
-      --sidebar-hover: #1a2226;
-      --header-bg: #ffffff;
-      --sidebar-width: 240px;
-      --r-md: 8px;
+      /* Theme variables - dynamically updated via presets */
+      --navy-primary: #001f3f;
+      --navy-dark: #001529;
+      --navy-light: #003366;
+      --navy-accent: #0074D9;
+      --navy-hover: #002a52;
+      --text-primary: #333333;
+      
+      --c-secondary: #003366;
+      --c-bg: #f5f7fa;
+      --c-card: #ffffff;
+      --c-on-accent: #ffffff;
+      --text-muted: #6b7280;
+      
+      --success: #2ecc40;
+      --warning: #ff851b;
+      --danger: #ff4136;
+      --r-md: 10px;
     }
 
     body.dark-mode {
-      --bg: #121212;
-      --card: #1e1e1e;
-      --text: #e0e0e0;
-      --muted: #a0a0a0;
-      --border: #333333;
-      --header-bg: #1e1e1e;
+      --c-bg: #121212;
+      --c-card: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-muted: #a0a0a0;
+      --navy-primary: #1a1a1a;
+      --navy-dark: #121212;
+      --navy-light: #2d2d2d;
     }
 
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     body {
-      background: var(--bg);
-      color: var(--text);
+      background: var(--c-bg);
+      color: var(--text-primary);
       overflow-x: hidden;
       min-height: 100vh;
       transition: background 0.2s, color 0.2s;
     }
 
-    /* Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); border-radius: 6px; }
-
-    /* App Container Layout */
+    /* Layout Elements */
     .app-container {
       display: flex;
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    /* Sidebar Styles */
     .sidebar {
-      width: var(--sidebar-width);
-      background: var(--sidebar-bg);
-      color: var(--sidebar-color);
+      width: 250px;
+      background: linear-gradient(180deg, var(--navy-primary) 0%, var(--navy-dark) 100%);
+      color: white;
       display: flex;
       flex-direction: column;
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      z-index: 100;
-      overflow-y: auto;
-      padding: 20px 15px;
-      transition: width 0.3s ease;
+      height: 100vh;
+      z-index: 1000;
+      transition: width 0.2s ease;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.15);
     }
 
     .sidebar.collapsed {
       width: 70px;
-      padding: 20px 10px;
     }
 
-    .sidebar-brand {
-      font-size: 18px;
-      margin-bottom: 20px;
-      color: #fff;
-      text-align: center;
-      font-weight: bold;
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #2c3b41;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
     }
 
-    .sidebar.collapsed .sidebar-brand span { display: none; }
-
-    .nav-item {
+    .sidebar-header h3 {
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
       display: flex;
       align-items: center;
-      gap: 11px;
-      padding: 9px 12px;
-      text-decoration: none;
-      color: var(--sidebar-color);
-      border-radius: 10px;
-      margin-bottom: 4px;
-      font-weight: 500;
-      font-size: 13.5px;
-      cursor: pointer;
-      transition: background 0.18s, color 0.18s, transform 0.15s;
+      gap: 10px;
+    }
+
+    .sidebar-user {
+      padding: 15px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
       white-space: nowrap;
+      overflow: hidden;
     }
 
-    .nav-item:hover {
-      background: rgba(255,255,255,0.07);
+    .sidebar-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--navy-accent);
       color: #fff;
-      transform: translateX(3px);
-    }
-
-    .nav-item.active {
-      background: rgba(255,255,255,0.12);
-      color: #fff;
-      border-left: 3px solid var(--orange);
-    }
-
-    .nav-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
-      font-size: 13px;
-      flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    .sidebar.collapsed .nav-item span:not(.nav-icon) { display: none; }
-    .sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; }
-    .sidebar.collapsed .nav-icon { width: 36px; height: 36px; font-size: 15px; }
+    .sidebar-menu {
+      flex: 1;
+      padding: 15px 10px;
+      overflow-y: auto;
+      list-style: none;
+    }
 
-    /* Main Content Wrapper */
+    .sidebar-menu li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar-menu button {
+      width: 100%;
+      padding: 11px 15px;
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.8);
+      text-align: left;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .sidebar-menu button:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .sidebar-menu button.active {
+      background: var(--navy-accent);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0,116,217,0.25);
+    }
+
+    .sidebar.collapsed .sidebar-menu button {
+      justify-content: center;
+      padding: 11px 0;
+    }
+
+    .sidebar.collapsed .sidebar-menu span:not(.sidebar-icon) {
+      display: none;
+    }
+
+    .sidebar-icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Main view container */
     .main-content {
-      margin-left: var(--sidebar-width);
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 25px;
-      width: calc(100% - var(--sidebar-width));
-      transition: margin-left 0.3s ease, width 0.3s ease;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .main-content.expanded {
-      margin-left: 70px;
-      width: calc(100% - 70px);
-    }
-
-    /* Header Bar */
-    .top-bar {
+    .header-bar {
+      height: 65px;
+      background: var(--c-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      background: var(--header-bg);
-      padding: 10px 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 25px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
 
-    .nav-toggle {
-      font-size: 18px;
-      cursor: pointer;
-      color: var(--text);
+    .header-left {
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 15px;
+    }
+
+    .hamburger-btn {
+      font-size: 18px;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
       width: 32px;
       height: 32px;
       border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* Common Card Styling */
-    .card {
-      background: var(--card);
+    .hamburger-btn:hover {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    /* Body Scroller */
+    .view-container {
+      flex: 1;
       padding: 20px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      overflow-y: auto;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--c-card);
+      border-radius: var(--r-md);
+      padding: 20px;
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.02);
       margin-bottom: 20px;
     }
 
-    /* Buttons */
-    .btn {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      color: #fff;
-      background: var(--orange);
-      text-decoration: none;
-      display: inline-flex;
+    .card-header {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      transition: background 0.2s;
+      margin-bottom: 15px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding-bottom: 10px;
     }
 
-    .btn:hover { background: #d04f0a; }
-    .btn-secondary { background: #7f8c8d; }
-    .btn-secondary:hover { background: #6c7a7b; }
-    .btn-success { background: #2ecc40; }
-    .btn-success:hover { background: #27ae60; }
-    .btn-danger { background: #ff4136; }
-    .btn-danger:hover { background: #e02d22; }
+    /* Stats Widgets */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .stat-widget {
+      border-radius: var(--r-md);
+      color: white;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .stat-widget:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-widget h3 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .stat-widget p {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .stat-widget .widget-icon {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 45px;
+      color: rgba(255,255,255,0.18);
+    }
+
+    .bg-accent { background: linear-gradient(135deg, var(--navy-accent), var(--navy-light)); }
+    .bg-green { background: linear-gradient(135deg, var(--success), #2ebd59); }
+    .bg-red { background: linear-gradient(135deg, var(--danger), #ff6358); }
+    .bg-orange { background: linear-gradient(135deg, var(--warning), #ff9f43); }
 
     /* Tables */
-    .table-container {
+    .table-responsive {
       overflow-x: auto;
-      margin-top: 15px;
+      width: 100%;
     }
 
     table {
@@ -242,17 +319,59 @@
 
     th, td {
       padding: 12px 15px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
       font-size: 13.5px;
     }
 
     th {
-      font-weight: bold;
-      background: var(--bg);
-      color: var(--text);
+      font-weight: 700;
+      background: rgba(0,0,0,0.02);
+      color: var(--text-primary);
     }
 
-    /* Form Fields */
+    tr:hover {
+      background: rgba(0,0,0,0.01);
+    }
+
+    /* Split layout (list left, form right) */
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 992px) {
+      .split-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: white;
+      background: var(--navy-accent);
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-secondary { background: #6b7280; }
+    .btn-success { background: var(--success); }
+    .btn-danger { background: var(--danger); }
+    .btn-warning { background: var(--warning); }
+
+    /* Dropdowns and fields */
     .form-group {
       margin-bottom: 15px;
     }
@@ -268,140 +387,150 @@
       width: 100%;
       padding: 10px;
       border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
+      border: 1px solid rgba(0,0,0,0.12);
+      background: var(--c-card);
+      color: var(--text-primary);
       font-size: 14px;
+      outline: none;
     }
 
-    .form-grid {
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--navy-accent);
+      box-shadow: 0 0 0 3px rgba(0,116,217,0.12);
+    }
+
+    /* Theme presets list in Profile */
+    .theme-preset-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
     }
 
-    /* Slide-over Modal Layout */
-    .modal-overlay {
+    .theme-preset-card {
+      border: 2px solid rgba(0,0,0,0.1);
+      border-radius: var(--r-md);
+      padding: 10px;
+      cursor: pointer;
+      text-align: center;
+      background: var(--c-card);
+      transition: all 0.2s;
+    }
+
+    .theme-preset-card.active {
+      border-color: var(--navy-accent);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .theme-preset-swatch {
+      height: 30px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Live WhatsApp integration settings */
+    .whatsapp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #e1f5fe;
+      color: #0288d1;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Search panel */
+    .global-search {
+      position: relative;
+      width: 250px;
+    }
+
+    .global-search input {
+      width: 100%;
+      padding: 8px 12px 8px 32px;
+      border-radius: 20px;
+      border: 1px solid rgba(0,0,0,0.1);
+      background: rgba(0,0,0,0.03);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .global-search i {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* Slide-over Split view form modal */
+    .modal-slideover-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
+      background: rgba(0,0,0,0.4);
+      z-index: 2000;
       display: flex;
       justify-content: flex-end;
     }
 
-    .modal-content {
-      width: 500px;
+    .modal-slideover {
+      width: 480px;
       max-width: 100%;
-      background: var(--card);
+      background: var(--c-card);
       height: 100%;
+      box-shadow: -5px 0 25px rgba(0,0,0,0.15);
       display: flex;
       flex-direction: column;
-      box-shadow: -5px 0 25px rgba(0,0,0,0.15);
-      animation: slideIn 0.25s ease-out;
+      animation: slideLeft 0.2s ease-out;
     }
 
-    @keyframes slideIn {
+    @keyframes slideLeft {
       from { transform: translateX(100%); }
       to { transform: translateX(0); }
     }
 
-    .modal-header {
+    .slideover-header {
       padding: 20px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--bg);
+      background: rgba(0,0,0,0.02);
     }
 
-    .modal-body {
+    .slideover-body {
       padding: 20px;
       overflow-y: auto;
       flex: 1;
     }
 
-    .modal-footer {
+    .slideover-footer {
       padding: 15px 20px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(0,0,0,0.06);
       display: flex;
       justify-content: flex-end;
       gap: 10px;
-      background: var(--bg);
+      background: rgba(0,0,0,0.02);
     }
 
-    /* Dynamic stats widgets */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 25px;
-    }
-
-    .small-box {
-      border-radius: 8px;
-      position: relative;
-      display: block;
-      color: #fff;
-      overflow: hidden;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-    }
-
-    .small-box h3 { font-size: 28px; font-weight: bold; margin-bottom: 6px; }
-    .small-box p { font-size: 13px; opacity: 0.9; }
-    .small-box .icon {
-      position: absolute;
-      top: 10px; right: 15px;
-      font-size: 50px;
-      color: rgba(0,0,0,0.15);
-    }
-
-    .bg-orange { background: linear-gradient(135deg, #e8590c, #f39c12); }
-    .bg-green { background: linear-gradient(135deg, #27ae60, #2ecc71); }
-    .bg-red { background: linear-gradient(135deg, #c0392b, #e74c3c); }
-    .bg-blue { background: linear-gradient(135deg, #2980b9, #3498db); }
-
-    /* Login Screen Container */
-    .login-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #2c3e50, #1e282c);
-      padding: 15px;
-    }
-
-    .login-box {
-      width: 400px;
-      background: var(--card);
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-      border: 1px solid var(--border);
-    }
-
-    /* Print styling rules */
+    /* Print styles */
     @media print {
       body * { visibility: hidden; }
-      .print-area, .print-area * { visibility: visible; }
-      .print-area {
-        position: absolute;
-        left: 0; top: 0;
-        width: 100%;
-        color: #000;
-        background: #fff;
-      }
-      .sidebar, .top-bar, .btn, .modal-overlay { display: none !important; }
+      .print-box, .print-box * { visibility: visible; }
+      .print-box { position: absolute; left: 0; top: 0; width: 100%; }
+      .app-container { display: none !important; }
     }
 
-    /* Mobile Adaptations */
+    /* Responsive adjustments */
     @media (max-width: 768px) {
       .sidebar { display: none !important; }
-      .main-content { margin-left: 0 !important; width: 100% !important; padding: 15px !important; }
-      .form-grid { grid-template-columns: 1fr; }
-      .top-bar { padding: 10px 15px; }
-      .nav-toggle { display: none !important; }
+      .sidebar-overlay.show { display: block; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .global-search { display: none; }
     }
   </style>
 </head>
@@ -409,14 +538,152 @@
 
   <div id="root"></div>
 
-  <!-- Loading config functions -->
+  <!-- Loading settings & config functions -->
   <script src="config.js"></script>
 
   <!-- React code compiled with Babel -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // React SPA Main Application Component
+    // Language Pack Translation Engine
+    const TRANSLATIONS = {
+      'en': {
+        'dashboard': 'Dashboard',
+        'chanda': 'Chanda Collection',
+        'expenses': 'Expenses',
+        'handovers': 'Deposits & Handovers',
+        'villages': 'Villages',
+        'categories': 'Expense Categories',
+        'accounts': 'Bank & Wallets',
+        'users': 'Collectors & Users',
+        'roles': 'Permissions Matrix',
+        'festivals': 'Festival Sessions',
+        'settings': 'Committee Settings',
+        'profile': 'My Profile',
+        'logs': 'Audit Logs',
+        
+        'total_donation': 'Total Donations',
+        'total_expense': 'Total Expenses',
+        'balance': 'Net Balance',
+        'my_collection': 'My Collection',
+        'outstanding_dues': 'Outstanding Dues',
+        
+        'donor_name': 'Donor Name',
+        'mobile': 'Mobile Number',
+        'village': 'Village',
+        'amount': 'Amount',
+        'mode': 'Mode',
+        'actions': 'Actions',
+        'save': 'Save',
+        'cancel': 'Cancel',
+        'print': 'Print',
+        'edit': 'Edit',
+        'delete': 'Delete',
+        
+        'dues_tracker': 'Dues & Promises Tracker',
+        'promised_amount': 'Total Promised Amount',
+        'collected': 'Collected',
+        'remaining': 'Remaining Dues',
+        'pay_installment': 'Pay Installment',
+        'load_demo': 'Load Demo Data',
+        'clear_all': 'Reset All Data',
+        'search': 'Search here...'
+      },
+      'hi': {
+        'dashboard': 'डैशबोर्ड',
+        'chanda': 'चंदा प्रविष्टि',
+        'expenses': 'व्यय/खर्चा लॉग',
+        'handovers': 'जमा व हैंडओवर',
+        'villages': 'ग्राम सूची',
+        'categories': 'व्यय श्रेणियां',
+        'accounts': 'बैंक व वॉलेट्स',
+        'users': 'कलेक्टर्स प्रबंधन',
+        'roles': 'अनुमति मैट्रिक्स',
+        'festivals': 'उत्सव सत्र',
+        'settings': 'समिति सेटिंग्स',
+        'profile': 'मेरी प्रोफ़ाइल',
+        'logs': 'ऑडिट लॉग्स',
+        
+        'total_donation': 'कुल चंदा संग्रह',
+        'total_expense': 'कुल स्वीकृत खर्चे',
+        'balance': 'बचत बैलेंस राशि',
+        'my_collection': 'मेरा चंदा संग्रह',
+        'outstanding_dues': 'कुल बकाया राशि',
+        
+        'donor_name': 'दाता का नाम',
+        'mobile': 'मोबाइल नंबर',
+        'village': 'गाँव',
+        'amount': 'राशि',
+        'mode': 'माध्यम',
+        'actions': 'कार्रवाई',
+        'save': 'सहेजें',
+        'cancel': 'रद्द करें',
+        'print': 'प्रिंट करें',
+        'edit': 'सुधारें',
+        'delete': 'हटाएं',
+        
+        'dues_tracker': 'बकाया चंदा (Promises) ट्रैकर',
+        'promised_amount': 'कुल तय राशि',
+        'collected': 'प्राप्त राशि',
+        'remaining': 'बकाया राशि',
+        'pay_installment': 'किस्त जमा करें',
+        'load_demo': 'डेमो डेटा लोड करें',
+        'clear_all': 'डेटा साफ करें',
+        'search': 'खोजें...'
+      },
+      'hinglish': {
+        'dashboard': 'Dashboard',
+        'chanda': 'Chanda Collection Entry',
+        'expenses': 'Expenses / Kharcha',
+        'handovers': 'Handovers & Deposits',
+        'villages': 'Gaon ki List',
+        'categories': 'Expense Categories',
+        'accounts': 'Bank & Wallets Accounts',
+        'users': 'Collectors Management',
+        'roles': 'Permissions Matrix',
+        'festivals': 'Festival Sessions',
+        'settings': 'Committee Settings',
+        'profile': 'My Profile Edit',
+        'logs': 'Audit Logs History',
+        
+        'total_donation': 'Total Chanda Collection',
+        'total_expense': 'Total Expense Logged',
+        'balance': 'Net Bachat Balance',
+        'my_collection': 'Mera Collection',
+        'outstanding_dues': 'Baki / Dues Amount',
+        
+        'donor_name': 'Donor Name',
+        'mobile': 'Mobile Number',
+        'village': 'Gaon',
+        'amount': 'Amount Paid',
+        'mode': 'Payment Mode',
+        'actions': 'Actions',
+        'save': 'Save Kare',
+        'cancel': 'Cancel Kare',
+        'print': 'Print Kare',
+        'edit': 'Edit Kare',
+        'delete': 'Delete Kare',
+        
+        'dues_tracker': 'Dues & Promises Tracker',
+        'promised_amount': 'Total Deal Amount',
+        'collected': 'Khel/Collected',
+        'remaining': 'Remaining Baki',
+        'pay_installment': 'Installment Pay Kare',
+        'load_demo': 'Demo Data Load Kare',
+        'clear_all': 'Data Clear Kare',
+        'search': 'Search kare...'
+      }
+    };
+
+    // Predefined CSS Color Presets
+    const THEME_PRESETS = [
+      { id: 'navy', name: 'Slate Navy', primary: '#001f3f', accent: '#0074D9', dark: '#001529', light: '#003366', hover: '#002a52' },
+      { id: 'emerald', name: 'Emerald Green', primary: '#145a32', accent: '#27ae60', dark: '#0e3a21', light: '#1e8449', hover: '#196f3d' },
+      { id: 'sunset', name: 'Sunset Orange', primary: '#78281f', accent: '#e67e22', dark: '#511b15', light: '#ba4a00', hover: '#935116' },
+      { id: 'crimson', name: 'Crimson Red', primary: '#641e16', accent: '#c0392b', dark: '#42140f', light: '#922b21', hover: '#7b241c' },
+      { id: 'royal', name: 'Royal Purple', primary: '#4a154b', accent: '#611f69', dark: '#300d31', light: '#7c3a80', hover: '#4d194e' }
+    ];
+
     function ChandaApp() {
       const [currentUser, setCurrentUser] = useState(getCurrentUser());
       const [activeTab, setActiveTab] = useState('dashboard');
@@ -424,19 +691,25 @@
       const [loading, setLoading] = useState(false);
       const [sidebarCollapsed, setSidebarCollapsed] = useState(localStorage.getItem("sidebar_collapsed") === "true");
       const [darkMode, setDarkMode] = useState(localStorage.getItem("dark_mode") === "true");
-      
-      // Modal triggers
-      const [showDonationModal, setShowDonationModal] = useState(false);
-      const [showExpenseModal, setShowExpenseModal] = useState(false);
+      const [language, setLanguage] = useState(localStorage.getItem("app_lang") || 'en');
+      const [globalSearch, setGlobalSearch] = useState('');
+
+      // Slide-over forms
+      const [showDonationForm, setShowDonationForm] = useState(false);
+      const [showExpenseForm, setShowExpenseForm] = useState(false);
       const [currentRecord, setCurrentRecord] = useState(null);
       
-      // Print layouts
+      // Installment lookup
+      const [installmentParent, setInstallmentParent] = useState(null);
+
+      // Print states
       const [printRecord, setPrintRecord] = useState(null);
       const [printType, setPrintType] = useState(''); // 'receipt' or 'voucher'
 
       useEffect(() => {
         if (currentUser) {
           fetchInitData();
+          applyActiveTheme();
         }
       }, [currentUser]);
 
@@ -449,7 +722,21 @@
         localStorage.setItem("dark_mode", darkMode ? "true" : "false");
       }, [darkMode]);
 
-      // Call API to fetch fresh initialize database state
+      useEffect(() => {
+        localStorage.setItem("app_lang", language);
+      }, [language]);
+
+      const applyActiveTheme = () => {
+        const activeThemeId = localStorage.getItem("app_theme_id") || "navy";
+        const theme = THEME_PRESETS.find(t => t.id === activeThemeId) || THEME_PRESETS[0];
+        const root = document.documentElement;
+        root.style.setProperty('--navy-primary', theme.primary);
+        root.style.setProperty('--navy-accent', theme.accent);
+        root.style.setProperty('--navy-dark', theme.dark);
+        root.style.setProperty('--navy-light', theme.light);
+        root.style.setProperty('--navy-hover', theme.hover);
+      };
+
       const fetchInitData = async () => {
         setLoading(true);
         try {
@@ -462,7 +749,7 @@
             showToast("डेटा सिंक करने में विफल: " + data.message, "error");
           }
         } catch(e) {
-          showToast("नेटवर्क त्रुटि: " + e.message, "error");
+          showToast("कनेक्शन एरर: " + e.message, "error");
         } finally {
           setLoading(false);
         }
@@ -498,7 +785,6 @@
         setSystemData(null);
       };
 
-      // Perform unified write operations to App Sheets
       const handleSaveRecord = async (action, payload) => {
         setLoading(true);
         try {
@@ -513,11 +799,11 @@
           });
           const data = await res.json();
           if (data.success) {
-            showToast("रिकॉर्ड सफलतापूर्वक सुरक्षित किया गया!");
-            fetchInitData(); // refresh state
+            showToast("डेटा सफलतापूर्वक सहेजा गया!");
+            fetchInitData();
             return true;
           } else {
-            Swal.fire({ text: "सुरक्षित करने में त्रुटि: " + data.message, icon: 'error', confirmButtonColor: '#ff851b' });
+            Swal.fire({ text: "त्रुटि: " + data.message, icon: 'error', confirmButtonColor: '#ff851b' });
             return false;
           }
         } catch (e) {
@@ -531,7 +817,7 @@
       const handleDeleteRecord = (table, keyColumn, value) => {
         confirmAction(
           "क्या आप वाकई इसे हटाना चाहते हैं?",
-          "यह कार्रवाई पूर्ववत नहीं की जा सकती।",
+          "यह डेटा स्थायी रूप से हटा दिया जाएगा।",
           async () => {
             setLoading(true);
             try {
@@ -548,10 +834,10 @@
               });
               const data = await res.json();
               if (data.success) {
-                showToast("सफलतापूर्वक हटा दिया गया!");
+                showToast("सफलतापूर्वक हटाया गया!");
                 fetchInitData();
               } else {
-                Swal.fire({ text: "हटाने में त्रुटि: " + data.message, icon: 'error' });
+                Swal.fire({ text: "हटाने में विफलता: " + data.message, icon: 'error' });
               }
             } catch(e) {
               Swal.fire({ text: "नेटवर्क त्रुटि: " + e.message, icon: 'error' });
@@ -562,16 +848,26 @@
         );
       };
 
+      const changeThemePreset = (themeId) => {
+        localStorage.setItem("app_theme_id", themeId);
+        applyActiveTheme();
+        showToast("थीम रंग लागू कर दिया गया है!");
+      };
+
+      const translate = (key) => {
+        return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en']?.[key] || key;
+      };
+
       if (!currentUser) {
         return <LoginScreen onLogin={handleLogin} loading={loading} />;
       }
 
       if (!systemData) {
         return (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--c-bg)' }}>
             <div style={{ textAlign: 'center' }}>
               <div className="sync-loader" style={{ width: '40px', height: '40px', borderWidth: '4px', marginBottom: '15px' }}></div>
-              <h4 style={{ color: 'var(--orange)' }}>लोड हो रहा है... कृपया प्रतीक्षा करें</h4>
+              <h4 style={{ color: 'var(--navy-accent)' }}>डेटाबेस लोड हो रहा है... कृपया प्रतीक्षा करें</h4>
             </div>
           </div>
         );
@@ -579,85 +875,128 @@
 
       return (
         <div className="app-container">
-          {/* Main Layout Navigation Components */}
           <Sidebar 
             collapsed={sidebarCollapsed} 
-            setCollapsed={(val) => { setSidebarCollapsed(val); localStorage.setItem("sidebar_collapsed", val ? "true" : "false"); }} 
+            setCollapsed={setSidebarCollapsed} 
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
-            user={currentUser}
+            user={currentUser} 
             onLogout={handleLogout}
+            t={translate}
           />
           
-          <div className={`main-content ${sidebarCollapsed ? 'expanded' : ''}`}>
+          <div className="main-content">
             <Topbar 
               user={currentUser} 
               loading={loading} 
               onRefresh={fetchInitData} 
-              darkMode={darkMode}
+              darkMode={darkMode} 
               setDarkMode={setDarkMode}
+              language={language}
+              setLanguage={setLanguage}
+              globalSearch={globalSearch}
+              setGlobalSearch={setGlobalSearch}
               systemData={systemData}
+              t={translate}
             />
 
-            {activeTab === 'dashboard' && <DashboardView systemData={systemData} user={currentUser} setActiveTab={setActiveTab} />}
-            {activeTab === 'donations' && (
-              <DonationsView 
-                systemData={systemData} 
-                onDelete={handleDeleteRecord} 
-                onEdit={(rec) => { setCurrentRecord(rec); setShowDonationModal(true); }}
-                onAdd={() => { setCurrentRecord(null); setShowDonationModal(true); }}
-                onPrint={(rec) => { setPrintRecord(rec); setPrintType('receipt'); setTimeout(() => window.print(), 100); }}
-              />
-            )}
-            {activeTab === 'expenses' && (
-              <ExpensesView 
-                systemData={systemData} 
-                onDelete={handleDeleteRecord} 
-                onEdit={(rec) => { setCurrentRecord(rec); setShowExpenseModal(true); }}
-                onAdd={() => { setCurrentRecord(null); setShowExpenseModal(true); }}
-                onPrint={(rec) => { setPrintRecord(rec); setPrintType('voucher'); setTimeout(() => window.print(), 100); }}
-              />
-            )}
-            {activeTab === 'handovers' && <HandoversView systemData={systemData} user={currentUser} onAction={handleSaveRecord} />}
-            {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
-            {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
-            {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
-            {activeTab === 'users' && <UsersView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
-            {activeTab === 'roles' && <RbacView systemData={systemData} onAction={handleSaveRecord} />}
-            {activeTab === 'festivals' && <FestivalsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} />}
-            {activeTab === 'settings' && <SettingsView systemData={systemData} user={currentUser} onAction={handleSaveRecord} onRefresh={fetchInitData} />}
-            {activeTab === 'profile' && <ProfileView user={currentUser} onAction={handleSaveRecord} onLogout={handleLogout} />}
+            <div className="view-container">
+              {activeTab === 'dashboard' && (
+                <DashboardView 
+                  systemData={systemData} 
+                  user={currentUser} 
+                  setActiveTab={setActiveTab} 
+                  globalSearch={globalSearch}
+                  t={translate}
+                />
+              )}
+              {activeTab === 'donations' && (
+                <DonationsView 
+                  systemData={systemData} 
+                  onDelete={handleDeleteRecord} 
+                  globalSearch={globalSearch}
+                  onEdit={(rec) => { setCurrentRecord(rec); setInstallmentParent(null); setShowDonationForm(true); }}
+                  onAdd={() => { setCurrentRecord(null); setInstallmentParent(null); setShowDonationForm(true); }}
+                  onPrint={(rec) => { setPrintRecord(rec); setPrintType('receipt'); setTimeout(() => window.print(), 100); }}
+                  t={translate}
+                />
+              )}
+              {activeTab === 'expenses' && (
+                <ExpensesView 
+                  systemData={systemData} 
+                  onDelete={handleDeleteRecord} 
+                  globalSearch={globalSearch}
+                  onEdit={(rec) => { setCurrentRecord(rec); setShowExpenseForm(true); }}
+                  onAdd={() => { setCurrentRecord(null); setShowExpenseForm(true); }}
+                  onPrint={(rec) => { setPrintRecord(rec); setPrintType('voucher'); setTimeout(() => window.print(), 100); }}
+                  t={translate}
+                />
+              )}
+              {activeTab === 'dues' && (
+                <DuesTrackerView 
+                  systemData={systemData} 
+                  onPayInstallment={(parentRec) => { 
+                    setInstallmentParent(parentRec); 
+                    setCurrentRecord(null); 
+                    setShowDonationForm(true); 
+                  }}
+                  t={translate}
+                />
+              )}
+              {activeTab === 'handovers' && <HandoversView systemData={systemData} user={currentUser} onAction={handleSaveRecord} t={translate} />}
+              {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              {activeTab === 'users' && <UsersView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              {activeTab === 'roles' && <RbacView systemData={systemData} onAction={handleSaveRecord} t={translate} />}
+              {activeTab === 'festivals' && <FestivalsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              {activeTab === 'settings' && <SettingsView systemData={systemData} user={currentUser} onAction={handleSaveRecord} onRefresh={fetchInitData} t={translate} />}
+              {activeTab === 'profile' && (
+                <ProfileView 
+                  user={currentUser} 
+                  onAction={handleSaveRecord} 
+                  onLogout={handleLogout} 
+                  activeThemeId={localStorage.getItem("app_theme_id") || "navy"}
+                  onChangeTheme={changeThemePreset}
+                  t={translate} 
+                />
+              )}
+            </div>
           </div>
 
-          {/* Modal Components */}
-          {showDonationModal && (
+          {/* Form Modal Overlays */}
+          {showDonationForm && (
             <DonationFormModal 
               record={currentRecord} 
+              parentRecord={installmentParent}
               villages={systemData.villages} 
-              onClose={() => setShowDonationModal(false)} 
+              donations={systemData.donations || []}
+              onClose={() => setShowDonationForm(false)} 
               onSave={async (payload) => {
                 const ok = await handleSaveRecord(currentRecord ? "updateDonation" : "addDonation", { donation: payload });
-                if (ok) setShowDonationModal(false);
+                if (ok) setShowDonationForm(false);
               }}
+              t={translate}
             />
           )}
 
-          {showExpenseModal && (
+          {showExpenseForm && (
             <ExpenseFormModal 
               record={currentRecord} 
               categories={systemData.categories} 
               accounts={systemData.accounts}
-              onClose={() => setShowExpenseModal(false)} 
+              onClose={() => setShowExpenseForm(false)} 
               onSave={async (payload) => {
                 const ok = await handleSaveRecord(currentRecord ? "updateExpense" : "addExpense", { expense: payload });
-                if (ok) setShowExpenseModal(false);
+                if (ok) setShowExpenseForm(false);
               }}
+              t={translate}
             />
           )}
 
-          {/* Print Render Container overlays */}
+          {/* Printing Overlays */}
           {printRecord && (
-            <div className="print-area">
+            <div className="print-box">
               {printType === 'receipt' ? (
                 <PrintReceipt slip={printRecord} settings={systemData.settings} />
               ) : (
@@ -670,39 +1009,35 @@
     }
 
     // ==========================================
-    // SUB-COMPONENTS & RENDER SCREENS
+    // RENDER COMPONENTS
     // ==========================================
 
-    // LOGIN SCREEN
     function LoginScreen({ onLogin, loading }) {
       const [mobile, setMobile] = useState('');
       const [password, setPassword] = useState('');
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        if (!mobile || !password) return alert("कृपया मोबाइल और पासवर्ड दर्ज करें।");
         onLogin(mobile, password);
       };
 
       return (
-        <div className="login-container">
-          <div className="login-box">
-            <div style={{ textAlignment: 'center', marginBottom: '20px' }}>
-              <i className="fas fa-om" style={{ fontSize: '40px', color: '#ff851b' }}></i>
-              <h2 style={{ marginTop: '10px', color: '#e8590c', fontWeight: 'bold' }}>गणेश उत्सव समिति</h2>
-              <p style={{ fontSize: '12px', color: '#8a7a6d' }}>चंदा एवं व्यय प्रबंधन प्रणाली (ERP)</p>
-            </div>
+        <div className="login-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, #1e282c, #001529)' }}>
+          <div className="login-box" style={{ background: '#fff', padding: '30px', borderRadius: '8px', width: '380px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
+            <i className="fas fa-om" style={{ fontSize: '42px', color: '#ff851b', marginBottom: '10px' }}></i>
+            <h2 style={{ color: '#001f3f', fontWeight: 'bold' }}>गणेश उत्सव ERP</h2>
+            <p style={{ color: '#6b7280', fontSize: '12px', marginBottom: '20px' }}>चंदा एवं व्यय प्रबंधन प्रणाली</p>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label><i className="fas fa-phone-alt"></i> मोबाइल नंबर (Mobile Number)</label>
-                <input type="text" placeholder="दर्ज करें" value={mobile} onChange={e => setMobile(e.target.value)} required />
+              <div className="form-group" style={{ textAlign: 'left' }}>
+                <label><i className="fas fa-phone-alt"></i> मोबाइल नंबर</label>
+                <input type="text" placeholder="10-digit mobile" value={mobile} onChange={e => setMobile(e.target.value)} required />
               </div>
-              <div className="form-group">
-                <label><i className="fas fa-lock"></i> पासवर्ड (Password)</label>
-                <input type="password" placeholder="दर्ज करें" value={password} onChange={e => setPassword(e.target.value)} required />
+              <div className="form-group" style={{ textAlign: 'left' }}>
+                <label><i className="fas fa-lock"></i> पासवर्ड</label>
+                <input type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
-              <button type="submit" className="btn" style={{ width: '100%', marginTop: '10px' }} disabled={loading}>
-                {loading ? 'प्रमाणित किया जा रहा है...' : 'लॉगिन करें'}
+              <button type="submit" className="btn" style={{ width: '100%', padding: '12px', background: '#ff851b' }} disabled={loading}>
+                {loading ? 'लोड हो रहा है...' : 'लॉगिन करें (Sign In)'}
               </button>
             </form>
           </div>
@@ -710,183 +1045,221 @@
       );
     }
 
-    // NAVIGATION SIDEBAR
-    function Sidebar({ collapsed, setCollapsed, activeTab, setActiveTab, user, onLogout }) {
+    function Sidebar({ collapsed, setCollapsed, activeTab, setActiveTab, user, onLogout, t }) {
       const isSuper = user.role === "Super Admin" || user.role === "admin";
-      
-      const menu = [
-        { key: 'dashboard', label: 'डैशबोर्ड', icon: 'fa-chart-pie', color: '#e8590c', bg: 'linear-gradient(135deg,#e8590c,#f39c12)' },
-        { key: 'donations', label: 'चंदा प्रविष्टि', icon: 'fa-hand-holding-usd', color: '#27ae60', bg: 'linear-gradient(135deg,#27ae60,#2ecc71)' },
-        { key: 'expenses', label: 'खर्चा प्रविष्टि', icon: 'fa-tags', color: '#c0392b', bg: 'linear-gradient(135deg,#c0392b,#e74c3c)' },
-        { key: 'handovers', label: 'जमा व हैंडओवर', icon: 'fa-wallet', color: '#2980b9', bg: 'linear-gradient(135deg,#2980b9,#3498db)' },
-        { key: 'villages', label: 'गाँव सूची', icon: 'fa-map-marked-alt', color: '#8e44ad', bg: 'linear-gradient(135deg,#8e44ad,#9b59b6)' },
-      ];
 
       return (
         <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-          <div className="sidebar-brand">
-            <i className="fas fa-om" style={{ color: '#f39c12' }}></i>
-            <span>Ganesh ERP</span>
-            <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
+          <div className="sidebar-header">
+            <h3><i className="fas fa-om" style={{ color: '#ff851b' }}></i> {!collapsed && 'Ganesh ERP'}</h3>
+            <button className="hamburger-btn" onClick={() => setCollapsed(!collapsed)} style={{ color: '#fff' }}>
               <i className={`fas ${collapsed ? 'fa-angle-right' : 'fa-angle-left'}`}></i>
             </button>
           </div>
-          
-          <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '1px solid #2c3b41', paddingBottom: '15px' }}>
-            <div style={{ width: collapsed ? '40px' : '60px', height: collapsed ? '40px' : '60px', borderRadius: '50%', background: '#ff851b', color: '#fff', display: 'inline-flex', alignItems: 'center', justifySpace: 'center', fontWeight: 'bold', fontSize: '20px', margin: '0 auto 8px', justifyContent: 'center' }}>
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{user.name.charAt(0).toUpperCase()}</div>
             {!collapsed && (
-              <div>
-                <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>{user.name}</div>
-                <div style={{ color: '#8a7a6d', fontSize: '10px' }}>{user.role}</div>
+              <div style={{ marginTop: '5px' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{user.name}</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>{user.role}</div>
               </div>
             )}
           </div>
 
-          <div style={{ flex: 1 }}>
-            {menu.map(item => (
-              <div 
-                key={item.key} 
-                className={`nav-item ${activeTab === item.key ? 'active' : ''}`}
-                onClick={() => setActiveTab(item.key)}
-              >
-                <span className="nav-icon" style={{ background: item.bg }}><i className={`fas ${item.icon}`}></i></span>
-                <span>{item.label}</span>
-              </div>
-            ))}
-
+          <ul className="sidebar-menu">
+            <li>
+              <button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>
+                <i className="fas fa-chart-pie sidebar-icon"></i>
+                <span>{t('dashboard')}</span>
+              </button>
+            </li>
+            <li>
+              <button className={activeTab === 'donations' ? 'active' : ''} onClick={() => setActiveTab('donations')}>
+                <i className="fas fa-hand-holding-usd sidebar-icon"></i>
+                <span>{t('chanda')}</span>
+              </button>
+            </li>
+            <li>
+              <button className={activeTab === 'dues' ? 'active' : ''} onClick={() => setActiveTab('dues')}>
+                <i className="fas fa-search-dollar sidebar-icon"></i>
+                <span>{t('dues_tracker')}</span>
+              </button>
+            </li>
+            <li>
+              <button className={activeTab === 'expenses' ? 'active' : ''} onClick={() => setActiveTab('expenses')}>
+                <i className="fas fa-tags sidebar-icon"></i>
+                <span>{t('expenses')}</span>
+              </button>
+            </li>
+            <li>
+              <button className={activeTab === 'handovers' ? 'active' : ''} onClick={() => setActiveTab('handovers')}>
+                <i className="fas fa-wallet sidebar-icon"></i>
+                <span>{t('handovers')}</span>
+              </button>
+            </li>
+            <li>
+              <button className={activeTab === 'villages' ? 'active' : ''} onClick={() => setActiveTab('villages')}>
+                <i className="fas fa-map-marker-alt sidebar-icon"></i>
+                <span>{t('villages')}</span>
+              </button>
+            </li>
+            
             {isSuper && (
               <>
-                <div style={{ padding: '10px 12px 5px', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
-                  {!collapsed && 'प्रणाली नियंत्रण'}
-                </div>
-                <div className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
-                  <span className="nav-icon" style={{ background: '#d35400' }}><i className="fas fa-list-ul"></i></span>
-                  <span>व्यय श्रेणियां</span>
-                </div>
-                <div className={`nav-item ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => setActiveTab('accounts')}>
-                  <span className="nav-icon" style={{ background: '#7f8c8d' }}><i className="fas fa-piggy-bank"></i></span>
-                  <span>बैंक व वॉलेट्स</span>
-                </div>
-                <div className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-                  <span className="nav-icon" style={{ background: '#1a5276' }}><i className="fas fa-users-cog"></i></span>
-                  <span>कलेक्टर्स प्रबंधन</span>
-                </div>
-                <div className={`nav-item ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => setActiveTab('roles')}>
-                  <span className="nav-icon" style={{ background: '#6a1b9a' }}><i className="fas fa-key"></i></span>
-                  <span>अनुमति मैट्रिक्स (RBAC)</span>
-                </div>
-                <div className={`nav-item ${activeTab === 'festivals' ? 'active' : ''}`} onClick={() => setActiveTab('festivals')}>
-                  <span className="nav-icon" style={{ background: '#f1c40f' }}><i className="fas fa-calendar-alt"></i></span>
-                  <span>उत्सव सत्र</span>
-                </div>
-                <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-                  <span className="nav-icon" style={{ background: '#5d6d7e' }}><i className="fas fa-sliders-h"></i></span>
-                  <span>समिति सेटिंग्स</span>
-                </div>
+                <li style={{ padding: '10px 15px 5px', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                  {!collapsed && 'Control Panel'}
+                </li>
+                <li>
+                  <button className={activeTab === 'categories' ? 'active' : ''} onClick={() => setActiveTab('categories')}>
+                    <i className="fas fa-list-ul sidebar-icon"></i>
+                    <span>{t('categories')}</span>
+                  </button>
+                </li>
+                <li>
+                  <button className={activeTab === 'accounts' ? 'active' : ''} onClick={() => setActiveTab('accounts')}>
+                    <i className="fas fa-piggy-bank sidebar-icon"></i>
+                    <span>{t('accounts')}</span>
+                  </button>
+                </li>
+                <li>
+                  <button className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}>
+                    <i className="fas fa-users-cog sidebar-icon"></i>
+                    <span>{t('users')}</span>
+                  </button>
+                </li>
+                <li>
+                  <button className={activeTab === 'roles' ? 'active' : ''} onClick={() => setActiveTab('roles')}>
+                    <i className="fas fa-key sidebar-icon"></i>
+                    <span>{t('roles')}</span>
+                  </button>
+                </li>
+                <li>
+                  <button className={activeTab === 'festivals' ? 'active' : ''} onClick={() => setActiveTab('festivals')}>
+                    <i className="fas fa-calendar-alt sidebar-icon"></i>
+                    <span>{t('festivals')}</span>
+                  </button>
+                </li>
+                <li>
+                  <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>
+                    <i className="fas fa-sliders-h sidebar-icon"></i>
+                    <span>{t('settings')}</span>
+                  </button>
+                </li>
               </>
             )}
-          </div>
+          </ul>
 
-          <div style={{ borderTop: '1px solid #2c3b41', paddingTop: '15px' }}>
-            <div className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
-              <span className="nav-icon" style={{ background: '#6c3483' }}><i className="fas fa-user-cog"></i></span>
-              <span>प्रोफ़ाइल संपादित करें</span>
-            </div>
-            <div className="nav-item" onClick={onLogout}>
-              <span className="nav-icon" style={{ background: '#c0392b' }}><i className="fas fa-sign-out-alt"></i></span>
-              <span>लॉगआउट</span>
-            </div>
+          <div style={{ padding: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <button className="sidebar-menu li button" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '10px 12px', border: 'none', color: '#fff', textAlign: 'left', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => setActiveTab('profile')}>
+              <i className="fas fa-user-cog"></i>
+              {!collapsed && <span>{t('profile')}</span>}
+            </button>
+            <button className="sidebar-menu li button" style={{ width: '100%', background: 'rgba(255,65,54,0.15)', borderRadius: '6px', padding: '10px 12px', border: 'none', color: '#ff4136', textAlign: 'left', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }} onClick={onLogout}>
+              <i className="fas fa-sign-out-alt"></i>
+              {!collapsed && <span>Logout</span>}
+            </button>
           </div>
         </div>
       );
     }
 
-    // TOPBAR HEADER
-    function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, systemData }) {
+    function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, language, setLanguage, globalSearch, setGlobalSearch, systemData, t }) {
       const settings = systemData.settings || {};
+      
       return (
-        <div className="top-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ lineHeight: '1.2' }}>
-              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: 'var(--orange)', display: 'flex', alignItems: 'center' }}>
-                {settings.committee_name || 'युवा गणेश उत्सव समिति'}
-                {loading && <span className="sync-loader" title="Syncing data..."></span>}
-              </h4>
-              <small style={{ fontSize: '10px', color: 'var(--muted)' }}>{settings.committee_address || 'ग्राम - बालोद'}</small>
-            </div>
+        <div className="header-bar">
+          <div className="header-left">
+            <h4 style={{ color: 'var(--navy-accent)', fontWeight: '700', fontSize: '16px' }}>
+              {settings.committee_name || 'युवा गणेश उत्सव समिति'} 
+              {loading && <i className="fas fa-circle-notch fa-spin" style={{ marginLeft: '10px', fontSize: '14px' }}></i>}
+            </h4>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={onRefresh} style={{ minHeight: '34px', padding: '5px 10px' }}>
-              <i className="fas fa-sync-alt"></i> {!loading && 'सिंक करें'}
-            </button>
-            <button className="btn btn-secondary btn-sm" onClick={() => setDarkMode(!darkMode)} style={{ minHeight: '34px', padding: '5px 10px', background: 'none', border: '1px solid var(--border)', color: 'var(--text)' }}>
+          <div className="header-right">
+            {/* Global Search Bar */}
+            <div className="global-search">
+              <input 
+                type="text" 
+                placeholder={t('search')} 
+                value={globalSearch} 
+                onChange={e => setGlobalSearch(e.target.value)} 
+              />
+              <i className="fas fa-search"></i>
+            </div>
+
+            {/* Language Switcher */}
+            <select 
+              value={language} 
+              onChange={e => setLanguage(e.target.value)}
+              style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.15)', background: 'var(--c-card)', color: 'var(--text-primary)', fontSize: '12.5px', cursor: 'pointer' }}
+            >
+              <option value="en">English</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+              <option value="hinglish">Hinglish</option>
+            </select>
+
+            {/* Dark Mode toggle */}
+            <button className="hamburger-btn" onClick={() => setDarkMode(!darkMode)} style={{ color: 'var(--text-primary)' }}>
               <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
             </button>
-            <select 
-              value={getViewingFestivalId()} 
-              onChange={(e) => setViewingFestivalId(e.target.value)}
-              style={{ padding: '5px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)', fontSize: '12px', cursor: 'pointer' }}
-            >
-              {systemData.festivals && systemData.festivals.map(f => (
-                <option key={f.id} value={f.id}>{f.name}</option>
-              ))}
-            </select>
+
+            {/* Sync Refresh */}
+            <button className="btn btn-secondary" onClick={onRefresh} style={{ padding: '6px 12px', fontSize: '12.5px' }}>
+              <i className="fas fa-sync-alt"></i>
+            </button>
           </div>
         </div>
       );
     }
 
-    // DASHBOARD VIEW SCREEN
-    function DashboardView({ systemData, user, setActiveTab }) {
+    function DashboardView({ systemData, user, setActiveTab, globalSearch, t }) {
       const donations = systemData.donations || [];
       const expenses = systemData.expenses || [];
       
-      let totalDonation = 0;
-      donations.forEach(d => totalDonation += parseFloat(d.amount || 0));
+      let totalDonations = 0;
+      donations.forEach(d => totalDonations += parseFloat(d.amount || 0));
 
-      let totalExpense = 0;
-      expenses.forEach(e => {
-        if (e.status === 'Approved') {
-          totalExpense += parseFloat(e.amount || 0);
-        }
-      });
+      let totalExpenses = 0;
+      expenses.forEach(e => { if (e.status === 'Approved') totalExpenses += parseFloat(e.amount || 0); });
 
-      const netBalance = totalDonation - totalExpense;
+      const netBalance = totalDonations - totalExpenses;
 
       let myCollection = 0;
+      donations.forEach(d => { if (d.collected_by_mobile === user.mobile) myCollection += parseFloat(d.amount || 0); });
+
+      let outstandingDues = 0;
       donations.forEach(d => {
-        if (d.collected_by_mobile == user.mobile) {
-          myCollection += parseFloat(d.amount || 0);
-        }
+        const dues = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
+        if (dues > 0 && !d.parent_receipt_no) outstandingDues += dues;
       });
 
-      // Render chart
+      // Filter local lists if search query is active
+      const displayDonations = donations.filter(d => 
+        d.donor_name.toLowerCase().includes(globalSearch.toLowerCase()) || d.receipt_no.includes(globalSearch)
+      );
+
       const chartRef = useRef(null);
       useEffect(() => {
         if (chartRef.current) {
-          // Village-wise calculation
-          const villageSums = {};
+          const villageWise = {};
           donations.forEach(d => {
-            villageSums[d.village] = (villageSums[d.village] || 0) + parseFloat(d.amount || 0);
+            villageWise[d.village] = (villageWise[d.village] || 0) + parseFloat(d.amount);
           });
-          const labels = Object.keys(villageSums);
-          const values = Object.values(villageSums);
 
           const myChart = new Chart(chartRef.current, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
-              labels: labels,
+              labels: Object.keys(villageWise),
               datasets: [{
-                data: values,
-                backgroundColor: ['#2ecc40', '#ff851b', '#0074d9', '#ff4136', '#b10dc9', '#ffdc00', '#39cccc']
+                data: Object.values(villageWise),
+                backgroundColor: ['#0074D9', '#2ecc40', '#ff851b', '#ff4136', '#b10dc9', '#39cccc']
               }]
             },
             options: {
               responsive: true,
-              maintainAspectRatio: false
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
             }
           });
           return () => myChart.destroy();
@@ -894,59 +1267,63 @@
       }, [donations]);
 
       return (
-        <div className="dashboard-view">
+        <div>
           <div className="stats-grid">
-            <div className="small-box bg-orange" onClick={() => setActiveTab('donations')} style={{ cursor: 'pointer' }}>
-              <h3>₹{totalDonation.toLocaleString('en-IN')}</h3>
-              <p>कुल चंदा संग्रह (Total Donations)</p>
-              <i className="fas fa-hand-holding-usd icon"></i>
+            <div className="stat-widget bg-accent" onClick={() => setActiveTab('donations')}>
+              <h3>₹{totalDonations.toLocaleString('en-IN')}</h3>
+              <p>{t('total_donation')}</p>
+              <i className="fas fa-hand-holding-usd widget-icon"></i>
             </div>
-            <div className="small-box bg-red" onClick={() => setActiveTab('expenses')} style={{ cursor: 'pointer' }}>
-              <h3>₹{totalExpense.toLocaleString('en-IN')}</h3>
-              <p>कुल स्वीकृत खर्चे (Total Approved Expenses)</p>
-              <i className="fas fa-tags icon"></i>
+            <div className="stat-widget bg-red" onClick={() => setActiveTab('expenses')}>
+              <h3>₹{totalExpenses.toLocaleString('en-IN')}</h3>
+              <p>{t('total_expense')}</p>
+              <i className="fas fa-tags widget-icon"></i>
             </div>
-            <div className="small-box bg-blue">
+            <div className="stat-widget bg-green">
               <h3>₹{netBalance.toLocaleString('en-IN')}</h3>
-              <p>कुल बचत बैलेंस (Available Balance)</p>
-              <i className="fas fa-piggy-bank icon"></i>
+              <p>{t('balance')}</p>
+              <i className="fas fa-university widget-icon"></i>
             </div>
-            <div className="small-box bg-green" onClick={() => setActiveTab('donations')} style={{ cursor: 'pointer' }}>
-              <h3>₹{myCollection.toLocaleString('en-IN')}</h3>
-              <p>मेरा चंदा संग्रह (My Collection)</p>
-              <i className="fas fa-user-check icon"></i>
+            <div className="stat-widget bg-orange" onClick={() => setActiveTab('dues')}>
+              <h3>₹{outstandingDues.toLocaleString('en-IN')}</h3>
+              <p>{t('outstanding_dues')}</p>
+              <i className="fas fa-exclamation-triangle widget-icon"></i>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
+          <div className="split-layout">
             <div className="card">
-              <h3 style={{ marginBottom: '15px', color: 'var(--orange)' }}><i className="fas fa-chart-bar"></i> गाँव के अनुसार संग्रह (Village-wise Collections)</h3>
-              <div style={{ height: '250px' }}>
+              <div className="card-header">
+                <h3><i className="fas fa-chart-pie"></i> गाँव अनुसार चंदा विवरण (Village Collections)</h3>
+              </div>
+              <div style={{ height: '280px', position: 'relative' }}>
                 <canvas ref={chartRef}></canvas>
               </div>
             </div>
 
             <div className="card">
-              <h3 style={{ marginBottom: '15px', color: 'var(--orange)' }}><i className="fas fa-history"></i> हालिया चंदा संग्रह (Recent Contributions)</h3>
-              <div className="table-container">
+              <div className="card-header">
+                <h3><i className="fas fa-history"></i> हालिया रसीदें (Recent Contributions)</h3>
+              </div>
+              <div className="table-responsive">
                 <table>
                   <thead>
                     <tr>
                       <th>रसीद</th>
-                      <th>दाता का नाम</th>
+                      <th>दाता</th>
                       <th>राशि</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {donations.slice(0, 5).map(d => (
+                    {displayDonations.slice(0, 6).map(d => (
                       <tr key={d.receipt_no}>
                         <td>#{d.receipt_no}</td>
-                        <td>{d.donor_name}</td>
-                        <td style={{ fontWeight: 'bold', color: '#2ecc40' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                        <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.village}</small></td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
                       </tr>
                     ))}
-                    {donations.length === 0 && (
-                      <tr><td colSpan="3" style={{ textAlign: 'center' }}>कोई रिकॉर्ड नहीं मिला</td></tr>
+                    {displayDonations.length === 0 && (
+                      <tr><td colSpan="3" style={{ textAlign: 'center' }}>कोई डेटा उपलब्ध नहीं है।</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -957,39 +1334,47 @@
       );
     }
 
-    // DONATIONS LIST VIEW
-    function DonationsView({ systemData, onDelete, onEdit, onAdd, onPrint }) {
-      const [search, setSearch] = useState('');
-      const [village, setVillage] = useState('All');
+    function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, t }) {
+      const [villageFilter, setVillageFilter] = useState('All');
       const donations = systemData.donations || [];
 
       const filtered = donations.filter(d => {
-        const matchesSearch = d.donor_name.toLowerCase().includes(search.toLowerCase()) || 
-                              d.donor_mobile.includes(search) || 
-                              d.receipt_no.includes(search);
-        const matchesVillage = village === 'All' || d.village === village;
+        const matchesSearch = d.donor_name.toLowerCase().includes(globalSearch.toLowerCase()) || 
+                              d.receipt_no.includes(globalSearch) ||
+                              d.donor_mobile.includes(globalSearch);
+        const matchesVillage = villageFilter === 'All' || d.village === villageFilter;
         return matchesSearch && matchesVillage;
       });
 
+      // Export to CSV Helper
+      const handleExportCSV = () => {
+        let headers = ["Receipt No", "Date", "Donor Name", "Mobile", "Village", "Amount", "Mode", "Collected By"];
+        let rows = filtered.map(d => [d.receipt_no, d.date, d.donor_name, d.donor_mobile, d.village, d.amount, d.mode, d.collected_by_name]);
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `donations_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
       return (
         <div className="card">
-          <div className="section-header">
-            <h2><i className="fas fa-hand-holding-usd"></i> चंदा संग्रह रसीदें ({filtered.length})</h2>
-            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> नया चंदा प्रविष्ट करें</button>
+          <div className="card-header">
+            <h2><i className="fas fa-hand-holding-usd"></i> चंदा रसीदें (Donations List) ({filtered.length})</h2>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-secondary" onClick={handleExportCSV}><i className="fas fa-file-csv"></i> Excel/CSV</button>
+              <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> {t('pay_installment')}</button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '15px', margin: '15px 0' }}>
-            <input 
-              type="text" 
-              placeholder="खोजें: नाम, मोबाइल या रसीद क्र..." 
-              value={search} 
-              onChange={e => setSearch(e.target.value)}
-              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)' }}
-            />
+          <div style={{ marginBottom: '15px', width: '220px' }}>
             <select 
-              value={village} 
-              onChange={e => setVillage(e.target.value)}
-              style={{ width: '200px', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)' }}
+              value={villageFilter} 
+              onChange={e => setVillageFilter(e.target.value)}
+              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.15)', background: 'var(--c-card)', color: 'var(--text-primary)' }}
             >
               <option value="All">सभी गाँव (All Villages)</option>
               {systemData.villages && systemData.villages.map(v => (
@@ -998,39 +1383,102 @@
             </select>
           </div>
 
-          <div className="table-container">
+          <div className="table-responsive">
             <table>
               <thead>
                 <tr>
-                  <th>रसीद क्रमांक</th>
+                  <th>रसीद क्र</th>
                   <th>दिनांक</th>
-                  <th>दाता का नाम</th>
+                  <th>दाता विवरण</th>
                   <th>गाँव</th>
-                  <th>चंदा राशि</th>
-                  <th>भुगतान प्रकार</th>
-                  <th>प्राप्तकर्ता</th>
+                  <th>प्राप्त राशि</th>
+                  <th>शेष (Dues)</th>
+                  <th>भुगतान माध्यम</th>
                   <th>कार्रवाई</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(d => (
-                  <tr key={d.receipt_no}>
-                    <td>#{d.receipt_no}</td>
-                    <td>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
-                    <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--muted)' }}>{d.donor_mobile}</small></td>
-                    <td>{d.village}</td>
-                    <td style={{ fontWeight: 'bold', color: '#2ecc40' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
-                    <td><span style={{ padding: '3px 8px', borderRadius: '20px', background: d.mode === 'Cash' ? '#e2e8f0' : '#d2f4ea', color: d.mode === 'Cash' ? '#4a5568' : '#0f766e', fontSize: '11px', fontWeight: 'bold' }}>{d.mode}</span></td>
-                    <td>{d.collected_by_name}</td>
-                    <td>
-                      <button className="action-icon edit-icon" onClick={() => onEdit(d)} title="Edit"><i className="fas fa-edit"></i></button>
-                      <button className="action-icon receipt-icon" onClick={() => onPrint(d)} title="Print"><i className="fas fa-print"></i></button>
-                      <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} title="Delete"><i className="fas fa-trash-alt"></i></button>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई चंदा रसीद नहीं मिली।</td></tr>
+                {filtered.map(d => {
+                  const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
+                  return (
+                    <tr key={d.receipt_no}>
+                      <td>#{d.receipt_no}</td>
+                      <td>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
+                      <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
+                      <td>{d.village}</td>
+                      <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                      <td style={{ color: remaining > 0 ? 'red' : 'inherit' }}>₹{remaining.toFixed(2)}</td>
+                      <td>{d.mode}</td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    function DuesTrackerView({ systemData, onPayInstallment, t }) {
+      const donations = systemData.donations || [];
+      
+      // Calculate dues per parent promised deal
+      const dueRecords = donations.filter(d => {
+        const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
+        return remaining > 0 && !d.parent_receipt_no;
+      });
+
+      return (
+        <div className="card">
+          <div className="card-header">
+            <h2><i className="fas fa-search-dollar"></i> बकाया चंदा विवरण (Dues Tracking) ({dueRecords.length})</h2>
+          </div>
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>प्रारंभिक रसीद</th>
+                  <th>दाता विवरण</th>
+                  <th>गाँव</th>
+                  <th>तय राशि (Deal)</th>
+                  <th>कुल प्राप्त</th>
+                  <th>कुल बकाया (Dues)</th>
+                  <th>कार्रवाई</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dueRecords.map(d => {
+                  // Find all installments related to this donation
+                  const installments = donations.filter(x => x.parent_receipt_no === d.receipt_no);
+                  let totalPaid = parseFloat(d.amount);
+                  installments.forEach(ins => totalPaid += parseFloat(ins.amount));
+                  const remaining = parseFloat(d.promised_amount) - totalPaid;
+
+                  if (remaining <= 0) return null;
+
+                  return (
+                    <tr key={d.receipt_no}>
+                      <td>#{d.receipt_no}</td>
+                      <td><strong>{d.donor_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{d.donor_mobile}</small></td>
+                      <td>{d.village}</td>
+                      <td style={{ fontWeight: 'bold' }}>₹{parseFloat(d.promised_amount).toFixed(2)}</td>
+                      <td style={{ color: 'var(--success)' }}>₹{totalPaid.toFixed(2)}</td>
+                      <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{remaining.toFixed(2)}</td>
+                      <td>
+                        <button className="btn btn-success btn-sm" onClick={() => onPayInstallment(d)} style={{ padding: '4px 10px', fontSize: '12px' }}>
+                          <i className="fas fa-plus"></i> किस्त जोड़ें
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {dueRecords.length === 0 && (
+                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>कोई बकाया रिकॉर्ड लंबित नहीं है।</td></tr>
                 )}
               </tbody>
             </table>
@@ -1039,56 +1487,26 @@
       );
     }
 
-    // EXPENSES LIST VIEW
-    function ExpensesView({ systemData, onDelete, onEdit, onAdd, onPrint }) {
-      const [search, setSearch] = useState('');
-      const [category, setCategory] = useState('All');
+    function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, t }) {
       const expenses = systemData.expenses || [];
-
-      const filtered = expenses.filter(e => {
-        const matchesSearch = e.title.toLowerCase().includes(search.toLowerCase()) || 
-                              e.expense_no.includes(search);
-        const matchesCategory = category === 'All' || e.category === category;
-        return matchesSearch && matchesCategory;
-      });
+      const filtered = expenses.filter(e => e.title.toLowerCase().includes(globalSearch.toLowerCase()) || e.expense_no.includes(globalSearch));
 
       return (
         <div className="card">
-          <div className="section-header">
-            <h2><i className="fas fa-tags"></i> समिति के व्यय (Expenses Log) ({filtered.length})</h2>
-            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> नया खर्च दर्ज करें</button>
+          <div className="card-header">
+            <h2><i className="fas fa-tags"></i> समिति के व्यय विवरण ({filtered.length})</h2>
+            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> नया व्यय दर्ज करें</button>
           </div>
-
-          <div style={{ display: 'flex', gap: '15px', margin: '15px 0' }}>
-            <input 
-              type="text" 
-              placeholder="खोजें: खर्च नाम या वाउचर क्र..." 
-              value={search} 
-              onChange={e => setSearch(e.target.value)}
-              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)' }}
-            />
-            <select 
-              value={category} 
-              onChange={e => setCategory(e.target.value)}
-              style={{ width: '200px', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)' }}
-            >
-              <option value="All">सभी श्रेणियां (All Categories)</option>
-              {systemData.categories && systemData.categories.map(c => (
-                <option key={c.id} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="table-container">
+          <div className="table-responsive">
             <table>
               <thead>
                 <tr>
                   <th>वाउचर क्रमांक</th>
                   <th>दिनांक</th>
-                  <th>खर्च विवरण</th>
+                  <th>विवरण</th>
                   <th>श्रेणी</th>
                   <th>राशि</th>
-                  <th>भुगतान प्रकार</th>
+                  <th>खाता</th>
                   <th>स्थिति</th>
                   <th>कार्रवाई</th>
                 </tr>
@@ -1098,27 +1516,22 @@
                   <tr key={ex.expense_no}>
                     <td>#{ex.expense_no}</td>
                     <td>{new Date(ex.date || ex.timestamp).toLocaleDateString('en-IN')}</td>
-                    <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--muted)' }}>{ex.note}</small></td>
+                    <td><strong>{ex.title}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{ex.note}</small></td>
                     <td>{ex.category}</td>
-                    <td style={{ fontWeight: 'bold', color: '#c0392b' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
+                    <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
                     <td>{ex.mode}</td>
                     <td>
-                      <span style={{ 
-                        padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
-                        background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3',
-                        color: ex.status === 'Approved' ? '#0f766e' : '#a46000'
-                      }}>{ex.status}</span>
+                      <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                        {ex.status}
+                      </span>
                     </td>
                     <td>
-                      <button className="action-icon edit-icon" onClick={() => onEdit(ex)} title="Edit"><i className="fas fa-edit"></i></button>
-                      <button className="action-icon receipt-icon" onClick={() => onPrint(ex)} title="Print"><i className="fas fa-print"></i></button>
-                      <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} title="Delete"><i className="fas fa-trash-alt"></i></button>
+                      <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                      <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
+                      <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई खर्चा प्रविष्टि नहीं मिली।</td></tr>
-                )}
               </tbody>
             </table>
           </div>
@@ -1126,8 +1539,7 @@
       );
     }
 
-    // HANDOVERS VIEW SCREEN
-    function HandoversView({ systemData, user, onAction }) {
+    function HandoversView({ systemData, user, onAction, t }) {
       const [amount, setAmount] = useState('');
       const [accountId, setAccountId] = useState('1');
       const [remark, setRemark] = useState('');
@@ -1139,7 +1551,6 @@
       const handleSubmit = async (e) => {
         e.preventDefault();
         if (!amount || parseFloat(amount) <= 0) return alert("कृपया सही राशि डालें।");
-        
         const ok = await onAction("submitHandover", {
           handover: {
             collector_name: user.name,
@@ -1158,20 +1569,10 @@
         }
       };
 
-      const handleApprove = async (id) => {
-        confirmAction(
-          "क्या आप वाकई इस हैंडओवर को मंजूरी देना चाहते हैं?",
-          "इससे आपके चुने हुए खाते में राशि जमा हो जाएगी।",
-          () => {
-            onAction("approveHandover", { handover_id: id });
-          }
-        );
-      };
-
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+        <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-paper-plane"></i> हैंडओवर सबमिट करें</h3>
+            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-paper-plane"></i> हैंडओवर सबमिट करें</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>हैंडओवर राशि (Amount to Handover)</label>
@@ -1186,55 +1587,45 @@
                 </select>
               </div>
               <div className="form-group">
-                <label>रिमार्क / टिप्पणी (Remark)</label>
-                <textarea rows="3" placeholder="वैकल्पिक टिप्पणी" value={remark} onChange={e => setRemark(e.target.value)}></textarea>
+                <label>रिमार्क / टिप्पणी</label>
+                <textarea rows="3" placeholder="वैकल्पिक विवरण" value={remark} onChange={e => setRemark(e.target.value)}></textarea>
               </div>
               <button type="submit" className="btn" style={{ width: '100%' }}>सबमिट करें</button>
             </form>
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-wallet"></i> हैंडओवर इतिहास और अनुमोदन</h3>
-            <div className="table-container">
+            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-wallet"></i> हैंडओवर इतिहास और अनुमोदन</h3>
+            <div className="table-responsive">
               <table>
                 <thead>
                   <tr>
-                    <th>कलेक्टर का नाम</th>
+                    <th>विवरण</th>
                     <th>राशि</th>
-                    <th>खाता</th>
                     <th>स्थिति</th>
                     <th>कार्रवाई</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {handovers.map(h => {
-                    const accName = accounts.find(a => a.id == h.account_id)?.account_name || h.account_id;
-                    return (
-                      <tr key={h.id}>
-                        <td><strong>{h.collector_name}</strong><br/><small style={{ color: 'var(--muted)' }}>{h.collector_mobile}</small></td>
-                        <td style={{ fontWeight: 'bold' }}>₹{parseFloat(h.amount).toFixed(2)}</td>
-                        <td>{accName}</td>
-                        <td>
-                          <span style={{ 
-                            padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
-                            background: h.status === 'Approved' ? '#d2f4ea' : '#fff0d3',
-                            color: h.status === 'Approved' ? '#0f766e' : '#a46000'
-                          }}>{h.status}</span>
-                        </td>
-                        <td>
-                          {isSuper && h.status === "Pending" && (
-                            <button className="btn btn-success btn-sm" onClick={() => handleApprove(h.id)} style={{ minHeight: '28px', padding: '3px 8px', fontSize: '11px' }}>
-                              मंजूर करें
-                            </button>
-                          )}
-                          {h.status === "Approved" && <small style={{ color: 'var(--muted)' }}>Approved by {h.approved_by}</small>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {handovers.length === 0 && (
-                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई हैंडओवर अनुरोध नहीं मिला।</td></tr>
-                  )}
+                  {handovers.map(h => (
+                    <tr key={h.id}>
+                      <td><strong>{h.collector_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{h.transfer_date}</small></td>
+                      <td style={{ fontWeight: 'bold' }}>₹{parseFloat(h.amount).toFixed(2)}</td>
+                      <td>
+                        <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: h.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: h.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                          {h.status}
+                        </span>
+                      </td>
+                      <td>
+                        {isSuper && h.status === "Pending" && (
+                          <button className="btn btn-success btn-sm" onClick={() => onAction("approveHandover", { handover_id: h.id })} style={{ padding: '3px 8px', fontSize: '11px' }}>
+                            मंजूर करें
+                          </button>
+                        )}
+                        {h.status === "Approved" && <small style={{ color: 'var(--text-muted)' }}>Approved by {h.approved_by}</small>}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -1243,8 +1634,7 @@
       );
     }
 
-    // VILLAGES MASTER VIEW
-    function VillagesView({ systemData, onAction, onDelete }) {
+    function VillagesView({ systemData, onAction, onDelete, t }) {
       const [name, setName] = useState('');
       const [editId, setEditId] = useState(null);
       const villages = systemData.villages || [];
@@ -1260,29 +1650,26 @@
       };
 
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+        <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-map-marker-alt"></i> {editId ? 'गाँव का नाम बदलें' : 'नया गाँव जोड़ें'}</h3>
-            <form onSubmit={handleSubmit}>
+            <h3><i className="fas fa-map-marker-alt"></i> {editId ? 'गाँव बदलें' : 'नया गाँव जोड़ें'}</h3>
+            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
                 <label>गाँव का नाम (Village Name)</label>
                 <input type="text" placeholder="गाँव का नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
-                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
-              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
             </form>
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-map-marked-alt"></i> गाँव की सूची</h3>
-            <div className="table-container">
+            <h3><i className="fas fa-map-marked-alt"></i> गाँव की सूची</h3>
+            <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
                     <th>गाँव क्रमांक</th>
-                    <th>गाँव का नाम</th>
+                    <th>नाम</th>
                     <th>कार्रवाई</th>
                   </tr>
                 </thead>
@@ -1292,14 +1679,11 @@
                       <td>#{idx + 1}</td>
                       <td><strong>{v.name}</strong></td>
                       <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(v.id); setName(v.name); }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("villages", "id", v.id)}><i className="fas fa-trash-alt"></i></button>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(v.id); setName(v.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("villages", "id", v.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
                       </td>
                     </tr>
                   ))}
-                  {villages.length === 0 && (
-                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई गाँव दर्ज नहीं है।</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -1308,8 +1692,7 @@
       );
     }
 
-    // EXPENSE CATEGORIES VIEW
-    function CategoriesView({ systemData, onAction, onDelete }) {
+    function CategoriesView({ systemData, onAction, onDelete, t }) {
       const [name, setName] = useState('');
       const [editId, setEditId] = useState(null);
       const categories = systemData.categories || [];
@@ -1325,29 +1708,26 @@
       };
 
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+        <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-list-ul"></i> {editId ? 'खर्च श्रेणी बदलें' : 'नई खर्च श्रेणी जोड़ें'}</h3>
-            <form onSubmit={handleSubmit}>
+            <h3><i className="fas fa-list-ul"></i> {editId ? 'व्यय श्रेणी बदलें' : 'नई खर्च श्रेणी जोड़ें'}</h3>
+            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>श्रेणी का नाम (Category Name)</label>
+                <label>श्रेणी नाम (Category Name)</label>
                 <input type="text" placeholder="श्रेणी नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
-                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
-              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
             </form>
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-folder-open"></i> खर्चे की श्रेणियां</h3>
-            <div className="table-container">
+            <h3><i className="fas fa-folder-open"></i> खर्चे की श्रेणियां</h3>
+            <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
                     <th>क्रमांक</th>
-                    <th>श्रेणी नाम</th>
+                    <th>नाम</th>
                     <th>कार्रवाई</th>
                   </tr>
                 </thead>
@@ -1357,14 +1737,11 @@
                       <td>#{idx + 1}</td>
                       <td><strong>{c.name}</strong></td>
                       <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(c.id); setName(c.name); }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("categories", "id", c.id)}><i className="fas fa-trash-alt"></i></button>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(c.id); setName(c.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("categories", "id", c.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
                       </td>
                     </tr>
                   ))}
-                  {categories.length === 0 && (
-                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई व्यय श्रेणी दर्ज नहीं है।</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -1373,8 +1750,7 @@
       );
     }
 
-    // BANK & WALLETS VIEW SCREEN
-    function AccountsView({ systemData, onAction, onDelete }) {
+    function AccountsView({ systemData, onAction, onDelete, t }) {
       const [name, setName] = useState('');
       const [balance, setBalance] = useState('');
       const [editId, setEditId] = useState(null);
@@ -1387,7 +1763,7 @@
           account: {
             id: editId,
             account_name: name.trim(),
-            balance: editId ? undefined : parseFloat(balance || 0) // Balance set on creation only
+            balance: editId ? undefined : parseFloat(balance || 0)
           }
         });
         if (ok) {
@@ -1398,36 +1774,33 @@
       };
 
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+        <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-piggy-bank"></i> {editId ? 'खाता बदलें' : 'नया बैंक/वॉलेट जोड़ें'}</h3>
-            <form onSubmit={handleSubmit}>
+            <h3><i className="fas fa-piggy-bank"></i> {editId ? 'खाता बदलें' : 'नया खाता/वॉलेट जोड़ें'}</h3>
+            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>खाते का नाम (Wallet Name)</label>
-                <input type="text" placeholder="जैसे: SBI बैंक, PhonePe" value={name} onChange={e => setName(e.target.value)} required />
+                <label>खाते का नाम</label>
+                <input type="text" placeholder="SBI Bank, Cash Box etc." value={name} onChange={e => setName(e.target.value)} required />
               </div>
               {!editId && (
                 <div className="form-group">
-                  <label>प्रारंभिक जमा राशि (Opening Balance)</label>
-                  <input type="number" placeholder="₹0.00" value={balance} onChange={e => setBalance(e.target.value)} />
+                  <label>प्रारंभिक बैलेंस राशि (Opening Balance)</label>
+                  <input type="number" placeholder="₹" value={balance} onChange={e => setBalance(e.target.value)} />
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
-                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
-              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
             </form>
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-university"></i> पंजीकृत बैंक एवं वॉलेट्स</h3>
-            <div className="table-container">
+            <h3><i className="fas fa-university"></i> पंजीकृत बैंक एवं वॉलेट्स</h3>
+            <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
                     <th>क्रमांक</th>
-                    <th>खाते का नाम</th>
-                    <th>वर्तमान बैलेंस</th>
+                    <th>खाता</th>
+                    <th>बैलेंस</th>
                     <th>कार्रवाई</th>
                   </tr>
                 </thead>
@@ -1436,16 +1809,13 @@
                     <tr key={acc.id}>
                       <td>#{idx + 1}</td>
                       <td><strong>{acc.account_name}</strong></td>
-                      <td style={{ fontWeight: 'bold', color: '#0f766e' }}>₹{parseFloat(acc.balance).toFixed(2)}</td>
+                      <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(acc.balance).toFixed(2)}</td>
                       <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(acc.id); setName(acc.account_name); }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("accounts", "id", acc.id)}><i className="fas fa-trash-alt"></i></button>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(acc.id); setName(acc.account_name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("accounts", "id", acc.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
                       </td>
                     </tr>
                   ))}
-                  {accounts.length === 0 && (
-                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>कोई बैंक खाता दर्ज नहीं है।</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -1454,8 +1824,7 @@
       );
     }
 
-    // USERS / COLLECTORS VIEW SCREEN
-    function UsersView({ systemData, onAction, onDelete }) {
+    function UsersView({ systemData, onAction, onDelete, t }) {
       const [name, setName] = useState('');
       const [mobile, setMobile] = useState('');
       const [password, setPassword] = useState('');
@@ -1470,13 +1839,12 @@
 
       const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!name.trim() || !mobile.trim()) return;
         const ok = await onAction("saveUser", {
           user: {
             id: editId,
             name: name.trim(),
             mobile: mobile.trim(),
-            password: password ? password : (editId ? undefined : "123"), // Defaults to 123
+            password: password || (editId ? undefined : "123"),
             role: role,
             village: village,
             target_donation: targetDonation ? parseFloat(targetDonation) : 0,
@@ -1485,97 +1853,68 @@
           }
         });
         if (ok) {
-          handleReset();
+          setName(''); setMobile(''); setPassword(''); setVillage(''); setTargetDonation(''); setEditId(null);
         }
       };
 
-      const handleReset = () => {
-        setName('');
-        setMobile('');
-        setPassword('');
-        setRole('Collector');
-        setVillage('');
-        setTargetDonation('');
-        setStatus('active');
-        setEditId(null);
-      };
-
-      const handleEdit = (u) => {
-        setEditId(u.id);
-        setName(u.name);
-        setMobile(u.mobile);
-        setPassword(''); // keep blank unless changing password
-        setRole(u.role || 'Collector');
-        setVillage(u.village || '');
-        setTargetDonation(u.target_donation || '');
-        setStatus(u.status || 'active');
-      };
-
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+        <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-user-plus"></i> {editId ? 'कलेक्टर संपादित करें' : 'नया कलेक्टर / सदस्य जोड़ें'}</h3>
-            <form onSubmit={handleSubmit}>
+            <h3><i className="fas fa-user-plus"></i> {editId ? 'कलेक्टर सुधारें' : 'नया कलेक्टर जोड़ें'}</h3>
+            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>पूरा नाम (Full Name)</label>
-                <input type="text" placeholder="कलेक्टर का नाम दर्ज करें" value={name} onChange={e => setName(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>मोबाइल नंबर (यह लॉगिन ID होगी)</label>
-                <input type="text" placeholder="10 अंकों का मोबाइल दर्ज करें" value={mobile} onChange={e => setMobile(e.target.value)} required />
+                <label>पूरा नाम (Name)*</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>पासवर्ड (Password) {editId && '(बदलने के लिए ही भरें)'}</label>
-                <input type="password" placeholder={editId ? "अपरिवर्तित रहने दें" : "डिफ़ॉल्ट 123 है"} value={password} onChange={e => setPassword(e.target.value)} />
+                <label>मोबाइल (लॉगिन ID होगी)*</label>
+                <input type="text" value={mobile} onChange={e => setMobile(e.target.value)} required />
               </div>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>भूमिका (Role)</label>
-                  <select value={role} onChange={e => setRole(e.target.value)}>
-                    <option value="Collector">Collector (संग्रहकर्ता)</option>
-                    <option value="Admin">Admin (प्रबंधक)</option>
-                    <option value="Super Admin">Super Admin (मुख्य प्रशासक)</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>स्थिति (Status)</label>
-                  <select value={status} onChange={e => setStatus(e.target.value)}>
-                    <option value="active">Active (सक्रिय)</option>
-                    <option value="inactive">Inactive (निष्क्रिय)</option>
-                  </select>
-                </div>
+              <div className="form-group">
+                <label>पासवर्ड (डिफ़ॉल्ट 123 है)</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
               </div>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>असाइन किया गया गाँव</label>
-                  <select value={village} onChange={e => setVillage(e.target.value)}>
-                    <option value="">कोई भी नहीं (None)</option>
-                    {villages.map(v => (
-                      <option key={v.id} value={v.name}>{v.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>लक्ष्य संग्रह (Target Collection)</label>
-                  <input type="number" placeholder="₹0.00" value={targetDonation} onChange={e => setTargetDonation(e.target.value)} />
-                </div>
+              <div className="form-group">
+                <label>भूमिका (Role)</label>
+                <select value={role} onChange={e => setRole(e.target.value)}>
+                  <option value="Collector">Collector</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Super Admin">Super Admin</option>
+                </select>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="btn" style={{ flex: 1 }}>{editId ? 'संपादित करें' : 'सहेजें'}</button>
-                <button type="button" className="btn btn-secondary" onClick={handleReset}>साफ़ करें</button>
+              <div className="form-group">
+                <label>असाइन किया गया गाँव</label>
+                <select value={village} onChange={e => setVillage(e.target.value)}>
+                  <option value="">कोई भी नहीं</option>
+                  {villages.map(v => (
+                    <option key={v.id} value={v.name}>{v.name}</option>
+                  ))}
+                </select>
               </div>
+              <div className="form-group">
+                <label>लक्ष्य संग्रह (Target Collection)</label>
+                <input type="number" placeholder="₹" value={targetDonation} onChange={e => setTargetDonation(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>स्थिति</label>
+                <select value={status} onChange={e => setStatus(e.target.value)}>
+                  <option value="active">सक्रिय (Active)</option>
+                  <option value="inactive">निष्क्रिय (Inactive)</option>
+                </select>
+              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
             </form>
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-users"></i> पंजीकृत कलेक्टर्स सूची</h3>
-            <div className="table-container">
+            <h3><i className="fas fa-users"></i> पंजीकृत कलेक्टर्स सूची</h3>
+            <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>कलेक्टर विवरण</th>
-                    <th>भूमिका (Role)</th>
-                    <th>असाइन गाँव</th>
+                    <th>कलेक्टर</th>
+                    <th>भूमिका</th>
+                    <th>गाँव</th>
                     <th>स्थिति</th>
                     <th>कार्रवाई</th>
                   </tr>
@@ -1583,19 +1922,15 @@
                 <tbody>
                   {users.map(u => (
                     <tr key={u.id}>
-                      <td><strong>{u.name}</strong><br/><small style={{ color: 'var(--muted)' }}>{u.mobile}</small></td>
+                      <td><strong>{u.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{u.mobile}</small></td>
                       <td>{u.role}</td>
                       <td>{u.village || 'N/A'}</td>
+                      <td><span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: u.status === 'active' ? '#d2f4ea' : '#f8d7da', color: u.status === 'active' ? '#0f766e' : '#721c24' }}>{u.status}</span></td>
                       <td>
-                        <span style={{ 
-                          padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
-                          background: u.status === 'active' ? '#d2f4ea' : '#f8d7da',
-                          color: u.status === 'active' ? '#0f766e' : '#721c24'
-                        }}>{u.status}</span>
-                      </td>
-                      <td>
-                        <button className="action-icon edit-icon" onClick={() => handleEdit(u)}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("users", "id", u.id)}><i className="fas fa-trash-alt"></i></button>
+                        <button className="action-icon edit-icon" onClick={() => {
+                          setEditId(u.id); setName(u.name); setMobile(u.mobile); setRole(u.role); setVillage(u.village || ''); setTargetDonation(u.target_donation || ''); setStatus(u.status);
+                        }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("users", "id", u.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
                       </td>
                     </tr>
                   ))}
@@ -1607,47 +1942,37 @@
       );
     }
 
-    // RBAC PERMISSIONS MATRIX SCREEN
-    function RbacView({ systemData, onAction }) {
+    function RbacView({ systemData, onAction, t }) {
       const roles = systemData.roles || [];
       const pages = systemData.rbacPages || [];
 
-      const handleToggle = (roleKey, pageKey, permKey, currentValue) => {
-        onAction("toggleRbac", {
-          roleKey: roleKey,
-          pageKey: pageKey,
-          permKey: permKey,
-          value: !currentValue
-        });
-      };
-
       return (
         <div className="card">
-          <h2 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-key"></i> अनुमतियां मैट्रिक्स (Role-Based Access Control)</h2>
-          <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '20px' }}>
-            प्रत्येक भूमिका (Role) के लिए विशिष्ट पृष्ठों के अनुमतियों (View, Add, Edit, Delete) को यहां से नियंत्रित करें। Super Admin अनुमतियां हमेशा के लिए लॉक हैं।
+          <div className="card-header">
+            <h2><i className="fas fa-key"></i> अनुमतियां मैट्रिक्स (Dynamic Access Matrix)</h2>
+          </div>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '15px' }}>
+            भूमिका (Role) के आधार पर विशिष्ट अनुमतियों को चालू/बंद करें। Super Admin अनुमतियां हमेशा चालू रहेंगी।
           </p>
 
           {roles.map(role => {
             let perms = {};
-            try {
-              perms = JSON.parse(role.permissions || '{}');
-            } catch(e) {}
+            try { perms = JSON.parse(role.permissions || '{}'); } catch(e) {}
 
             return (
-              <div key={role.role_key} style={{ marginBottom: '30px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+              <div key={role.role_key} style={{ marginBottom: '25px', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px', overflow: 'hidden' }}>
                 <div style={{ background: role.color || '#2c3e50', color: '#fff', padding: '10px 15px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
                   <span>{role.label}</span>
                   {Number(role.is_super) === 1 && <span style={{ background: 'rgba(255,255,255,0.2)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px' }}>Locked (Super Owner)</span>}
                 </div>
-                <div className="table-container" style={{ marginTop: 0 }}>
+                <div className="table-responsive">
                   <table>
                     <thead>
                       <tr>
-                        <th>मॉड्यूल / पृष्ठ (Screen)</th>
+                        <th>पृष्ठ / मॉड्यूल (Screen)</th>
                         <th style={{ textAlign: 'center' }}>देखें (View)</th>
                         <th style={{ textAlign: 'center' }}>जोड़ें (Add)</th>
-                        <th style={{ textAlign: 'center' }}>सुधारें (Edit)</th>
+                        <th style={{ textAlign: 'center' }}>संपादित करें (Edit)</th>
                         <th style={{ textAlign: 'center' }}>मिटाएं (Delete)</th>
                       </tr>
                     </thead>
@@ -1655,45 +1980,13 @@
                       {pages.map(page => {
                         const pPerm = perms[page.key] || { v: 0, a: 0, e: 0, d: 0 };
                         const isLocked = Number(role.is_super) === 1;
-
                         return (
                           <tr key={page.key}>
-                            <td>
-                              <strong>{page.label}</strong><br/>
-                              <small style={{ color: 'var(--muted)' }}>{page.group}</small>
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={!!pPerm.v} 
-                                disabled={isLocked}
-                                onChange={() => handleToggle(role.role_key, page.key, 'v', pPerm.v)} 
-                              />
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={!!pPerm.a} 
-                                disabled={isLocked}
-                                onChange={() => handleToggle(role.role_key, page.key, 'a', pPerm.a)} 
-                              />
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={!!pPerm.e} 
-                                disabled={isLocked}
-                                onChange={() => handleToggle(role.role_key, page.key, 'e', pPerm.e)} 
-                              />
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={!!pPerm.d} 
-                                disabled={isLocked}
-                                onChange={() => handleToggle(role.role_key, page.key, 'd', pPerm.d)} 
-                              />
-                            </td>
+                            <td><strong>{page.label}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{page.group}</small></td>
+                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.v} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'v', value: !pPerm.v })} /></td>
+                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.a} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'a', value: !pPerm.a })} /></td>
+                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.e} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'e', value: !pPerm.e })} /></td>
+                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.d} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'd', value: !pPerm.d })} /></td>
                           </tr>
                         );
                       })}
@@ -1707,12 +2000,10 @@
       );
     }
 
-    // FESTIVAL SESSIONS VIEW
-    function FestivalsView({ systemData, onAction, onDelete }) {
+    function FestivalsView({ systemData, onAction, onDelete, t }) {
       const [name, setName] = useState('');
       const [status, setStatus] = useState('archived');
       const [editId, setEditId] = useState(null);
-      
       const festivals = systemData.festivals || [];
 
       const handleSubmit = async (e) => {
@@ -1720,42 +2011,37 @@
         if (!name.trim()) return;
         const ok = await onAction("saveFestival", { festival: { id: editId, name: name.trim(), status: status } });
         if (ok) {
-          setName('');
-          setStatus('archived');
-          setEditId(null);
+          setName(''); setStatus('archived'); setEditId(null);
         }
       };
 
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '20px' }}>
+        <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-calendar-plus"></i> {editId ? 'सत्र संपादित करें' : 'नया उत्सव सत्र जोड़ें'}</h3>
-            <form onSubmit={handleSubmit}>
+            <h3><i className="fas fa-calendar-plus"></i> {editId ? 'उत्सव सत्र सुधारें' : 'नया उत्सव सत्र जोड़ें'}</h3>
+            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
-                <label>उत्सव का नाम (Session Name)</label>
-                <input type="text" placeholder="जैसे: गणेश उत्सव 2026" value={name} onChange={e => setName(e.target.value)} required />
+                <label>उत्सव सत्र का नाम</label>
+                <input type="text" placeholder="Ganesh Utsav 2026" value={name} onChange={e => setName(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>स्थिति (Status)</label>
+                <label>स्थिति</label>
                 <select value={status} onChange={e => setStatus(e.target.value)}>
-                  <option value="active">Active (चालू)</option>
-                  <option value="archived">Archived (पुराना/संग्रहीत)</option>
+                  <option value="active">Active (सक्रिय)</option>
+                  <option value="archived">Archived (पुराना)</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="btn" style={{ flex: 1 }}>सहेजें</button>
-                {editId && <button type="button" className="btn btn-secondary" onClick={() => { setEditId(null); setName(''); }}>रद्द करें</button>}
-              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
             </form>
           </div>
 
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-history"></i> उत्सव सत्र सूची</h3>
-            <div className="table-container">
+            <h3><i className="fas fa-calendar-alt"></i> उपलब्ध उत्सव सत्र</h3>
+            <div className="table-responsive" style={{ marginTop: '15px' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>सत्र नाम</th>
+                    <th>नाम</th>
                     <th>स्थिति</th>
                     <th>कार्रवाई</th>
                   </tr>
@@ -1764,16 +2050,10 @@
                   {festivals.map(f => (
                     <tr key={f.id}>
                       <td><strong>{f.name}</strong></td>
+                      <td><span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: f.status === 'active' ? '#d2f4ea' : '#e2e8f0', color: f.status === 'active' ? '#0f766e' : '#4a5568' }}>{f.status}</span></td>
                       <td>
-                        <span style={{ 
-                          padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold',
-                          background: f.status === 'active' ? '#d2f4ea' : '#e2e8f0',
-                          color: f.status === 'active' ? '#0f766e' : '#4a5568'
-                        }}>{f.status}</span>
-                      </td>
-                      <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(f.id); setName(f.name); setStatus(f.status); }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("festivals", "id", f.id)}><i className="fas fa-trash-alt"></i></button>
+                        <button className="action-icon edit-icon" onClick={() => { setEditId(f.id); setName(f.name); setStatus(f.status); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        <button className="action-icon delete-icon" onClick={() => onDelete("festivals", "id", f.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
                       </td>
                     </tr>
                   ))}
@@ -1785,241 +2065,247 @@
       );
     }
 
-    // SYSTEM MAINTENANCE & SETTINGS VIEW
-    function SettingsView({ systemData, user, onAction, onRefresh }) {
-      const [committeeName, setCommitteeName] = useState('');
-      const [committeeAddress, setCommitteeAddress] = useState('');
-      const [smsApiKey, setSmsApiKey] = useState('');
-      const [smsSenderId, setSmsSenderId] = useState('');
-      const [smsAutoSend, setSmsAutoSend] = useState(false);
-      
+    function SettingsView({ systemData, user, onAction, onRefresh, t }) {
+      const [name, setName] = useState('');
+      const [address, setAddress] = useState('');
+      const [smsKey, setSmsKey] = useState('');
+      const [smsSender, setSmsSender] = useState('');
+      const [smsAuto, setSmsAuto] = useState(false);
+
       const settings = systemData.settings || {};
 
       useEffect(() => {
-        setCommitteeName(settings.committee_name || '');
-        setCommitteeAddress(settings.committee_address || '');
-        setSmsApiKey(settings.sms_api_key || '');
-        setSmsSenderId(settings.sms_sender_id || '');
-        setSmsAutoSend(settings.sms_auto_send === 'true');
+        setName(settings.committee_name || '');
+        setAddress(settings.committee_address || '');
+        setSmsKey(settings.sms_api_key || '');
+        setSmsSender(settings.sms_sender_id || '');
+        setSmsAuto(settings.sms_auto_send === 'true');
       }, [settings]);
 
       const handleSubmit = async (e) => {
         e.preventDefault();
         onAction("saveSettings", {
           settings: {
-            committee_name: committeeName.trim(),
-            committee_address: committeeAddress.trim(),
-            sms_api_key: smsApiKey.trim(),
-            sms_sender_id: smsSenderId.trim(),
-            sms_auto_send: smsAutoSend ? 'true' : 'false'
+            committee_name: name.trim(),
+            committee_address: address.trim(),
+            sms_api_key: smsKey.trim(),
+            sms_sender_id: smsSender.trim(),
+            sms_auto_send: smsAuto ? 'true' : 'false'
           }
         });
       };
 
-      const handleLoadDemo = () => {
-        confirmAction(
-          "क्या आप वाकई डेमो डेटा लोड करना चाहते हैं?",
-          "इससे आपका वर्तमान सारा डेटा साफ हो जाएगा और डेमो डेटा लोड हो जाएगा।",
-          async () => {
-            const ok = await onAction("loadDemoData", {});
-            if (ok) {
-              onRefresh();
-            }
-          }
-        );
-      };
-
-      const handleClearAll = () => {
-        confirmAction(
-          "क्या आप वाकई सारा डेटा हटाना चाहते हैं?",
-          "इससे आपका सारा डेटा (चंदा, खर्चे, वॉलेट बैलेंस) स्थायी रूप से साफ हो जाएगा।",
-          async () => {
-            const ok = await onAction("clearAllData", {});
-            if (ok) {
-              onRefresh();
-            }
-          }
-        );
-      };
-
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
+        <div className="split-layout">
           <div className="card">
-            <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-cogs"></i> समिति एवं गेटवे सेटिंग्स</h3>
-            <form onSubmit={handleSubmit}>
+            <h3><i className="fas fa-cogs"></i> समिति एवं गेटवे सेटिंग्स</h3>
+            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
               <div className="form-group">
                 <label>समिति का नाम (Committee Name)</label>
-                <input type="text" value={committeeName} onChange={e => setCommitteeName(e.target.value)} required />
+                <input type="text" value={name} onChange={e => setName(e.target.value)} required />
               </div>
               <div className="form-group">
                 <label>समिति का पता (Address)</label>
-                <input type="text" value={committeeAddress} onChange={e => setCommitteeAddress(e.target.value)} />
-              </div>
-              
-              <h4 style={{ margin: '20px 0 10px', color: 'var(--orange)', borderBottom: '1px solid var(--border)', paddingBottom: '5px' }}>
-                <i className="fab fa-whatsapp"></i> WhatsApp Gateway Settings (UltraMsg)
-              </h4>
-              <div className="form-group">
-                <label>UltraMsg API Instance ID (Sender ID)</label>
-                <input type="text" placeholder="e.g. instance1234" value={smsSenderId} onChange={e => setSmsSenderId(e.target.value)} />
+                <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>UltraMsg API Token</label>
-                <input type="text" placeholder="Enter API auth token" value={smsApiKey} onChange={e => setSmsApiKey(e.target.value)} />
+                <label>WhatsApp API Token (UltraMsg Token)</label>
+                <input type="text" placeholder="Enter API auth key" value={smsKey} onChange={e => setSmsKey(e.target.value)} />
               </div>
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input type="checkbox" id="sms_auto" checked={smsAutoSend} onChange={e => setSmsAutoSend(e.target.checked)} style={{ width: 'auto' }} />
-                <label htmlFor="sms_auto" style={{ margin: 0, cursor: 'pointer' }}>चंदा प्राप्ति पर व्हाट्सएप रसीद स्वतः भेजें (Auto-send WhatsApp)</label>
+              <div className="form-group">
+                <label>UltraMsg Instance ID (Sender ID)</label>
+                <input type="text" placeholder="instance1234" value={smsSender} onChange={e => setSmsSender(e.target.value)} />
               </div>
-
-              <button type="submit" className="btn" style={{ width: '100%', marginTop: '10px' }}>सेटिंग्स सुरक्षित करें</button>
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input type="checkbox" id="sms_auto" checked={smsAuto} onChange={e => setSmsAuto(e.target.checked)} style={{ width: 'auto' }} />
+                <label htmlFor="sms_auto" style={{ margin: 0, cursor: 'pointer' }}>व्हाट्सएप पर रसीद स्वतः भेजें (Auto Send WhatsApp)</label>
+              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>सुरक्षित करें</button>
             </form>
           </div>
 
-          <div className="card" style={{ borderTop: '4px solid #ff4136' }}>
-            <h3 style={{ color: '#ff4136', marginBottom: '15px' }}><i className="fas fa-tools"></i> सिस्टम मेंटेनेंस टूल्स</h3>
-            <p style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.5', marginBottom: '20px' }}>
-              इन टूल्स का उपयोग केवल परीक्षण या नए साल की शुरुआत के दौरान करें। डेटा डिलीट होने पर वापस नहीं लाया जा सकता।
+          <div className="card" style={{ borderTop: '4px solid var(--danger)' }}>
+            <h3 style={{ color: 'var(--danger)' }}><i className="fas fa-tools"></i> डेटा मेंटेनेंस व बैकअप</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '10px 0 20px' }}>
+              डेमो डेटा लोड करने या सभी फ़ाइलों को डिलीट करने की सेटिंग्स। यह क्रिया पूर्ववत नहीं की जा सकती।
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button className="btn btn-success" onClick={handleLoadDemo}><i className="fas fa-database"></i> डेमो डेटा लोड करें</button>
-              <button className="btn btn-danger" onClick={handleClearAll}><i className="fas fa-trash-alt"></i> सारा डेटा साफ करें</button>
+              <button className="btn btn-success" onClick={async () => {
+                confirmAction("क्या आप वाकई मॉक डेटा रिस्टोर करना चाहते हैं?", "इससे वर्तमान सारा डेटा साफ़ हो जाएगा।", async () => {
+                  const ok = await onAction("loadDemoData", {});
+                  if (ok) onRefresh();
+                });
+              }}><i className="fas fa-database"></i> {t('load_demo')}</button>
+              
+              <button className="btn btn-danger" onClick={async () => {
+                confirmAction("क्या आप वाकई सम्पूर्ण डेटा साफ़ करना चाहते हैं?", "यह डेटा हमेशा के लिए हटा दिया जाएगा।", async () => {
+                  const ok = await onAction("clearAllData", {});
+                  if (ok) onRefresh();
+                });
+              }}><i className="fas fa-trash-alt"></i> {t('clear_all')}</button>
             </div>
           </div>
         </div>
       );
     }
 
-    // PROFILE EDIT VIEW
-    function ProfileView({ user, onAction, onLogout }) {
+    function ProfileView({ user, onAction, onLogout, activeThemeId, onChangeTheme, t }) {
       const [name, setName] = useState(user.name);
       const [password, setPassword] = useState('');
-      
+
       const handleSubmit = async (e) => {
         e.preventDefault();
         const payload = { name: name.trim() };
-        if (password.trim()) {
-          payload.password = password;
-        }
-        
+        if (password.trim()) payload.password = password.trim();
         const ok = await onAction("updateMyProfile", { profile: payload });
         if (ok) {
           setPassword('');
-          Swal.fire({ text: "प्रोफ़ाइल सफलतापूर्वक अपडेट की गई! कृपया नए क्रेडेंशियल लागू करने के लिए फिर से लॉगिन करें।", icon: 'success' })
-            .then(() => onLogout());
+          Swal.fire({ text: "प्रोफ़ाइल सहेजी गई! सेटिंग्स लागू करने के लिए कृपया फिर से लॉगिन करें।", icon: 'success' }).then(() => onLogout());
         }
       };
 
       return (
-        <div className="card" style={{ maxWidth: '500px', margin: '0 auto' }}>
-          <h3 style={{ color: 'var(--orange)', marginBottom: '15px' }}><i className="fas fa-user-cog"></i> प्रोफ़ाइल संपादित करें</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>मेरा नाम</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+        <div className="split-layout">
+          <div className="card">
+            <h3><i className="fas fa-user-cog"></i> प्रोफ़ाइल संपादित करें</h3>
+            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
+              <div className="form-group">
+                <label>मेरा नाम</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>लॉगिन मोबाइल नंबर (अपरिवर्तनीय)</label>
+                <input type="text" value={user.mobile} disabled />
+              </div>
+              <div className="form-group">
+                <label>नया पासवर्ड (सुरक्षा के लिए भरें)</label>
+                <input type="password" placeholder="खाली छोड़ें यदि नहीं बदलना है" value={password} onChange={e => setPassword(e.target.value)} />
+              </div>
+              <button type="submit" className="btn" style={{ width: '100%' }}>अपडेट करें</button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3><i className="fas fa-palette"></i> रंग पैलेट (Theme Preset Gallery)</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '5px 0 15px' }}>
+              अपने पसंदीदा रंग पैलेट का चयन करें जो पूरे अनुप्रयोग में तुरंत लागू हो जाएगा।
+            </p>
+            <div className="theme-preset-grid">
+              {THEME_PRESETS.map(theme => (
+                <div 
+                  key={theme.id} 
+                  className={`theme-preset-card ${activeThemeId === theme.id ? 'active' : ''}`}
+                  onClick={() => onChangeTheme(theme.id)}
+                >
+                  <div className="theme-preset-swatch" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}></div>
+                  <strong style={{ fontSize: '12px' }}>{theme.name}</strong>
+                </div>
+              ))}
             </div>
-            <div className="form-group">
-              <label>लॉगिन मोबाइल (बदला नहीं जा सकता)</label>
-              <input type="text" value={user.mobile} disabled />
-            </div>
-            <div className="form-group">
-              <label>नया पासवर्ड (बदलने के लिए ही भरें)</label>
-              <input type="password" placeholder="अपरिवर्तित रहने दें" value={password} onChange={e => setPassword(e.target.value)} />
-            </div>
-            <button type="submit" className="btn" style={{ width: '100%', marginTop: '10px' }}>अपडेट करें</button>
-          </form>
+          </div>
         </div>
       );
     }
 
     // ==========================================
-    // FORM MODALS (SLIDE-OVERS)
+    // MODAL DIALOGS
     // ==========================================
 
-    // ADD/EDIT DONATION MODAL
-    function DonationFormModal({ record, villages, onClose, onSave }) {
-      const [donorName, setDonorName] = useState(record?.donor_name || '');
-      const [donorMobile, setDonorMobile] = useState(record?.donor_mobile || '');
-      const [village, setVillage] = useState(record?.village || (villages[0]?.name || ''));
+    function DonationFormModal({ record, parentRecord, villages, donations, onClose, onSave, t }) {
+      const [donorName, setDonorName] = useState(record?.donor_name || parentRecord?.donor_name || '');
+      const [donorMobile, setDonorMobile] = useState(record?.donor_mobile || parentRecord?.donor_mobile || '');
+      const [village, setVillage] = useState(record?.village || parentRecord?.village || (villages[0]?.name || ''));
       const [amount, setAmount] = useState(record?.amount || '');
       const [mode, setMode] = useState(record?.mode || 'Cash');
-      const [promisedAmount, setPromisedAmount] = useState(record?.promised_amount || '');
-      const [arrangementType, setArrangementType] = useState(record?.promised_amount && record.promised_amount != record.amount ? 'installment' : 'one_time');
+      const [promisedAmount, setPromisedAmount] = useState(record?.promised_amount || parentRecord?.promised_amount || '');
+      const [isPromised, setIsPromised] = useState(!!(record?.promised_amount || parentRecord));
+
+      useEffect(() => {
+        if (parentRecord) {
+          // If paying installment, load outstanding dues
+          const installments = donations.filter(x => x.parent_receipt_no === parentRecord.receipt_no);
+          let paid = parseFloat(parentRecord.amount);
+          installments.forEach(ins => paid += parseFloat(ins.amount));
+          const remaining = parseFloat(parentRecord.promised_amount) - paid;
+          setAmount(remaining);
+        }
+      }, [parentRecord]);
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        if (!donorName.trim() || !amount || parseFloat(amount) <= 0) return alert("कृपया सभी आवश्यक फ़ील्ड भरें।");
-
         const payload = {
           donor_name: donorName.trim(),
           donor_mobile: donorMobile.trim(),
           village: village,
           amount: parseFloat(amount),
           mode: mode,
-          promised_amount: arrangementType === 'one_time' ? parseFloat(amount) : parseFloat(promisedAmount || amount),
+          promised_amount: isPromised ? parseFloat(promisedAmount || amount) : parseFloat(amount),
           festival_id: getViewingFestivalId(),
           collected_by_name: record ? record.collected_by_name : JSON.parse(localStorage.getItem("currentUser")).name,
           collected_by_mobile: record ? record.collected_by_mobile : JSON.parse(localStorage.getItem("currentUser")).mobile,
           date: record ? record.date : new Date().toISOString().slice(0, 10),
-          receipt_no: record?.receipt_no
+          receipt_no: record?.receipt_no,
+          parent_receipt_no: parentRecord ? parentRecord.receipt_no : record?.parent_receipt_no
         };
         onSave(payload);
       };
 
       return (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3><i className="fas fa-hand-holding-usd"></i> {record ? 'चंदा रसीद संपादित करें' : 'नया चंदा सहेजें'}</h3>
-              <button className="close-btn" onClick={onClose}>&times;</button>
+        <div className="modal-slideover-overlay">
+          <div className="modal-slideover">
+            <div className="slideover-header">
+              <h3><i className="fas fa-hand-holding-usd"></i> {record ? 'चंदा रसीद सुधारें' : (parentRecord ? 'किस्त जमा करें (Installment)' : 'नया चंदा प्रविष्ट करें')}</h3>
+              <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="modal-body">
+              <div className="slideover-body">
+                {parentRecord && (
+                  <div style={{ padding: '10px', background: '#fff0d3', borderRadius: '4px', marginBottom: '15px', fontSize: '12.5px', color: '#a46000' }}>
+                    <strong>किस्त भुगतान:</strong> रसीद #{parentRecord.receipt_no} के लिए शेष किस्त राशि जमा की जा रही है।
+                  </div>
+                )}
                 <div className="form-group">
                   <label>दाता का नाम (Donor Name)*</label>
-                  <input type="text" value={donorName} onChange={e => setDonorName(e.target.value)} required />
+                  <input type="text" value={donorName} onChange={e => setDonorName(e.target.value)} required disabled={!!parentRecord} />
                 </div>
                 <div className="form-group">
-                  <label>दाता का मोबाइल नंबर (Donor Mobile)</label>
-                  <input type="text" value={donorMobile} onChange={e => setDonorMobile(e.target.value)} />
+                  <label>दाता का मोबाइल नंबर</label>
+                  <input type="text" value={donorMobile} onChange={e => setDonorMobile(e.target.value)} disabled={!!parentRecord} />
                 </div>
                 <div className="form-group">
                   <label>गाँव (Village)*</label>
-                  <select value={village} onChange={e => setVillage(e.target.value)}>
+                  <select value={village} onChange={e => setVillage(e.target.value)} disabled={!!parentRecord}>
                     {villages.map(v => (
                       <option key={v.id} value={v.name}>{v.name}</option>
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>भुगतान व्यवस्था प्रकार (Payment Arrangement)</label>
-                  <select value={arrangementType} onChange={e => setArrangementType(e.target.value)}>
-                    <option value="one_time">एक बार भुगतान (One-time)</option>
-                    <option value="installment">किस्त/प्रतिबद्ध भुगतान (Promised Deal)</option>
-                  </select>
-                </div>
-                {arrangementType === 'installment' && (
+                {!parentRecord && (
+                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input type="checkbox" id="is_promised" checked={isPromised} onChange={e => setIsPromised(e.target.checked)} style={{ width: 'auto' }} />
+                    <label htmlFor="is_promised" style={{ margin: 0, cursor: 'pointer' }}>यह एक किस्त/तय राशि भुगतान है (Promised Deal)</label>
+                  </div>
+                )}
+                {isPromised && !parentRecord && (
                   <div className="form-group">
-                    <label>कुल प्रतिबद्ध राशि (Total Deal Amount)</label>
+                    <label>कुल प्रतिबद्ध राशि (Total Deal Amount)*</label>
                     <input type="number" placeholder="₹" value={promisedAmount} onChange={e => setPromisedAmount(e.target.value)} required />
                   </div>
                 )}
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>आज प्राप्त राशि (Amount)*</label>
-                    <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
-                  </div>
-                  <div className="form-group">
-                    <label>भुगतान माध्यम (Mode)</label>
-                    <select value={mode} onChange={e => setMode(e.target.value)}>
-                      <option value="Cash">Cash (नकद)</option>
-                      <option value="Online">Online (UPI / क्यूआर)</option>
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label>{parentRecord ? 'किस्त भुगतान राशि' : 'आज प्राप्त राशि'} (Amount)*</label>
+                  <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>भुगतान माध्यम (Mode)</label>
+                  <select value={mode} onChange={e => setMode(e.target.value)}>
+                    <option value="Cash">Cash (नकद)</option>
+                    <option value="Online">Online (UPI / क्यूआर)</option>
+                  </select>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="submit" className="btn">सहेजें</button>
+              <div className="slideover-footer">
+                <button type="submit" className="btn">सहेजें (Save)</button>
                 <button type="button" className="btn btn-secondary" onClick={onClose}>रद्द करें</button>
               </div>
             </form>
@@ -2028,8 +2314,7 @@
       );
     }
 
-    // ADD/EDIT EXPENSE MODAL
-    function ExpenseFormModal({ record, categories, accounts, onClose, onSave }) {
+    function ExpenseFormModal({ record, categories, accounts, onClose, onSave, t }) {
       const [title, setTitle] = useState(record?.title || '');
       const [category, setCategory] = useState(record?.category || (categories[0]?.name || ''));
       const [amount, setAmount] = useState(record?.amount || '');
@@ -2040,9 +2325,9 @@
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        if (!title.trim() || !amount || parseFloat(amount) <= 0) return alert("कृपया सभी आवश्यक फ़ील्ड भरें।");
-
-        const payload = {
+        if (!title.trim() || !amount) return alert("सभी आवश्यक फील्ड भरें।");
+        
+        onSave({
           title: title.trim(),
           category: category,
           amount: parseFloat(amount),
@@ -2055,67 +2340,62 @@
           added_by_mobile: record ? record.added_by_mobile : JSON.parse(localStorage.getItem("currentUser")).mobile,
           date: record ? record.date : new Date().toISOString().slice(0, 10),
           expense_no: record?.expense_no
-        };
-        onSave(payload);
+        });
       };
 
       return (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3><i className="fas fa-tags"></i> {record ? 'खर्च विवरण संपादित करें' : 'नया खर्च सहेजें'}</h3>
-              <button className="close-btn" onClick={onClose}>&times;</button>
+        <div className="modal-slideover-overlay">
+          <div className="modal-slideover">
+            <div className="slideover-header">
+              <h3><i className="fas fa-tags"></i> {record ? 'व्यय विवरण सुधारें' : 'नया खर्च दर्ज करें'}</h3>
+              <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="modal-body">
+              <div className="slideover-body">
                 <div className="form-group">
-                  <label>खर्च का शीर्षक (Title)*</label>
+                  <label>खर्च शीर्षक (Title)*</label>
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                  <label>खर्च श्रेणी (Category)*</label>
+                  <label>व्यय श्रेणी (Category)*</label>
                   <select value={category} onChange={e => setCategory(e.target.value)}>
                     {categories.map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
                   </select>
                 </div>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>खर्च राशि (Amount)*</label>
-                    <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
-                  </div>
-                  <div className="form-group">
-                    <label>भुगतान माध्यम (Mode)</label>
-                    <select value={mode} onChange={e => setMode(e.target.value)}>
-                      <option value="Cash">Cash (नकद)</option>
-                      <option value="Online">Online (बैंक / क्यूआर)</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>खाता/वॉलेट (Account source)</label>
-                    <select value={accountId} onChange={e => setAccountId(e.target.value)}>
-                      {accounts.map(a => (
-                        <option key={a.id} value={a.id}>{a.account_name} (₹{parseFloat(a.balance).toFixed(2)})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>अनुमोदन स्थिति (Status)</label>
-                    <select value={status} onChange={e => setStatus(e.target.value)}>
-                      <option value="Pending">Pending (लंबित)</option>
-                      <option value="Approved">Approved (स्वीकृत)</option>
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label>राशि (Amount)*</label>
+                  <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                  <label>रिमार्क / टिप्पणी (Remark)</label>
-                  <textarea rows="3" placeholder="वैकल्पिक विवरण" value={note} onChange={e => setNote(e.target.value)}></textarea>
+                  <label>भुगतान माध्यम (Mode)</label>
+                  <select value={mode} onChange={e => setMode(e.target.value)}>
+                    <option value="Cash">Cash (नकद)</option>
+                    <option value="Online">Online (UPI / बैंक)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>स्रोत खाता (Account source)</label>
+                  <select value={accountId} onChange={e => setAccountId(e.target.value)}>
+                    {accounts.map(a => (
+                      <option key={a.id} value={a.id}>{a.account_name} (Bal: ₹{parseFloat(a.balance).toFixed(2)})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>स्थिति (Status)</label>
+                  <select value={status} onChange={e => setStatus(e.target.value)}>
+                    <option value="Pending">Pending (लंबित)</option>
+                    <option value="Approved">Approved (स्वीकृत)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>नोट/टिप्पणी</label>
+                  <textarea rows="3" placeholder="वैकल्पिक" value={note} onChange={e => setNote(e.target.value)}></textarea>
                 </div>
               </div>
-              <div className="modal-footer">
+              <div className="slideover-footer">
                 <button type="submit" className="btn">सहेजें</button>
                 <button type="button" className="btn btn-secondary" onClick={onClose}>रद्द करें</button>
               </div>
@@ -2126,109 +2406,93 @@
     }
 
     // ==========================================
-    // PRINT FORM TEMPLATES (Zero-Reload Page Slips)
+    // THERMAL SLIP TEMPLATES FOR PRINT VIEW
     // ==========================================
 
-    // PRINT RECEIPT SLIP
     function PrintReceipt({ slip, settings }) {
       const remainingDues = parseFloat(slip.promised_amount || slip.amount) - parseFloat(slip.amount);
       return (
-        <div style={{ maxWidth: '300px', margin: '0 auto', padding: '15px', border: '1px solid #ccc', background: '#fff', fontSize: '12px', lineHeight: '1.4', color: '#000' }}>
-          <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '10px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
-            <p style={{ margin: '2px 0 0', fontSize: '10px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
+        <div style={{ maxWidth: '280px', margin: '0 auto', padding: '15px', border: '1px solid #000', background: '#fff', fontSize: '11.5px', lineHeight: '1.45', color: '#000', fontFamily: 'monospace' }}>
+          <div style={{ textAlign: 'center', borderBottom: '1.5px solid #000', paddingBottom: '8px', marginBottom: '8px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
+            <p style={{ margin: '2px 0 0', fontSize: '9.5px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
           </div>
-
-          <div style={{ textAlign: 'center', margin: '10px 0' }}>
-            <span style={{ border: '1px solid #000', padding: '3px 8px', fontWeight: 'bold', fontSize: '11px' }}>चंदा रसीद (CHANDA SLIP)</span>
+          <div style={{ textAlign: 'center', margin: '8px 0' }}>
+            <span style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 'bold', fontSize: '10px' }}>चंदा प्राप्ति रसीद</span>
           </div>
-
-          <div style={{ margin: '10px 0' }}>
-            <p><strong>रसीद क्र:</strong> #{slip.receipt_no}</p>
-            <p><strong>दिनांक:</strong> {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
-            <p><strong>दाता का नाम:</strong> {slip.donor_name}</p>
-            <p><strong>मोबाइल:</strong> {slip.donor_mobile || 'N/A'}</p>
-            <p><strong>ग्राम:</strong> {slip.village}</p>
+          <div style={{ margin: '8px 0' }}>
+            <p>रसीद क्र: #{slip.receipt_no}</p>
+            <p>दिनांक: {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
+            <p>दाता: {slip.donor_name}</p>
+            <p>मोबाइल: {slip.donor_mobile || 'N/A'}</p>
+            <p>ग्राम/शहर: {slip.village}</p>
           </div>
-
-          <table style={{ width: '100%', borderTop: '1px solid #000', borderBottom: '1px solid #000', margin: '10px 0', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', margin: '8px 0' }}>
             <tbody>
               <tr>
-                <td style={{ padding: '5px 0' }}>प्राप्त राशि (Received)</td>
-                <td style={{ textAlign: 'right', padding: '5px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
+                <td style={{ padding: '4px 0' }}>प्राप्त राशि (Received)</td>
+                <td style={{ textAlign: 'right', padding: '4px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
               </tr>
               {remainingDues > 0 && (
                 <>
                   <tr>
-                    <td style={{ padding: '5px 0' }}>कुल स्वीकृत राशि (Promised)</td>
-                    <td style={{ textAlign: 'right', padding: '5px 0' }}>₹{parseFloat(slip.promised_amount).toFixed(2)}</td>
+                    <td style={{ padding: '4px 0' }}>तय कुल राशि (Promised)</td>
+                    <td style={{ textAlign: 'right', padding: '4px 0' }}>₹{parseFloat(slip.promised_amount).toFixed(2)}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '5px 0', color: 'red' }}>शेष राशि (Dues Baki)</td>
-                    <td style={{ textAlign: 'right', padding: '5px 0', fontWeight: 'bold', color: 'red' }}>₹{remainingDues.toFixed(2)}</td>
+                    <td style={{ padding: '4px 0', color: 'red' }}>बकाया राशि (Outstanding)</td>
+                    <td style={{ textAlign: 'right', padding: '4px 0', fontWeight: 'bold', color: 'red' }}>₹{remainingDues.toFixed(2)}</td>
                   </tr>
                 </>
               )}
             </tbody>
           </table>
-
-          <p style={{ fontStyle: 'italic', fontSize: '10px', textAlign: 'center' }}>भुगतान माध्यम: {slip.mode}</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
+          <p style={{ fontSize: '9px', textAlign: 'center' }}>भुगतान प्रकार: {slip.mode}</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px' }}>
             <span>हस्ताक्षर (कलेक्टर)</span>
-            <span>हस्ताक्षर (प्रबंधक)</span>
+            <span>हस्ताक्षर (कोषाध्यक्ष)</span>
           </div>
-          
-          <p style={{ fontSize: '9px', color: '#777', textAlign: 'center', marginTop: '20px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
+          <p style={{ fontSize: '8.5px', color: '#555', textAlign: 'center', marginTop: '15px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
             {settings.receipt_note || 'गणेश जी की कृपा आप पर बनी रहे। धन्यवाद! 🙏'}
           </p>
         </div>
       );
     }
 
-    // PRINT VOUCHER SLIP
     function PrintVoucher({ slip, settings }) {
       return (
-        <div style={{ maxWidth: '300px', margin: '0 auto', padding: '15px', border: '1px solid #ccc', background: '#fff', fontSize: '12px', lineHeight: '1.4', color: '#000' }}>
-          <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '10px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
-            <p style={{ margin: '2px 0 0', fontSize: '10px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
+        <div style={{ maxWidth: '280px', margin: '0 auto', padding: '15px', border: '1px solid #000', background: '#fff', fontSize: '11.5px', lineHeight: '1.45', color: '#000', fontFamily: 'monospace' }}>
+          <div style={{ textAlign: 'center', borderBottom: '1.5px solid #000', paddingBottom: '8px', marginBottom: '8px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{settings.committee_name || 'युवा गणेश उत्सव समिति'}</h3>
+            <p style={{ margin: '2px 0 0', fontSize: '9.5px' }}>{settings.committee_address || 'ग्राम - बालोद'}</p>
           </div>
-
-          <div style={{ textAlign: 'center', margin: '10px 0' }}>
-            <span style={{ border: '1px solid #000', padding: '3px 8px', fontWeight: 'bold', fontSize: '11px' }}>व्यय वाउचर (EXPENSE VOUCHER)</span>
+          <div style={{ textAlign: 'center', margin: '8px 0' }}>
+            <span style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 'bold', fontSize: '10px' }}>व्यय भुगतान वाउचर</span>
           </div>
-
-          <div style={{ margin: '10px 0' }}>
-            <p><strong>वाउचर क्र:</strong> #{slip.expense_no}</p>
-            <p><strong>दिनांक:</strong> {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
-            <p><strong>खर्च नाम:</strong> {slip.title}</p>
-            <p><strong>व्यय श्रेणी:</strong> {slip.category}</p>
-            <p><strong>नोट:</strong> {slip.note || 'N/A'}</p>
+          <div style={{ margin: '8px 0' }}>
+            <p>वाउचर क्र: #{slip.expense_no}</p>
+            <p>दिनांक: {new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</p>
+            <p>व्यय शीर्षक: {slip.title}</p>
+            <p>श्रेणी: {slip.category}</p>
+            <p>विवरण: {slip.note || 'N/A'}</p>
           </div>
-
-          <table style={{ width: '100%', borderTop: '1px solid #000', borderBottom: '1px solid #000', margin: '10px 0', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', margin: '8px 0' }}>
             <tbody>
               <tr>
-                <td style={{ padding: '5px 0' }}>भुगतान राशि (Amount Paid)</td>
-                <td style={{ textAlign: 'right', padding: '5px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
+                <td style={{ padding: '4px 0' }}>भुगतान राशि (Paid)</td>
+                <td style={{ textAlign: 'right', padding: '4px 0', fontWeight: 'bold' }}>₹{parseFloat(slip.amount).toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
-
-          <p style={{ fontStyle: 'italic', fontSize: '10px', textAlign: 'center' }}>भुगतान माध्यम: {slip.mode} | स्थिति: {slip.status}</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-            <span>हस्ताक्षर (कलेक्टर)</span>
-            <span>स्वीकृतकर्ता (Admin)</span>
+          <p style={{ fontSize: '9px', textAlign: 'center' }}>माध्यम: {slip.mode} | स्थिति: {slip.status}</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px' }}>
+            <span>हस्ताक्षर (प्राप्तकर्ता)</span>
+            <span>हस्ताक्षर (अध्यक्ष)</span>
           </div>
-          
-          <p style={{ fontSize: '9px', color: '#777', textAlign: 'center', marginTop: '20px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
-            यह एक कंप्यूटर-जनरेटेड आधिकारिक व्यय रसीद पर्ची है।
-          </p>
         </div>
       );
     }
 
-    // Render components on page shell DOM
     const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(<ChandaApp />);
   </script>
