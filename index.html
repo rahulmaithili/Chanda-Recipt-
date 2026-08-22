@@ -1696,6 +1696,39 @@
       return roleVal;
     };
 
+    // ── Session Auto-Logout (20-min inactivity) ─────────────────────────────
+    let _sessionTimer = null;
+    const SESSION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+
+    function resetSessionTimer() {
+      if (_sessionTimer) clearTimeout(_sessionTimer);
+      _sessionTimer = setTimeout(() => {
+        const user = getCurrentUser();
+        if (!user) return;
+        localStorage.removeItem('currentUser');
+        invalidateCache();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Session Expired',
+          text: 'You have been logged out due to 20 minutes of inactivity.',
+          confirmButtonText: 'Login Again',
+          allowOutsideClick: false
+        }).then(() => { window.location.reload(); });
+      }, SESSION_TIMEOUT_MS);
+    }
+
+    function startSessionWatcher() {
+      ['mousemove','keydown','click','scroll','touchstart'].forEach(evt => {
+        document.addEventListener(evt, resetSessionTimer, { passive: true });
+      });
+      resetSessionTimer();
+    }
+
+    function stopSessionWatcher() {
+      if (_sessionTimer) clearTimeout(_sessionTimer);
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     function ChandaApp() {
       const [currentUser, setCurrentUser] = useState(getCurrentUser());
       const [activeTab, setActiveTab] = useState('dashboard');
@@ -1799,6 +1832,7 @@
             }
             localStorage.setItem("currentUser", JSON.stringify(data.user));
             setCurrentUser(data.user);
+            startSessionWatcher();
             showToast("Login Successful!");
           } else {
             Swal.fire({ text: data.message, icon: 'error', confirmButtonColor: '#ff851b' });
@@ -1811,6 +1845,7 @@
       };
 
       const handleLogout = () => {
+        stopSessionWatcher();
         localStorage.removeItem("currentUser");
         invalidateCache();
         setCurrentUser(null);
@@ -2819,18 +2854,46 @@
 
             {/* Notification Dropdown Panel */}
             <div className="header-dropdown-container">
-              <button className="icon-btn-round" onClick={() => { setShowNotifPanel(!showNotifPanel); setShowThemePanel(false); }} title="Recent Activities" style={{ position: 'relative' }}>
+              <button className="icon-btn-round" onClick={() => { setShowNotifPanel(!showNotifPanel); setShowThemePanel(false); }} title="Notifications & Pending Handovers" style={{ position: 'relative' }}>
                 <i className="fas fa-bell"></i>
-                {notifs.length > 0 && (
-                  <span style={{ position: 'absolute', top: '2px', right: '2px', width: '8px', height: '8px', borderRadius: '50%', background: '#e74c3c' }}></span>
-                )}
+                {(() => {
+                  const pendingCount = (systemData.handovers || []).filter(h => h.status === 'Pending').length;
+                  const totalBadge = notifs.length + pendingCount;
+                  return totalBadge > 0 ? (
+                    <span style={{ position: 'absolute', top: '-4px', right: '-4px', minWidth: '16px', height: '16px', borderRadius: '8px', background: '#e74c3c', color: 'white', fontSize: '9px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
+                      {totalBadge > 9 ? '9+' : totalBadge}
+                    </span>
+                  ) : null;
+                })()}
               </button>
               {showNotifPanel && (
                 <div className="notif-panel-card">
                   <div className="notif-panel-header">
-                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Recent Activities</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Notifications</span>
                     <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Real-Time</span>
                   </div>
+                  {/* Pending Handovers Section */}
+                  {(() => {
+                    const pendingHandovers = (systemData.handovers || []).filter(h => h.status === 'Pending');
+                    if (pendingHandovers.length === 0) return null;
+                    return (
+                      <div style={{ background: '#fff8e1', borderBottom: '1px solid #ffe082', padding: '8px 12px' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#a46000', marginBottom: '6px' }}>
+                          <i className="fas fa-clock" style={{ marginRight: '5px' }}></i>
+                          {pendingHandovers.length} Handover{pendingHandovers.length > 1 ? 's' : ''} Awaiting Approval
+                        </div>
+                        {pendingHandovers.slice(0, 3).map(h => (
+                          <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderTop: '1px solid #ffe082', fontSize: '11px' }}>
+                            <span style={{ fontWeight: '600' }}>{h.collector_name}</span>
+                            <span style={{ color: '#e67e22', fontWeight: 'bold' }}>₹{parseFloat(h.amount || 0).toFixed(0)}</span>
+                          </div>
+                        ))}
+                        {pendingHandovers.length > 3 && (
+                          <div style={{ fontSize: '10px', color: '#a46000', textAlign: 'center', marginTop: '4px' }}>+{pendingHandovers.length - 3} more pending...</div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <ul className="notif-list">
                     {notifs.map(n => (
                       <li key={n.id} className="notif-item">
@@ -3821,122 +3884,244 @@
 
     function HandoversView({ systemData, user, onAction, t }) {
       const [amount, setAmount] = useState('');
-      const [accountId, setAccountId] = useState('1');
+      const [accountId, setAccountId] = useState('');
       const [remark, setRemark] = useState('');
+      const [mode, setMode] = useState('Cash');
       const [collectorFilter, setCollectorFilter] = useState('All');
-      const isSuper = (user.role || "").toLowerCase() === "super admin" || (user.role || "").toLowerCase() === "admin";
+      const [statusFilter, setStatusFilter] = useState('All');
+      const isAdmin = (user.role || '').toLowerCase() === 'super admin' || (user.role || '').toLowerCase() === 'admin';
 
       const handovers = systemData.handovers || [];
       const accounts = systemData.accounts || [];
+      const donations = systemData.donations || [];
+
+      // Set default account
+      React.useEffect(() => {
+        if (accounts.length > 0 && !accountId) setAccountId(accounts[0].id);
+      }, [accounts]);
+
+      // Calculate collector balances
+      const collectorStats = React.useMemo(() => {
+        const stats = {};
+        donations.forEach(d => {
+          const key = d.collected_by_mobile;
+          if (!key) return;
+          if (!stats[key]) stats[key] = { name: d.collected_by_name || key, mobile: key, collected: 0, handedOver: 0 };
+          stats[key].collected += parseFloat(d.amount || 0);
+        });
+        handovers.filter(h => h.status === 'Approved').forEach(h => {
+          const key = h.collector_mobile;
+          if (!key) return;
+          if (!stats[key]) stats[key] = { name: h.collector_name || key, mobile: key, collected: 0, handedOver: 0 };
+          stats[key].handedOver += parseFloat(h.amount || 0);
+        });
+        return Object.values(stats).map(s => ({ ...s, pendingCash: Math.max(0, s.collected - s.handedOver) }));
+      }, [donations, handovers]);
+
+      const myStats = collectorStats.find(s => s.mobile === user.mobile) || { collected: 0, handedOver: 0, pendingCash: 0 };
 
       const uniqueCollectors = Array.from(new Set(handovers.map(h => h.collector_name)));
 
       const filteredHandovers = handovers.filter(h => {
         const matchesCollector = collectorFilter === 'All' || h.collector_name === collectorFilter;
-        // Non-super users should only see their own entries
-        const matchesUserScope = isSuper || h.collector_mobile === user.mobile;
-        return matchesCollector && matchesUserScope;
+        const matchesStatus = statusFilter === 'All' || h.status === statusFilter;
+        const matchesScope = isAdmin || h.collector_mobile === user.mobile;
+        return matchesCollector && matchesStatus && matchesScope;
       });
+
+      const pendingHandovers = filteredHandovers.filter(h => h.status === 'Pending');
+      const approvedHandovers = filteredHandovers.filter(h => h.status === 'Approved');
 
       const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!amount || parseFloat(amount) <= 0) return alert("Please enter a valid amount.");
-        const ok = await onAction("submitHandover", {
+        if (!amount || parseFloat(amount) <= 0) return Swal.fire({ text: 'Please enter a valid amount.', icon: 'warning' });
+        if (parseFloat(amount) > myStats.pendingCash && !isAdmin) {
+          const confirm = await Swal.fire({
+            icon: 'warning',
+            title: 'Amount Exceeds Pending Cash',
+            text: `You are submitting ₹${amount} but your pending cash is ₹${myStats.pendingCash.toFixed(2)}. Continue?`,
+            showCancelButton: true, confirmButtonText: 'Yes, Submit'
+          });
+          if (!confirm.isConfirmed) return;
+        }
+        const ok = await onAction('submitHandover', {
           handover: {
             collector_name: user.name,
             collector_mobile: user.mobile,
             amount: parseFloat(amount),
-            mode: "Cash",
+            mode: mode,
             transfer_date: new Date().toISOString().slice(0, 10),
             account_id: accountId,
             festival_id: getViewingFestivalId(),
             remark: remark
           }
         });
-        if (ok) {
-          setAmount('');
-          setRemark('');
-        }
+        if (ok) { setAmount(''); setRemark(''); }
+      };
+
+      const handlePrint = () => {
+        const tbl = document.getElementById('handover-history-table');
+        if (tbl) printReportTable('Cash Handover Report', tbl.outerHTML, systemData.settings);
       };
 
       return (
-        <div className="split-layout">
-          <div className="card">
-            <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-paper-plane"></i> {t('handover_submit')}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>{t('amount')} *</label>
-                <input type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+        <div>
+          {/* ── KPI Summary Row ── */}
+          {!isAdmin && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #e3f2fd, #fff)' }}>
+                <div style={{ fontSize: '22px', fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{myStats.collected.toFixed(0)}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}><i className="fas fa-hand-holding-usd"></i> Total Collected</div>
               </div>
-              <div className="form-group">
-                <label>{t('destination_account')}</label>
-                <select value={accountId} onChange={e => setAccountId(e.target.value)}>
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.account_name} (Bal: ₹{parseFloat(acc.balance).toFixed(2)})</option>
-                  ))}
-                </select>
+              <div className="card" style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(135deg, #e8f5e9, #fff)' }}>
+                <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#2ecc71' }}>₹{myStats.handedOver.toFixed(0)}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}><i className="fas fa-check-circle"></i> Handed Over</div>
               </div>
-              <div className="form-group">
-                <label>{t('notes')}</label>
-                <textarea rows="3" placeholder="..." value={remark} onChange={e => setRemark(e.target.value)}></textarea>
+              <div className="card" style={{ textAlign: 'center', padding: '16px', background: myStats.pendingCash > 0 ? 'linear-gradient(135deg, #fff8e1, #fff)' : 'linear-gradient(135deg, #e8f5e9, #fff)', border: myStats.pendingCash > 0 ? '1.5px solid #ffe082' : 'none' }}>
+                <div style={{ fontSize: '22px', fontWeight: 'bold', color: myStats.pendingCash > 0 ? '#e67e22' : '#2ecc71' }}>₹{myStats.pendingCash.toFixed(0)}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}><i className="fas fa-wallet"></i> Pending Cash (You Hold)</div>
               </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
-            </form>
-          </div>
-
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h3 style={{ color: 'var(--navy-accent)', margin: 0 }}><i className="fas fa-wallet"></i> {t('handover_history')}</h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => printReportTable(t('handover_history'), document.getElementById('handover-history-table').outerHTML, systemData.settings)} style={{ padding: '4px 10px', fontSize: '11px', background: '#34495e', display: 'flex', alignItems: 'center', gap: '5px' }}><i className="fas fa-print"></i> {t('print')}</button>
             </div>
-            
-            {isSuper && (
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 'bold' }}>FILTER BY COLLECTOR</label>
-                <select value={collectorFilter} onChange={e => setCollectorFilter(e.target.value)} style={{ padding: '6px 10px', fontSize: '12px', width: '100%', maxWidth: '200px' }}>
-                  <option value="All">All Collectors</option>
-                  {uniqueCollectors.map(name => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+          )}
 
-            <div className="table-responsive">
-              <table id="handover-history-table">
-                <thead>
-                  <tr>
-                    <th>{t('username')}</th>
-                    <th>{t('amount')}</th>
-                    <th>{t('status')}</th>
-                    <th>{t('actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHandovers.map(h => (
-                    <tr key={h.id}>
-                      <td><strong>{h.collector_name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{h.transfer_date}</small></td>
-                      <td style={{ fontWeight: 'bold' }}>₹{parseFloat(h.amount).toFixed(2)}</td>
-                      <td>
-                        <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: h.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: h.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                          {h.status === 'Approved' ? t('approved') : t('pending')}
-                        </span>
-                      </td>
-                      <td>
-                        {isSuper && h.status === "Pending" && (
-                          <button className="btn btn-success btn-sm" onClick={() => onAction("approveHandover", { handover_id: h.id })} style={{ padding: '3px 8px', fontSize: '11px' }}>
-                            {t('approve')}
-                          </button>
-                        )}
-                        {h.status === "Approved" && <small style={{ color: 'var(--text-muted)' }}>{t('approved_by')} {h.approved_by}</small>}
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredHandovers.length === 0 && (
-                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No handover entries found.</td></tr>
+          {isAdmin && (
+            <div style={{ marginBottom: '20px' }}>
+              <div className="card" style={{ padding: '15px' }}>
+                <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--navy-accent)' }}><i className="fas fa-users"></i> Collector Cash Summary</h4>
+                <div className="table-responsive">
+                  <table>
+                    <thead><tr><th>Collector</th><th>Total Collected</th><th>Handed Over</th><th style={{ color: '#e67e22' }}>Pending Cash</th></tr></thead>
+                    <tbody>
+                      {collectorStats.map(s => (
+                        <tr key={s.mobile}>
+                          <td><strong>{s.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{s.mobile}</small></td>
+                          <td style={{ fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{s.collected.toFixed(2)}</td>
+                          <td style={{ color: '#2ecc71' }}>₹{s.handedOver.toFixed(2)}</td>
+                          <td style={{ fontWeight: 'bold', color: s.pendingCash > 0 ? '#e67e22' : '#2ecc71' }}>
+                            {s.pendingCash > 0 ? `₹${s.pendingCash.toFixed(2)}` : '✓ Settled'}
+                          </td>
+                        </tr>
+                      ))}
+                      {collectorStats.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '15px', color: 'var(--text-muted)' }}>No collectors yet.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="split-layout">
+            {/* ── Submit Form ── */}
+            <div className="card">
+              <h3 style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}><i className="fas fa-paper-plane"></i> Submit Cash Handover</h3>
+              {!isAdmin && myStats.pendingCash > 0 && (
+                <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: '8px', padding: '10px 14px', marginBottom: '15px', fontSize: '12px', color: '#a46000' }}>
+                  <i className="fas fa-exclamation-circle"></i> You have <strong>₹{myStats.pendingCash.toFixed(2)}</strong> pending to hand over to the Treasurer.
+                </div>
+              )}
+              <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label>Cash Amount (₹) *</label>
+                  <input type="number" placeholder="Enter amount" value={amount} onChange={e => setAmount(e.target.value)} required style={{ fontSize: '18px', fontWeight: 'bold' }} />
+                </div>
+                <div className="form-group">
+                  <label>Deposit Mode</label>
+                  <select value={mode} onChange={e => setMode(e.target.value)}>
+                    <option value="Cash">Cash (Hand to Treasurer)</option>
+                    <option value="UPI / GPay">UPI / GPay Transfer</option>
+                    <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                    <option value="Cheque">Cheque</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Deposit Into Account</label>
+                  <select value={accountId} onChange={e => setAccountId(e.target.value)}>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.account_name} — Balance: ₹{parseFloat(acc.balance || 0).toFixed(2)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Remarks / Reference No (optional)</label>
+                  <textarea rows="2" placeholder="UPI Ref, Cheque No, etc." value={remark} onChange={e => setRemark(e.target.value)} />
+                </div>
+                <button type="submit" className="btn" style={{ width: '100%', fontSize: '14px', padding: '10px' }}>
+                  <i className="fas fa-paper-plane"></i> Submit Handover Request
+                </button>
+              </form>
+            </div>
+
+            {/* ── History Table ── */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <h3 style={{ color: 'var(--navy-accent)', margin: 0 }}><i className="fas fa-history"></i> Handover History</h3>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {isAdmin && (
+                    <select value={collectorFilter} onChange={e => setCollectorFilter(e.target.value)} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                      <option value="All">All Collectors</option>
+                      {uniqueCollectors.map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
                   )}
-                </tbody>
-              </table>
+                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                    <option value="All">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                  </select>
+                  <button className="btn btn-secondary btn-sm" onClick={handlePrint} style={{ padding: '4px 10px', fontSize: '11px', background: '#34495e' }}>
+                    <i className="fas fa-print"></i> Print
+                  </button>
+                </div>
+              </div>
+
+              {pendingHandovers.length > 0 && isAdmin && (
+                <div style={{ background: '#fff3e0', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', fontSize: '12px', color: '#a46000', border: '1px solid #ffe082' }}>
+                  <i className="fas fa-clock"></i> <strong>{pendingHandovers.length}</strong> handover{pendingHandovers.length > 1 ? 's' : ''} awaiting your approval.
+                </div>
+              )}
+
+              <div className="table-responsive">
+                <table id="handover-history-table">
+                  <thead>
+                    <tr>
+                      <th>Collector</th>
+                      <th>Amount</th>
+                      <th>Mode</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHandovers.map(h => (
+                      <tr key={h.id} style={{ background: h.status === 'Pending' && isAdmin ? '#fffde7' : 'transparent' }}>
+                        <td>
+                          <strong>{h.collector_name}</strong>
+                          {h.remark && <><br/><small style={{ color: 'var(--text-muted)', fontSize: '10px' }}>📝 {h.remark}</small></>}
+                        </td>
+                        <td style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--navy-accent)' }}>₹{parseFloat(h.amount || 0).toFixed(2)}</td>
+                        <td><small style={{ background: '#e3f2fd', padding: '2px 7px', borderRadius: '10px', fontSize: '10px' }}>{h.mode || 'Cash'}</small></td>
+                        <td style={{ fontSize: '11px' }}>{h.transfer_date}</td>
+                        <td>
+                          <span style={{ padding: '3px 9px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', background: h.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: h.status === 'Approved' ? '#0f766e' : '#a46000' }}>
+                            {h.status === 'Approved' ? '✓ Approved' : '⏳ Pending'}
+                          </span>
+                        </td>
+                        <td>
+                          {isAdmin && h.status === 'Pending' && (
+                            <button className="btn btn-success btn-sm" onClick={() => onAction('approveHandover', { handover_id: h.id })} style={{ padding: '4px 10px', fontSize: '11px' }}>
+                              <i className="fas fa-check"></i> Approve
+                            </button>
+                          )}
+                          {h.status === 'Approved' && <small style={{ color: 'var(--text-muted)', fontSize: '10px' }}>by {h.approved_by}</small>}
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredHandovers.length === 0 && (
+                      <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>No handover entries found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -4254,81 +4439,178 @@
       const [name, setName] = useState('');
       const [balance, setBalance] = useState('');
       const [editId, setEditId] = useState(null);
+      const [selectedAccId, setSelectedAccId] = useState(null);
       const accounts = systemData.accounts || [];
+      const handovers = (systemData.handovers || []).filter(h => h.status === 'Approved');
+      const expenses = (systemData.expenses || []).filter(e => e.status === 'Approved');
 
       const handleSubmit = async (e) => {
         e.preventDefault();
         if (!name.trim()) return;
         const ok = await onAction("saveAccount", {
-          account: {
-            id: editId,
-            account_name: name.trim(),
-            balance: editId ? undefined : parseFloat(balance || 0)
-          }
+          account: { id: editId, account_name: name.trim(), balance: editId ? undefined : parseFloat(balance || 0) }
         });
-        if (ok) {
-          setName('');
-          setBalance('');
-          setEditId(null);
-        }
+        if (ok) { setName(''); setBalance(''); setEditId(null); }
+      };
+
+      const getAccountStatement = (acc) => {
+        const txns = [];
+        // Credits: approved handovers deposited into this account
+        handovers.filter(h => String(h.account_id) === String(acc.id)).forEach(h => {
+          txns.push({ date: h.transfer_date || h.timestamp, desc: `Handover — ${h.collector_name} (${h.mode || 'Cash'})`, credit: parseFloat(h.amount || 0), debit: 0 });
+        });
+        // Debits: approved expenses from this account
+        expenses.filter(ex => String(ex.account_id) === String(acc.id)).forEach(ex => {
+          txns.push({ date: ex.date || ex.timestamp, desc: `Expense — ${ex.title} (${ex.category || ''})`, credit: 0, debit: parseFloat(ex.amount || 0) });
+        });
+        txns.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Running balance
+        let running = parseFloat(acc.balance || 0) - txns.reduce((s, t) => s + t.credit - t.debit, 0);
+        return txns.map(t => { running += t.credit - t.debit; return { ...t, runningBalance: running }; });
+      };
+
+      const handlePassbookPrint = (acc) => {
+        const txns = getAccountStatement(acc);
+        let tableRows = txns.map((t, i) => `
+          <tr style="border-bottom:1px solid #eee;">
+            <td>${i + 1}</td>
+            <td>${new Date(t.date).toLocaleDateString('en-IN')}</td>
+            <td>${t.desc}</td>
+            <td style="color:#2ecc71;font-weight:bold;">${t.credit > 0 ? '₹' + t.credit.toFixed(2) : '—'}</td>
+            <td style="color:#e74c3c;font-weight:bold;">${t.debit > 0 ? '₹' + t.debit.toFixed(2) : '—'}</td>
+            <td style="font-weight:bold;">₹${t.runningBalance.toFixed(2)}</td>
+          </tr>`).join('');
+        const html = `
+          <p><strong>Account:</strong> ${acc.account_name} &nbsp;|&nbsp; <strong>Current Balance:</strong> ₹${parseFloat(acc.balance).toFixed(2)}</p>
+          <table border="1" style="border-collapse:collapse;width:100%;font-size:12px;">
+            <thead><tr style="background:#001f3f;color:white;">
+              <th>#</th><th>Date</th><th>Description</th><th>Credit (IN ₹)</th><th>Debit (OUT ₹)</th><th>Balance ₹</th>
+            </tr></thead>
+            <tbody>${tableRows || '<tr><td colspan="6" style="text-align:center;padding:15px;">No transactions recorded.</td></tr>'}</tbody>
+          </table>`;
+        printReportTable(`Account Passbook — ${acc.account_name}`, html, systemData.settings);
       };
 
       return (
-        <div className="split-layout" style={{ display: 'grid', gridTemplateColumns: hasPermission('accounts', 'a') ? '1fr 2fr' : '1fr', gap: '20px' }}>
-          {hasPermission('accounts', 'a') && (
-            <div className="card">
-              <h3><i className="fas fa-piggy-bank"></i> {editId ? t('edit_account') : t('add_account')}</h3>
-              <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
-                <div className="form-group">
-                  <label>{t('account_source')} *</label>
-                  <input type="text" placeholder="SBI Bank, Cash Box etc." value={name} onChange={e => setName(e.target.value)} required />
-                </div>
-                {!editId && (
-                  <div className="form-group">
-                    <label>{t('opening_balance')}</label>
-                    <input type="number" placeholder="₹" value={balance} onChange={e => setBalance(e.target.value)} />
-                  </div>
-                )}
-                <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
-              </form>
-            </div>
-          )}
+        <div>
+          {/* Account Balance Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+            {accounts.map(acc => (
+              <div key={acc.id} className="card" style={{ padding: '16px', textAlign: 'center', cursor: 'pointer', border: selectedAccId === acc.id ? '2px solid var(--navy-accent)' : '1px solid rgba(0,0,0,0.05)', background: 'linear-gradient(135deg, #e3f2fd, #fff)' }}
+                onClick={() => setSelectedAccId(selectedAccId === acc.id ? null : acc.id)}>
+                <i className="fas fa-university" style={{ fontSize: '22px', color: 'var(--navy-accent)', marginBottom: '8px' }}></i>
+                <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{acc.account_name}</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--success)', marginTop: '6px' }}>₹{parseFloat(acc.balance || 0).toFixed(2)}</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Click to view passbook</div>
+              </div>
+            ))}
+          </div>
 
-          <div className="card">
-            <h3><i className="fas fa-university"></i> {t('accounts')}</h3>
-            <div className="table-responsive" style={{ marginTop: '15px' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>{t('accounts')}</th>
-                    <th>{t('balance')}</th>
-                    <th>{t('actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accounts.map((acc, idx) => (
-                    <tr key={acc.id}>
-                      <td>#{idx + 1}</td>
-                      <td><strong>{acc.account_name}</strong></td>
-                      <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(acc.balance).toFixed(2)}</td>
-                      <td>
-                        {hasPermission('accounts', 'e') && (
-                          <button className="action-icon edit-icon" onClick={() => { setEditId(acc.id); setName(acc.account_name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                        )}
-                        {hasPermission('accounts', 'd') && (
-                          <button className="action-icon delete-icon" onClick={() => onDelete("accounts", "id", acc.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
-                        )}
-                      </td>
+          {/* Passbook Panel */}
+          {selectedAccId && (() => {
+            const acc = accounts.find(a => String(a.id) === String(selectedAccId));
+            if (!acc) return null;
+            const txns = getAccountStatement(acc);
+            return (
+              <div className="card" style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0, color: 'var(--navy-accent)' }}><i className="fas fa-book"></i> Passbook — {acc.account_name}</h4>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => handlePassbookPrint(acc)} style={{ background: '#34495e', padding: '5px 12px', fontSize: '12px' }}>
+                      <i className="fas fa-print"></i> Print Statement
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setSelectedAccId(null)} style={{ background: '#95a5a6', padding: '5px 12px', fontSize: '12px' }}>✕ Close</button>
+                  </div>
+                </div>
+                <div className="table-responsive">
+                  <table>
+                    <thead><tr>
+                      <th>#</th><th>Date</th><th>Description</th>
+                      <th style={{ color: '#2ecc71' }}>Credit (₹ IN)</th>
+                      <th style={{ color: '#e74c3c' }}>Debit (₹ OUT)</th>
+                      <th>Balance (₹)</th>
+                    </tr></thead>
+                    <tbody>
+                      {txns.map((t, i) => (
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          <td style={{ fontSize: '12px' }}>{new Date(t.date).toLocaleDateString('en-IN')}</td>
+                          <td style={{ fontSize: '12px' }}>{t.desc}</td>
+                          <td style={{ fontWeight: 'bold', color: '#2ecc71' }}>{t.credit > 0 ? `₹${t.credit.toFixed(2)}` : '—'}</td>
+                          <td style={{ fontWeight: 'bold', color: '#e74c3c' }}>{t.debit > 0 ? `₹${t.debit.toFixed(2)}` : '—'}</td>
+                          <td style={{ fontWeight: 'bold' }}>₹{t.runningBalance.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      {txns.length === 0 && <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No transactions recorded yet.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          <div className="split-layout" style={{ display: 'grid', gridTemplateColumns: hasPermission('accounts', 'a') ? '1fr 2fr' : '1fr', gap: '20px' }}>
+            {hasPermission('accounts', 'a') && (
+              <div className="card">
+                <h3><i className="fas fa-piggy-bank"></i> {editId ? t('edit_account') : t('add_account')}</h3>
+                <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
+                  <div className="form-group">
+                    <label>{t('account_source')} *</label>
+                    <input type="text" placeholder="SBI Bank, Cash Box etc." value={name} onChange={e => setName(e.target.value)} required />
+                  </div>
+                  {!editId && (
+                    <div className="form-group">
+                      <label>{t('opening_balance')}</label>
+                      <input type="number" placeholder="₹" value={balance} onChange={e => setBalance(e.target.value)} />
+                    </div>
+                  )}
+                  <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
+                </form>
+              </div>
+            )}
+
+            <div className="card">
+              <h3><i className="fas fa-university"></i> {t('accounts')}</h3>
+              <div className="table-responsive" style={{ marginTop: '15px' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th><th>{t('accounts')}</th><th>{t('balance')}</th><th>Passbook</th><th>{t('actions')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {accounts.map((acc, idx) => (
+                      <tr key={acc.id}>
+                        <td>#{idx + 1}</td>
+                        <td><strong>{acc.account_name}</strong></td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(acc.balance || 0).toFixed(2)}</td>
+                        <td>
+                          <button onClick={() => handlePassbookPrint(acc)} title="Print Statement" style={{ background: 'none', border: 'none', color: '#34495e', cursor: 'pointer', fontSize: '14px' }}>
+                            <i className="fas fa-print"></i>
+                          </button>
+                          <button onClick={() => setSelectedAccId(selectedAccId === acc.id ? null : acc.id)} title="View Passbook" style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', cursor: 'pointer', fontSize: '14px', marginLeft: '6px' }}>
+                            <i className="fas fa-book"></i>
+                          </button>
+                        </td>
+                        <td>
+                          {hasPermission('accounts', 'e') && (
+                            <button className="action-icon edit-icon" onClick={() => { setEditId(acc.id); setName(acc.account_name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          )}
+                          {hasPermission('accounts', 'd') && (
+                            <button className="action-icon delete-icon" onClick={() => onDelete("accounts", "id", acc.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       );
     }
+
 
     // Modernized UsersView Component matching Screenshot 2 table layout & filters
     function UsersView({ systemData, onEdit, onAdd, onDelete, hasPermission, t }) {
