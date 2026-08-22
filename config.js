@@ -66,20 +66,21 @@ function getCurrentUser() {
 
 function requireLogin() {
   const user = getCurrentUser();
-  if (!user) {
-    window.location.href = "login.html";
+  const page = window.location.pathname.split("/").pop();
+  if (!user && page !== "index.html" && page !== "") {
+    window.location.href = "index.html";
   }
 }
 
 function isAdmin() {
   const user = getCurrentUser();
-  return user && user.role === "admin";
+  return user && (user.role === "Super Admin" || user.role === "admin");
 }
 
 function logout() {
   localStorage.removeItem("currentUser");
   invalidateCache();
-  window.location.href = "login.html";
+  window.location.href = "index.html";
 }
 
 // Session state helpers for Festival / Year management
