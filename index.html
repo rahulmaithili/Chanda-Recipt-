@@ -1808,6 +1808,7 @@
       // Print states
       const [printRecord, setPrintRecord] = useState(null);
       const [printType, setPrintType] = useState(''); // 'receipt' or 'voucher'
+      const [selectedCertificateDonation, setSelectedCertificateDonation] = useState(null);
 
       // Mobile app view states
       const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -2208,7 +2209,7 @@
                   onAdd={() => { setCurrentRecord(null); setInstallmentParent(null); setShowDonationForm(true); }}
                   onPrint={(rec) => { setPrintRecord(rec); setPrintType('receipt'); setTimeout(() => window.print(), 100); }}
                   sendWhatsAppReceipt={sendWhatsAppReceipt}
-                  sendWhatsAppCertificate={sendWhatsAppCertificate}
+                  sendWhatsAppCertificate={(rec) => setSelectedCertificateDonation(rec)}
                   hasPermission={hasPermission}
                   t={translate}
                 />
@@ -2258,6 +2259,7 @@
               {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
               {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} getViewingFestivalId={getViewingFestivalId} fetchInitData={fetchInitData} t={translate} />}
               {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
+              {activeTab === 'logs' && <LogsView systemData={systemData} t={translate} />}
               
               {activeTab === 'users' && (
                 <UsersView 
@@ -2353,6 +2355,15 @@
                 const ok = await handleSaveRecord("saveUser", { user: payload });
                 if (ok) setShowUserForm(false);
               }}
+              t={translate}
+            />
+          )}
+
+          {selectedCertificateDonation && (
+            <CertificateModal 
+              donation={selectedCertificateDonation}
+              settings={systemData.settings}
+              onClose={() => setSelectedCertificateDonation(null)}
               t={translate}
             />
           )}
@@ -2463,6 +2474,11 @@
                   {hasPermission('settings', 'v') && (
                     <button className={`btn btn-secondary ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
                       <i className="fas fa-sliders-h"></i> {translate('settings')}
+                    </button>
+                  )}
+                  {hasPermission('logs', 'v') && (
+                    <button className={`btn btn-secondary ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => { setActiveTab('logs'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
+                      <i className="fas fa-history" style={{ marginRight: '8px' }}></i> {translate('logs')}
                     </button>
                   )}
                   <button className={`btn btn-secondary ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => { setActiveTab('profile'); setShowMobileMenu(false); }} style={{ textAlign: 'left', background: 'none', color: 'var(--text-primary)', justifyContent: 'flex-start' }}>
@@ -2617,7 +2633,8 @@
         hasPermission('users', 'v') || 
         hasPermission('roles', 'v') || 
         hasPermission('festivals', 'v') || 
-        hasPermission('settings', 'v');
+        hasPermission('settings', 'v') ||
+        hasPermission('logs', 'v');
 
       return (
         <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -2760,6 +2777,14 @@
                     <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>
                       <i className="fas fa-sliders-h sidebar-icon"></i>
                       <span>{t('settings')}</span>
+                    </button>
+                  </li>
+                )}
+                {hasPermission('logs', 'v') && (
+                  <li>
+                    <button className={activeTab === 'logs' ? 'active' : ''} onClick={() => setActiveTab('logs')}>
+                      <i className="fas fa-history sidebar-icon"></i>
+                      <span>{t('logs')}</span>
                     </button>
                   </li>
                 )}
@@ -6857,6 +6882,402 @@
             letterSpacing: '0.5px'
           }}>
             स्वीकृतकर्ता:- {settings.committee_name || 'युवा गणेश उत्सव समिति'}
+          </div>
+        </div>
+      );
+    }
+
+    function LogsView({ systemData, t }) {
+      const [logs, setLogs] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [actionFilter, setActionFilter] = useState('All');
+
+      const fetchLogs = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(`${API_URL}?action=getLogs`);
+          const data = await res.json();
+          if (data.success) {
+            setLogs((data.logs || []).reverse());
+          }
+        } catch(e) {
+          console.error("Error fetching logs:", e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchLogs();
+      }, []);
+
+      const uniqueActions = React.useMemo(() => {
+        const actions = new Set();
+        logs.forEach(l => {
+          if (l.action) actions.add(l.action);
+        });
+        return ['All', ...Array.from(actions)];
+      }, [logs]);
+
+      const filteredLogs = logs.filter(l => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          (l.user_name || '').toLowerCase().includes(query) ||
+          (l.user_mobile || '').includes(query) ||
+          (l.details || '').toLowerCase().includes(query) ||
+          (l.action || '').toLowerCase().includes(query);
+          
+        const matchesAction = actionFilter === 'All' || l.action === actionFilter;
+        return matchesSearch && matchesAction;
+      });
+
+      const getActionColor = (action) => {
+        if (!action) return '#95a5a6';
+        const act = action.toLowerCase();
+        if (act.includes('login')) return '#0074D9';
+        if (act.includes('added') || act.includes('created') || act.includes('submit')) return '#2ecc40';
+        if (act.includes('edit') || act.includes('update') || act.includes('save')) return '#ff851b';
+        if (act.includes('delete') || act.includes('clear') || act.includes('error')) return '#ff4136';
+        return '#001f3f';
+      };
+
+      return (
+        <div>
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-history"></i> {t('logs')}</h2>
+              <small style={{ color: 'var(--text-muted)' }}>System / {t('logs')}</small>
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={fetchLogs} disabled={loading} style={{ background: 'var(--navy-accent)' }}>
+              <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i> Refresh Logs
+            </button>
+          </div>
+
+          <div className="card">
+            <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ marginBottom: 0, flex: '2 1 200px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Search logs..." 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #ddd', width: '100%' }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0, flex: '1 1 150px' }}>
+                <select 
+                  value={actionFilter} 
+                  onChange={e => setActionFilter(e.target.value)}
+                  style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #ddd', width: '100%', height: '37px', background: '#fff' }}
+                >
+                  {uniqueActions.map(act => (
+                    <option key={act} value={act}>{act}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {loading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <i className="fas fa-spinner fa-spin fa-2x"></i><br/><br/>Loading audit logs trail...
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '170px' }}>Timestamp</th>
+                      <th style={{ width: '150px' }}>Actor</th>
+                      <th style={{ width: '180px' }}>Action</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLogs.map(log => (
+                      <tr key={log.id}>
+                        <td style={{ fontSize: '12px', color: '#666' }}>
+                          {new Date(log.timestamp).toLocaleString('en-IN')}
+                        </td>
+                        <td>
+                          <strong>{log.user_name}</strong>
+                          {log.user_mobile && <div style={{ fontSize: '11px', color: '#95a5a6' }}>{log.user_mobile}</div>}
+                        </td>
+                        <td>
+                          <span style={{ 
+                            background: getActionColor(log.action), 
+                            color: '#fff', 
+                            padding: '3px 8px', 
+                            borderRadius: '4px', 
+                            fontSize: '11px', 
+                            fontWeight: 'bold', 
+                            display: 'inline-block' 
+                          }}>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '13px' }}>{log.details}</td>
+                      </tr>
+                    ))}
+                    {filteredLogs.length === 0 && (
+                      <tr><td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No audit trail found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function CertificateModal({ donation, settings, onClose, t }) {
+      const [showMsgPreview, setShowMsgPreview] = useState(false);
+      const committeeName = settings?.committee_name || "श्री गणेश उत्सव समिति";
+      const address = settings?.committee_address || "रायपुर, छत्तीसगढ़";
+      const year = new Date().getFullYear();
+      
+      const shareUrl = `${window.location.origin}/certificate.html?receipt_no=${donation.receipt_no}&donor=${encodeURIComponent(donation.donor_name)}&amount=${donation.amount}&village=${encodeURIComponent(donation.village)}&year=${year}&committee=${encodeURIComponent(committeeName)}`;
+      
+      const shareText = `*📜 ${committeeName} 📜*\n` +
+                        `-----------------------------\n` +
+                        `*चंदा दाता सम्मान पत्र (Certificate of Appreciation)*\n\n` +
+                        `प्रिय श्री/श्रीमती *${donation.donor_name}* (ग्राम/मोहल्ला: *${donation.village}*),\n` +
+                        `गणेश उत्सव ${year} में आपके द्वारा दिए गए *${parseFloat(donation.amount).toFixed(2)}* के चंदा सहयोग के लिए समिति आपका हार्दिक आभार व्यक्त करती है।\n\n` +
+                        `का डिजिटल सम्मान पत्र तैयार है, देखने के लिए इस लिंक पर क्लिक करें:\n` +
+                        `🔗 ${shareUrl}\n\n` +
+                        `*सादर धन्यवाद,*\n` +
+                        `*${committeeName}*\n` +
+                        `*गणपति बाप्पा मोरया!*`;
+
+      const handleCopyText = () => {
+        navigator.clipboard.writeText(shareText).then(() => {
+          Swal.fire({
+            text: "Message template copied to clipboard! You can paste it on WhatsApp.",
+            icon: "success",
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
+          });
+        });
+      };
+
+      const handleShareWhatsApp = () => {
+        let phone = String(donation.donor_mobile || '').replace(/\D/g, '');
+        if (phone.length === 10) {
+          phone = '91' + phone;
+        }
+        const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(shareText)}`;
+        window.open(url, '_blank');
+      };
+
+      const handlePrintCert = () => {
+        const logoHtml = settings?.lord_photo ? `<img src="${settings.lord_photo}" style="height:70px; margin-right:15px; border-radius:50%;" />` : '<i class="fas fa-om" style="font-size:50px; color:#ff851b; margin-bottom:10px;"></i>';
+        
+        function numToWords(num) {
+          if (num === 0) return 'शून्य मात्र';
+          const ones = ['', 'एक', 'दो', 'तीन', 'चार', 'पाँच', 'छह', 'सात', 'आठ', 'नौ', 'दस',
+                        'ग्यारह', 'बारह', 'तेरह', 'चौदह', 'पन्द्रह', 'सोलह', 'सत्रह', 'अठारह', 'उन्नीस'];
+          const tens = ['', '', 'बीस', 'तीस', 'चालीस', 'पचास', 'साठ', 'सत्तर', 'अस्सी', 'नब्बे'];
+          function conv(n) {
+            if (n < 20) return ones[n];
+            if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+            if (n < 1000) return ones[Math.floor(n / 100)] + ' सौ' + (n % 100 !== 0 ? ' ' + conv(n % 100) : '');
+            if (n < 100000) return conv(Math.floor(n / 1000)) + ' हजार' + (n % 1000 !== 0 ? ' ' + conv(n % 1000) : '');
+            return conv(Math.floor(n / 100000)) + ' लाख' + (n % 100000 !== 0 ? ' ' + conv(n % 100000) : '');
+          }
+          return conv(Math.floor(num)) + ' रुपये मात्र';
+        }
+
+        const formattedDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <html>
+          <head>
+            <title>सम्मान पत्र - ${donation.donor_name}</title>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <style>
+              body { background: #fffdf9; font-family: 'Segoe UI', serif; padding: 30px; display: flex; align-items: center; justify-content: center; min-height: 90vh; }
+              .card { width: 100%; max-width: 700px; padding: 40px; border: 4px solid #d4af37; border-radius: 8px; position: relative; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+              .card::before { content: ''; position: absolute; top: 8px; left: 8px; right: 8px; bottom: 8px; border: 2px double #d4af37; border-radius: 4px; pointer-events: none; }
+              .ganesha { font-size: 45px; color: #ff851b; margin-bottom: 10px; }
+              h1 { font-size: 26px; color: #001f3f; margin: 0 0 5px; }
+              h2 { font-size: 28px; color: #ff851b; margin: 15px 0 10px; font-family: serif; }
+              .divider { width: 120px; height: 3px; background: #d4af37; margin: 5px auto 20px; }
+              p { line-height: 1.8; font-size: 15px; color: #333; margin: 10px 0; }
+              .donor { font-size: 20px; font-weight: bold; color: #ff851b; border-bottom: 1px dashed #d4af37; padding: 0 10px 2px; display: inline-block; }
+              .amount { font-size: 17px; font-weight: bold; color: #001f3f; background: rgba(255, 133, 27, 0.06); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(255,133,27,0.1); display: inline-block; margin: 8px 0; }
+              .foot { display: flex; justify-content: space-between; margin-top: 40px; padding: 0 10px; }
+              .sig { width: 130px; text-align: center; }
+              .sig-line { border-bottom: 1px solid #777; margin-bottom: 5px; height: 30px; }
+              .sig-title { font-size: 10px; font-weight: bold; color: #001f3f; }
+              .meta { display: flex; justify-content: space-between; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; font-size: 11px; color: #777; }
+              @media print {
+                body { padding: 0; }
+                .card { box-shadow: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="ganesha">${logoHtml}</div>
+              <h1>${committeeName}</h1>
+              <p style="font-size:12px; color:#666; font-weight:bold; margin-top:2px;">${address}</p>
+              <div class="divider"></div>
+              <h2>सम्मान पत्र</h2>
+              <div style="font-size:15px; margin-bottom:10px;">॥ गणपति बाप्पा मोरया ॥</div>
+              <p>हम अत्यंत हर्ष और गौरव के साथ श्री/श्रीमती <span class="donor">${donation.donor_name}</span></p>
+              <p>(ग्राम/मोहल्ला: <strong>${donation.village}</strong>) को यह सम्मान पत्र भेंट करते हैं।</p>
+              <p>आपने <strong>गणेश उत्सव ${year}</strong> के पावन अवसर पर समिति को उदारतापूर्वक</p>
+              <div>
+                <span class="amount">₹${parseFloat(donation.amount).toFixed(2)}/-</span>
+                <div style="font-size:11px; color:#555; font-style:italic;">अक्षरी: ${numToWords(donation.amount)}</div>
+              </div>
+              <p>की चंदा राशि प्रदान कर धर्म व समाज सेवा के इस पुनीत कार्य में सहयोग किया है।</p>
+              <p style="font-size:13px; color:#555; margin-top:15px;">हम श्री गणेश जी से आपके परिवार की सुख-समृद्धि और उत्तम स्वास्थ्य की प्रार्थना करते हैं।</p>
+              
+              <div class="foot">
+                <div class="sig">
+                  <div class="sig-line"></div>
+                  <div class="sig-title">लेखा परीक्षक / Auditor</div>
+                </div>
+                <div class="sig">
+                  <div class="sig-line"></div>
+                  <div class="sig-title">कोषाध्यक्ष / Treasurer</div>
+                </div>
+                <div class="sig">
+                  <div class="sig-line"></div>
+                  <div class="sig-title">अध्यक्ष / President</div>
+                </div>
+              </div>
+              
+              <div class="meta">
+                <span>दिनांक: ${formattedDate}</span>
+                <span>रसीद क्रमांक: ${donation.receipt_no}</span>
+              </div>
+            </div>
+            <script>setTimeout(() => window.print(), 500);</script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      };
+
+      return (
+        <div className="modal-slideover-overlay" onClick={onClose}>
+          <div className="modal-slideover" style={{ width: '650px' }} onClick={e => e.stopPropagation()}>
+            <div className="slideover-header">
+              <h3><i className="fas fa-award"></i> Certificate Generator</h3>
+              <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
+            </div>
+            
+            <div className="slideover-body" style={{ background: '#f8fafc', padding: '20px' }}>
+              
+              <div style={{
+                background: '#fffdf9',
+                border: '4px double #d4af37',
+                borderRadius: '8px',
+                padding: '25px 20px',
+                textAlign: 'center',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                position: 'relative',
+                marginBottom: '20px',
+                fontFamily: 'serif'
+              }}>
+                <div style={{ position: 'absolute', top: '8px', left: '8px', right: '8px', bottom: '8px', border: '1px double #d4af37', pointerEvents: 'none' }}></div>
+                
+                <div style={{ color: '#ff851b', fontSize: '32px', marginBottom: '8px' }}>
+                  {settings.lord_photo ? (
+                    <img src={settings.lord_photo} style={{ height: '55px', borderRadius: '50%', objectFit: 'contain' }} />
+                  ) : (
+                    <i className="fas fa-om"></i>
+                  )}
+                </div>
+                
+                <h4 style={{ fontSize: '18px', color: '#001f3f', margin: 0, fontWeight: 'bold' }}>{committeeName}</h4>
+                <div style={{ width: '80px', height: '2px', background: '#d4af37', margin: '6px auto' }}></div>
+                
+                <h2 style={{ fontSize: '24px', color: '#ff851b', margin: '10px 0 5px' }}>सम्मान पत्र / Honor</h2>
+                <div style={{ fontSize: '12px', fontStyle: 'italic', color: '#666', marginBottom: '10px' }}>॥ गणपति बाप्पा मोरया ॥</div>
+                
+                <p style={{ fontSize: '13px', margin: '5px 0', color: '#333' }}>
+                  श्री/श्रीमती <strong style={{ color: '#ff851b', fontSize: '15px', borderBottom: '1px dashed #d4af37', padding: '0 5px' }}>{donation.donor_name}</strong>
+                </p>
+                <p style={{ fontSize: '12px', margin: '5px 0' }}>
+                  को गणेश उत्सव ${year} में उदारतापूर्वक योगदान
+                </p>
+                <div style={{
+                  background: 'rgba(255,133,27,0.06)',
+                  border: '1px solid rgba(255,133,27,0.15)',
+                  borderRadius: '4px',
+                  padding: '4px 12px',
+                  display: 'inline-block',
+                  fontWeight: 'bold',
+                  color: '#001f3f',
+                  fontSize: '15px',
+                  margin: '5px 0'
+                }}>
+                  ₹ {parseFloat(donation.amount).toFixed(2)}
+                </div>
+                <p style={{ fontSize: '12px', margin: '5px 0' }}>
+                  प्रदान करने हेतु सम्मान सहित धन्यवाद ज्ञापित किया जाता है।
+                </p>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', marginTop: '20px', padding: '0 10px' }}>
+                  <div style={{ width: '80px', borderTop: '1px dashed #777', paddingTop: '3px' }}>लेखा परीक्षक / Auditor</div>
+                  <div style={{ width: '80px', borderTop: '1px dashed #777', paddingTop: '3px' }}>कोषाध्यक्ष / Treasurer</div>
+                  <div style={{ width: '80px', borderTop: '1px dashed #777', paddingTop: '3px' }}>अध्यक्ष / President</div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <button 
+                  className="btn btn-secondary btn-sm" 
+                  onClick={() => setShowMsgPreview(!showMsgPreview)}
+                  style={{ width: '100%', background: '#fff', color: '#001f3f', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px' }}
+                >
+                  <span style={{ fontWeight: 'bold' }}><i className="fas fa-eye"></i> {showMsgPreview ? 'Hide' : 'View'} WhatsApp Message Template</span>
+                  <i className={`fas ${showMsgPreview ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                </button>
+                
+                {showMsgPreview && (
+                  <pre style={{
+                    background: '#eef2f6',
+                    padding: '12px 15px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'monospace',
+                    color: '#334155',
+                    marginTop: '8px',
+                    border: '1px solid #e2e8f0',
+                    maxHeight: '180px',
+                    overflowY: 'auto'
+                  }}>
+                    {shareText}
+                  </pre>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '15px' }}>
+                <button className="btn btn-secondary" onClick={handleCopyText} style={{ background: '#34495e' }}>
+                  <i className="fas fa-copy"></i> Copy Message & Link
+                </button>
+                <button className="btn btn-primary" onClick={handleShareWhatsApp} style={{ background: '#2ecc71' }}>
+                  <i className="fab fa-whatsapp"></i> Share on WhatsApp
+                </button>
+                <button className="btn btn-secondary" onClick={handlePrintCert} style={{ background: '#001f3f', gridColumn: '1 / -1' }}>
+                  <i className="fas fa-print"></i> Print Physical Certificate
+                </button>
+              </div>
+
+            </div>
+            
+            <div className="slideover-footer">
+              <button className="btn btn-secondary" onClick={onClose}>Close</button>
+            </div>
           </div>
         </div>
       );

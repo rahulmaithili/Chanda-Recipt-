@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>सम्मान पत्र / Donation Certificate</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #ff851b;
+      --navy: #001f3f;
+      --gold: #d4af37;
+      --saffron: #f39c12;
+      --cream: #fffdf9;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background: #f1f5f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .certificate-container {
+      background: var(--cream);
+      width: 100%;
+      max-width: 800px;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+      border: 4px solid var(--gold);
+    }
+    
+    /* Decorative double borders */
+    .certificate-container::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      border: 2px double var(--gold);
+      pointer-events: none;
+      border-radius: 8px;
+    }
+    
+    .corner-decor {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-color: var(--gold);
+      border-style: solid;
+      pointer-events: none;
+    }
+    
+    .top-left { top: 15px; left: 15px; border-width: 4px 0 0 4px; }
+    .top-right { top: 15px; right: 15px; border-width: 4px 4px 0 0; }
+    .bottom-left { bottom: 15px; left: 15px; border-width: 0 0 4px 4px; }
+    .bottom-right { bottom: 15px; right: 15px; border-width: 0 4px 4px 0; }
+
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    
+    .ganesha-emblem {
+      font-size: 50px;
+      color: var(--primary);
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .committee-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--navy);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+    
+    .cert-heading {
+      font-size: 32px;
+      color: var(--primary);
+      margin: 15px 0 10px;
+      font-family: Georgia, serif;
+      font-weight: bold;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .divider {
+      width: 120px;
+      height: 4px;
+      background: var(--gold);
+      margin: 8px auto 20px;
+      border-radius: 2px;
+    }
+    
+    .body-content {
+      text-align: center;
+      line-height: 1.8;
+      font-size: 16px;
+      color: #333;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    
+    .salutation {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: var(--navy);
+      font-weight: 600;
+    }
+    
+    .donor-name {
+      font-size: 22px;
+      color: var(--primary);
+      font-weight: bold;
+      border-bottom: 1px dashed var(--gold);
+      padding: 0 10px 2px;
+      display: inline-block;
+      margin: 5px 0;
+    }
+    
+    .amount-text {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--navy);
+      background: rgba(255, 133, 27, 0.08);
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 133, 27, 0.15);
+      display: inline-block;
+      margin: 10px 0;
+    }
+    
+    .amount-words {
+      font-size: 13px;
+      color: #666;
+      font-style: italic;
+      margin-top: 2px;
+    }
+    
+    .blessing {
+      margin-top: 20px;
+      color: #555;
+      font-weight: 500;
+      font-size: 15px;
+    }
+    
+    .footer-signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 45px;
+      padding: 0 20px;
+    }
+    
+    .signature-box {
+      text-align: center;
+      width: 150px;
+    }
+    
+    .signature-line {
+      border-bottom: 1px solid #7f8c8d;
+      margin-bottom: 6px;
+      height: 30px;
+    }
+    
+    .signature-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--navy);
+    }
+    
+    .meta-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 35px;
+      border-top: 1px solid #f1f1f1;
+      padding-top: 15px;
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+    
+    .actions {
+      margin-top: 25px;
+      display: flex;
+      gap: 15px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      transition: all 0.2s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    
+    .btn-primary:hover {
+      background: #e67e22;
+      transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+      background: var(--navy);
+      color: #fff;
+    }
+    
+    .btn-secondary:hover {
+      background: #001226;
+      transform: translateY(-1px);
+    }
+    
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .certificate-container {
+        box-shadow: none;
+        border-radius: 0;
+        width: 100%;
+        max-width: 100%;
+        border: 4px solid var(--gold);
+        margin: 0;
+      }
+      .actions {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="certificate-container" id="cert-card">
+    <div class="corner-decor top-left"></div>
+    <div class="corner-decor top-right"></div>
+    <div class="corner-decor bottom-left"></div>
+    <div class="corner-decor bottom-right"></div>
+
+    <div class="header">
+      <div class="ganesha-emblem">
+        <i class="fas fa-om"></i>
+      </div>
+      <div class="committee-title" id="lbl-committee">श्री गणेश उत्सव समिति</div>
+      <div class="divider"></div>
+      <div class="cert-heading">दान सम्मान पत्र</div>
+    </div>
+
+    <div class="body-content">
+      <div class="salutation">॥ गणपति बाप्पा मोरया ॥</div>
+      <p>हम अत्यंत हर्ष और गौरव के साथ श्री/श्रीमती <span class="donor-name" id="lbl-donor">चंदा दाता</span></p>
+      <p>(ग्राम/मोहल्ला: <strong id="lbl-village">गणेशखपरी</strong>) को यह सम्मान पत्र भेंट करते हैं।</p>
+      <p style="margin-top: 12px;">आपने <strong>गणेश उत्सव <span id="lbl-year">2026</span></strong> के पावन अवसर पर समिति को उदारतापूर्वक</p>
+      <div>
+        <span class="amount-text" id="lbl-amount">₹0.00</span>
+        <div class="amount-words" id="lbl-words">अक्षरी: शून्य मात्र</div>
+      </div>
+      <p>की चंदा राशि प्रदान कर धर्म व समाज सेवा के इस पुनीत कार्य में सहयोग किया है।</p>
+      <p class="blessing">हम भगवान श्री गणेश जी से आपके एवं आपके परिवार की सुख-समृद्धि, उत्तम स्वास्थ्य और प्रगति की मंगल कामना करते हैं।</p>
+    </div>
+
+    <div class="footer-signatures">
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <div class="signature-title">लेखा परीक्षक / Auditor</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <div class="signature-title">कोषाध्यक्ष / Treasurer</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <div class="signature-title">अध्यक्ष / President</div>
+      </div>
+    </div>
+
+    <div class="meta-info">
+      <span id="lbl-date">दिनांक: 22-08-2026</span>
+      <span id="lbl-receipt">रसीद क्रमांक: GU-2026-0000</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="window.print()">
+      <i class="fas fa-print"></i> प्रिंट / पीडीएफ डाउनलोड करें
+    </button>
+    <button class="btn btn-secondary" onclick="shareOnWhatsApp()">
+      <i class="fab fa-whatsapp"></i> व्हाट्सएप पर साझा करें
+    </button>
+  </div>
+
+  <script>
+    // Get query parameters
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+    
+    // Amount to Hindi words utility
+    function numberToHindiWords(num) {
+      if (num === 0) return 'शून्य मात्र';
+      
+      const ones = ['', 'एक', 'दो', 'तीन', 'चार', 'पाँच', 'छह', 'सात', 'आठ', 'नौ', 'दस',
+                    'ग्यारह', 'बारह', 'तेरह', 'चौदह', 'पन्द्रह', 'सोलह', 'सत्रह', 'अठारह', 'उन्नीस'];
+      const tens = ['', '', 'बीस', 'तीस', 'चालीस', 'पचास', 'साठ', 'सत्तर', 'अस्सी', 'नब्बे'];
+      
+      function convert(n) {
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+        if (n < 1000) return ones[Math.floor(n / 100)] + ' सौ' + (n % 100 !== 0 ? ' ' + convert(n % 100) : '');
+        if (n < 100000) return convert(Math.floor(n / 1000)) + ' हजार' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
+        return convert(Math.floor(n / 100000)) + ' लाख' + (n % 100000 !== 0 ? ' ' + convert(n % 100000) : '');
+      }
+      
+      return convert(Math.floor(num)) + ' रुपये मात्र';
+    }
+
+    const receiptNo = getQueryParam('receipt_no') || 'GU-2026-0000';
+    const donorName = getQueryParam('donor') || 'चंदा दाता';
+    const amountVal = parseFloat(getQueryParam('amount')) || 0;
+    const villageName = getQueryParam('village') || '—';
+    const yearVal = getQueryParam('year') || new Date().getFullYear();
+    const commName = getQueryParam('committee') || 'श्री गणेश उत्सव समिति';
+    
+    // Fill labels
+    document.getElementById('lbl-committee').textContent = commName;
+    document.getElementById('lbl-donor').textContent = donorName;
+    document.getElementById('lbl-village').textContent = villageName;
+    document.getElementById('lbl-year').textContent = yearVal;
+    document.getElementById('lbl-amount').textContent = '₹' + amountVal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    document.getElementById('lbl-words').textContent = 'अक्षरी: ' + numberToHindiWords(amountVal);
+    document.getElementById('lbl-receipt').textContent = 'रसीद क्रमांक: ' + receiptNo;
+    
+    const formattedDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+    document.getElementById('lbl-date').textContent = 'दिनांक: ' + formattedDate;
+
+    function shareOnWhatsApp() {
+      const committeeName = document.getElementById('lbl-committee').textContent;
+      const text = `*📜 ${committeeName} 📜*\n` +
+                   `-----------------------------\n` +
+                   `*चंदा दाता सम्मान पत्र (Certificate of Appreciation)*\n\n` +
+                   `श्री/श्रीमती *${donorName}* जी,\n` +
+                   `गणेश उत्सव में आपके द्वारा दिए गए *₹${amountVal.toFixed(2)}* के सहयोग के लिए समिति आपका आभार व्यक्त करती है।\n\n` +
+                   `अपना डिजिटल सम्मान पत्र देखने के लिए नीचे दिए गए लिंक पर क्लिक करें:\n` +
+                   `🔗 ${window.location.href}\n\n` +
+                   `*सादर धन्यवाद,*\n` +
+                   `*${committeeName}*\n` +
+                   `*गणपति बाप्पा मोरया!*`;
+      
+      const encodedText = encodeURIComponent(text);
+      const url = `https://api.whatsapp.com/send?text=${encodedText}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
