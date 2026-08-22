@@ -517,6 +517,33 @@
       background: rgba(0,0,0,0.02);
     }
 
+    /* Roles access matrix custom styles (From Screenshot 5 layout style!) */
+    .rbac-toggle-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      font-size: 11px;
+      font-weight: bold;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 2px;
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .rbac-toggle-badge.active {
+      background: var(--success);
+      color: white;
+      border-color: var(--success);
+    }
+    .rbac-toggle-badge.disabled {
+      background: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+
     /* Print styles - Hide print-box on screen and render correctly during print */
     .print-box {
       display: none;
@@ -696,13 +723,23 @@
       }
     };
 
-    // Predefined CSS Color Presets
+    // 15 Gorgeous CSS Color Presets matching Screenshot 4 Theme Matrix
     const THEME_PRESETS = [
-      { id: 'navy', name: 'Slate Navy', primary: '#001f3f', accent: '#0074D9', dark: '#001529', light: '#003366', hover: '#002a52' },
-      { id: 'emerald', name: 'Emerald Green', primary: '#145a32', accent: '#27ae60', dark: '#0e3a21', light: '#1e8449', hover: '#196f3d' },
-      { id: 'sunset', name: 'Sunset Orange', primary: '#78281f', accent: '#e67e22', dark: '#511b15', light: '#ba4a00', hover: '#935116' },
-      { id: 'crimson', name: 'Crimson Red', primary: '#641e16', accent: '#c0392b', dark: '#42140f', light: '#922b21', hover: '#7b241c' },
-      { id: 'royal', name: 'Royal Purple', primary: '#4a154b', accent: '#611f69', dark: '#300d31', light: '#7c3a80', hover: '#4d194e' }
+      { id: 'navy', name: 'Enterprise Navy', primary: '#001f3f', accent: '#0074D9', dark: '#001529', light: '#003366', hover: '#002a52' },
+      { id: 'cyan', name: 'Graphite & Cyan', primary: '#2c3e50', accent: '#00bec4', dark: '#1a252f', light: '#34495e', hover: '#22303e' },
+      { id: 'forest', name: 'Forest Executive', primary: '#196f3d', accent: '#2ecc71', dark: '#114f2b', light: '#229954', hover: '#145a32' },
+      { id: 'sand', name: 'Walnut & Sand', primary: '#5c3a21', accent: '#d35400', dark: '#3d2616', light: '#875a36', hover: '#4a2e1a' },
+      { id: 'emerald', name: 'Emerald Corporate', primary: '#145a32', accent: '#27ae60', dark: '#0e3a21', light: '#1e8449', hover: '#196f3d' },
+      { id: 'mocha', name: 'Mocha Executive', primary: '#4a2c2a', accent: '#e67e22', dark: '#321e1c', light: '#6e413e', hover: '#3c2422' },
+      { id: 'gold', name: 'Charcoal & Soft Gold', primary: '#212f3d', accent: '#f1c40f', dark: '#17202a', light: '#2c3e50', hover: '#1b2631' },
+      { id: 'sky', name: 'Zinc & Sky', primary: '#2b3e50', accent: '#3498db', dark: '#1d2a36', light: '#3d566e', hover: '#233241' },
+      { id: 'violet', name: 'Ink & Violet', primary: '#2c3e50', accent: '#9b59b6', dark: '#1a252f', light: '#3d566e', hover: '#233241' },
+      { id: 'rose', name: 'Slate & Rose', primary: '#34495e', accent: '#e91e63', dark: '#212f3d', light: '#4e6a85', hover: '#2c3e50' },
+      { id: 'amber', name: 'Stone & Amber', primary: '#4d5656', accent: '#ffc107', dark: '#333939', light: '#707b7c', hover: '#3f4747' },
+      { id: 'teal', name: 'Mineral Teal', primary: '#16a085', accent: '#1abc9c', dark: '#0e6251', light: '#45b39d', hover: '#117864' },
+      { id: 'copper', name: 'Paper & Copper', primary: '#7e5109', accent: '#ba4a00', dark: '#563706', light: '#a06a14', hover: '#654107' },
+      { id: 'mint', name: 'Obsidian & Mint', primary: '#1b2631', accent: '#2ecc71', dark: '#11171d', light: '#2c3e50', hover: '#151d26' },
+      { id: 'indigo', name: 'Cloud & Indigo Soft', primary: '#515a5a', accent: '#5b2c6f', dark: '#353b3b', light: '#7b8888', hover: '#424949' }
     ];
 
     function ChandaApp() {
@@ -718,6 +755,7 @@
       // Slide-over forms
       const [showDonationForm, setShowDonationForm] = useState(false);
       const [showExpenseForm, setShowExpenseForm] = useState(false);
+      const [showUserForm, setShowUserForm] = useState(false);
       const [currentRecord, setCurrentRecord] = useState(null);
       
       // Installment lookup
@@ -978,7 +1016,17 @@
               {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
               {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
               {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
-              {activeTab === 'users' && <UsersView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              
+              {activeTab === 'users' && (
+                <UsersView 
+                  systemData={systemData} 
+                  onEdit={(rec) => { setCurrentRecord(rec); setShowUserForm(true); }}
+                  onAdd={() => { setCurrentRecord(null); setShowUserForm(true); }}
+                  onDelete={handleDeleteRecord} 
+                  t={translate} 
+                />
+              )}
+              
               {activeTab === 'roles' && <RbacView systemData={systemData} onAction={handleSaveRecord} t={translate} />}
               {activeTab === 'festivals' && <FestivalsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
               {activeTab === 'settings' && <SettingsView systemData={systemData} user={currentUser} onAction={handleSaveRecord} onRefresh={fetchInitData} t={translate} />}
@@ -1020,6 +1068,19 @@
               onSave={async (payload) => {
                 const ok = await handleSaveRecord(currentRecord ? "updateExpense" : "addExpense", { expense: payload });
                 if (ok) setShowExpenseForm(false);
+              }}
+              t={translate}
+            />
+          )}
+
+          {showUserForm && (
+            <UserFormModal 
+              record={currentRecord}
+              villages={systemData.villages}
+              onClose={() => setShowUserForm(false)}
+              onSave={async (payload) => {
+                const ok = await handleSaveRecord("saveUser", { user: payload });
+                if (ok) setShowUserForm(false);
               }}
               t={translate}
             />
@@ -1993,178 +2054,284 @@
       );
     }
 
-    function UsersView({ systemData, onAction, onDelete, t }) {
-      const [name, setName] = useState('');
-      const [mobile, setMobile] = useState('');
-      const [password, setPassword] = useState('');
-      const [role, setRole] = useState('Collector');
-      const [village, setVillage] = useState('');
-      const [targetDonation, setTargetDonation] = useState('');
-      const [status, setStatus] = useState('active');
-      const [editId, setEditId] = useState(null);
+    // Modernized UsersView Component matching Screenshot 2 table layout & filters
+    function UsersView({ systemData, onEdit, onAdd, onDelete, t }) {
+      const [search, setSearch] = useState('');
+      const [roleFilter, setRoleFilter] = useState('All');
+      const [statusFilter, setStatusFilter] = useState('All');
 
       const users = systemData.users || [];
-      const villages = systemData.villages || [];
 
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        const ok = await onAction("saveUser", {
-          user: {
-            id: editId,
-            name: name.trim(),
-            mobile: mobile.trim(),
-            password: password || (editId ? undefined : "123"),
-            role: role,
-            village: village,
-            target_donation: targetDonation ? parseFloat(targetDonation) : 0,
-            status: status,
-            allow_login: 1
-          }
-        });
-        if (ok) {
-          setName(''); setMobile(''); setPassword(''); setVillage(''); setTargetDonation(''); setEditId(null);
-        }
+      const filtered = users.filter(u => {
+        const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.mobile.includes(search);
+        const matchesRole = roleFilter === 'All' || u.role === roleFilter;
+        const matchesStatus = statusFilter === 'All' || u.status === statusFilter;
+        return matchesSearch && matchesRole && matchesStatus;
+      });
+
+      const handleClear = () => {
+        setSearch('');
+        setRoleFilter('All');
+        setStatusFilter('All');
+      };
+
+      const handleExportCSV = () => {
+        let headers = ["Username", "Mobile (Login)", "Role", "Status", "Village Assigned"];
+        let rows = filtered.map(u => [u.name, u.mobile, u.role, u.status, u.village || "N/A"]);
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `users_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
 
       return (
-        <div className="split-layout">
-          <div className="card">
-            <h3><i className="fas fa-user-plus"></i> {editId ? 'कलेक्टर सुधारें' : 'नया कलेक्टर जोड़ें'}</h3>
-            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
-              <div className="form-group">
-                <label>पूरा नाम (Name)*</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+        <div>
+          {/* Header */}
+          <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.03)' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-users-cog"></i> Users Management</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / Users Management</small>
+            </div>
+            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> Add User</button>
+          </div>
+
+          {/* Filters Bar (Screenshot 2 style) */}
+          <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--navy-primary)' }}><i className="fas fa-filter"></i> Filters</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleClear} style={{ padding: '4px 10px', fontSize: '11px', background: '#6b7280' }}><i className="fas fa-times-circle"></i> Clear</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '15px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px' }}>SEARCH</label>
+                <input 
+                  type="text" 
+                  placeholder="Search users..." 
+                  value={search} 
+                  onChange={e => setSearch(e.target.value)} 
+                  style={{ padding: '8px', fontSize: '13px' }}
+                />
               </div>
-              <div className="form-group">
-                <label>मोबाइल (लॉगिन ID होगी)*</label>
-                <input type="text" value={mobile} onChange={e => setMobile(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>पासवर्ड (डिफ़ॉल्ट 123 है)</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>भूमिका (Role)</label>
-                <select value={role} onChange={e => setRole(e.target.value)}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px' }}>ROLE</label>
+                <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                  <option value="All">All Roles</option>
                   <option value="Collector">Collector</option>
                   <option value="Admin">Admin</option>
                   <option value="Super Admin">Super Admin</option>
                 </select>
               </div>
-              <div className="form-group">
-                <label>असाइन किया गया गाँव</label>
-                <select value={village} onChange={e => setVillage(e.target.value)}>
-                  <option value="">कोई भी नहीं</option>
-                  {villages.map(v => (
-                    <option key={v.id} value={v.name}>{v.name}</option>
-                  ))}
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '11px' }}>STATUS</label>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
+                  <option value="All">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
-              <div className="form-group">
-                <label>लक्ष्य संग्रह (Target Collection)</label>
-                <input type="number" placeholder="₹" value={targetDonation} onChange={e => setTargetDonation(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>स्थिति</label>
-                <select value={status} onChange={e => setStatus(e.target.value)}>
-                  <option value="active">सक्रिय (Active)</option>
-                  <option value="inactive">निष्क्रिय (Inactive)</option>
-                </select>
-              </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>सहेजें</button>
-            </form>
+            </div>
           </div>
 
+          {/* Action Toolbar */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+            <button className="btn btn-secondary" onClick={handleExportCSV} style={{ padding: '6px 12px', fontSize: '12px', background: '#2c3e50' }}><i className="fas fa-file-csv"></i> CSV</button>
+          </div>
+
+          {/* Table list */}
           <div className="card">
-            <h3><i className="fas fa-users"></i> पंजीकृत कलेक्टर्स सूची</h3>
-            <div className="table-responsive" style={{ marginTop: '15px' }}>
+            <div className="table-responsive">
               <table>
                 <thead>
                   <tr>
-                    <th>कलेक्टर</th>
-                    <th>भूमिका</th>
-                    <th>गाँव</th>
-                    <th>स्थिति</th>
-                    <th>कार्रवाई</th>
+                    <th>Username</th>
+                    <th>Mobile (Login ID)</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Village Assigned</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
+                  {filtered.map(u => (
                     <tr key={u.id}>
-                      <td><strong>{u.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{u.mobile}</small></td>
+                      <td><strong>{u.name}</strong></td>
+                      <td>{u.mobile}</td>
                       <td>{u.role}</td>
-                      <td>{u.village || 'N/A'}</td>
-                      <td><span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: u.status === 'active' ? '#d2f4ea' : '#f8d7da', color: u.status === 'active' ? '#0f766e' : '#721c24' }}>{u.status}</span></td>
                       <td>
-                        <button className="action-icon edit-icon" onClick={() => {
-                          setEditId(u.id); setName(u.name); setMobile(u.mobile); setRole(u.role); setVillage(u.village || ''); setTargetDonation(u.target_donation || ''); setStatus(u.status);
-                        }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', background: u.status === 'active' ? '#d2f4ea' : '#f8d7da', color: u.status === 'active' ? '#0f766e' : '#721c24' }}>
+                          {u.status}
+                        </span>
+                      </td>
+                      <td>{u.village || 'N/A'}</td>
+                      <td>
+                        <button className="action-icon edit-icon" onClick={() => onEdit(u)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
                         <button className="action-icon delete-icon" onClick={() => onDelete("users", "id", u.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
                       </td>
                     </tr>
                   ))}
+                  {filtered.length === 0 && (
+                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No users found.</td></tr>
+                  )}
                 </tbody>
               </table>
+            </div>
+            {/* Pagination / Table info footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '15px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Showing 1 to {filtered.length} of {filtered.length} entries</span>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <button className="btn btn-secondary btn-sm" disabled style={{ padding: '4px 10px', fontSize: '11px' }}>Previous</button>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '11px', background: 'var(--navy-accent)' }}>1</button>
+                <button className="btn btn-secondary btn-sm" disabled style={{ padding: '4px 10px', fontSize: '11px' }}>Next</button>
+              </div>
             </div>
           </div>
         </div>
       );
     }
 
+    // Modernized RbacView Component matching Screenshot 5 unified matrix layout
     function RbacView({ systemData, onAction, t }) {
       const roles = systemData.roles || [];
       const pages = systemData.rbacPages || [];
 
+      // Group pages by group/category
+      const groups = {};
+      pages.forEach(p => {
+        const g = p.group || 'GENERAL';
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(p);
+      });
+
       return (
         <div className="card">
-          <div className="card-header">
-            <h2><i className="fas fa-key"></i> अनुमतियां मैट्रिक्स (Dynamic Access Matrix)</h2>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-key"></i> Roles & Permissions Matrix</h2>
+              <small style={{ color: 'var(--text-muted)' }}>Home / Roles & Permissions</small>
+            </div>
           </div>
-          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '15px' }}>
-            भूमिका (Role) के आधार पर विशिष्ट अनुमतियों को चालू/बंद करें। Super Admin अनुमतियां हमेशा चालू रहेंगी।
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '5px 0 20px' }}>
+            Toggle <strong>V</strong>iew, <strong>A</strong>dd, <strong>E</strong>dit, <strong>D</strong>elete permissions per role. Changes save instantly. Super Admin (owner) is locked to full access.
           </p>
 
-          {roles.map(role => {
-            let perms = {};
-            try { perms = JSON.parse(role.permissions || '{}'); } catch(e) {}
+          <div className="table-responsive" style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }}>
+            <table style={{ minWidth: '800px' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '250px' }}>Page</th>
+                  {roles.map(role => (
+                    <th key={role.role_key} style={{ textAlign: 'center', background: 'rgba(0,0,0,0.01)', borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
+                      <span style={{ display: 'block', fontSize: '13px', fontWeight: 'bold' }}>{role.label}</span>
+                      <small style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginTop: '2px' }}>V • A • E • D</small>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.keys(groups).map(groupName => (
+                  <React.Fragment key={groupName}>
+                    {/* Category Divider row */}
+                    <tr style={{ background: '#f8f9fa' }}>
+                      <td colSpan={1 + roles.length} style={{ fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: 'var(--navy-primary)', padding: '8px 15px', letterSpacing: '0.5px' }}>
+                        {groupName}
+                      </td>
+                    </tr>
+                    {groups[groupName].map(page => (
+                      <tr key={page.key}>
+                        <td style={{ paddingLeft: '25px' }}>
+                          <span style={{ fontWeight: '600', fontSize: '13px' }}>{page.label}</span>
+                        </td>
+                        {roles.map(role => {
+                          let perms = {};
+                          try { perms = JSON.parse(role.permissions || '{}'); } catch(e) {}
+                          const pPerm = perms[page.key] || { v: 0, a: 0, e: 0, d: 0 };
+                          const isLocked = Number(role.is_super) === 1;
 
-            return (
-              <div key={role.role_key} style={{ marginBottom: '25px', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px', overflow: 'hidden' }}>
-                <div style={{ background: role.color || '#2c3e50', color: '#fff', padding: '10px 15px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{role.label}</span>
-                  {Number(role.is_super) === 1 && <span style={{ background: 'rgba(255,255,255,0.2)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px' }}>Locked (Super Owner)</span>}
-                </div>
-                <div className="table-responsive">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>पृष्ठ / मॉड्यूल (Screen)</th>
-                        <th style={{ textAlign: 'center' }}>देखें (View)</th>
-                        <th style={{ textAlign: 'center' }}>जोड़ें (Add)</th>
-                        <th style={{ textAlign: 'center' }}>संपादित करें (Edit)</th>
-                        <th style={{ textAlign: 'center' }}>मिटाएं (Delete)</th>
+                          const toggle = (permKey) => {
+                            if (isLocked) return;
+                            const newVal = !pPerm[permKey];
+                            onAction("toggleRbac", {
+                              roleKey: role.role_key,
+                              pageKey: page.key,
+                              permKey: permKey,
+                              value: newVal
+                            });
+                          };
+
+                          return (
+                            <td key={role.role_key} style={{ textAlign: 'center', borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
+                              <div style={{ display: 'inline-flex', gap: '4px' }}>
+                                <span 
+                                  className={`rbac-toggle-badge ${pPerm.v ? 'active' : ''} ${isLocked ? 'disabled' : ''}`}
+                                  onClick={() => toggle('v')}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: '24px', height: '24px', fontSize: '11px', fontWeight: 'bold',
+                                    borderRadius: '4px', cursor: isLocked ? 'not-allowed' : 'pointer',
+                                    border: '1px solid rgba(0,0,0,0.1)',
+                                    background: pPerm.v ? 'var(--success)' : '#fff',
+                                    color: pPerm.v ? '#fff' : '#888'
+                                  }}
+                                >
+                                  V
+                                </span>
+                                <span 
+                                  className={`rbac-toggle-badge ${pPerm.a ? 'active' : ''} ${isLocked ? 'disabled' : ''}`}
+                                  onClick={() => toggle('a')}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: '24px', height: '24px', fontSize: '11px', fontWeight: 'bold',
+                                    borderRadius: '4px', cursor: isLocked ? 'not-allowed' : 'pointer',
+                                    border: '1px solid rgba(0,0,0,0.1)',
+                                    background: pPerm.a ? 'var(--success)' : '#fff',
+                                    color: pPerm.a ? '#fff' : '#888'
+                                  }}
+                                >
+                                  A
+                                </span>
+                                <span 
+                                  className={`rbac-toggle-badge ${pPerm.e ? 'active' : ''} ${isLocked ? 'disabled' : ''}`}
+                                  onClick={() => toggle('e')}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: '24px', height: '24px', fontSize: '11px', fontWeight: 'bold',
+                                    borderRadius: '4px', cursor: isLocked ? 'not-allowed' : 'pointer',
+                                    border: '1px solid rgba(0,0,0,0.1)',
+                                    background: pPerm.e ? 'var(--success)' : '#fff',
+                                    color: pPerm.e ? '#fff' : '#888'
+                                  }}
+                                >
+                                  E
+                                </span>
+                                <span 
+                                  className={`rbac-toggle-badge ${pPerm.d ? 'active' : ''} ${isLocked ? 'disabled' : ''}`}
+                                  onClick={() => toggle('d')}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: '24px', height: '24px', fontSize: '11px', fontWeight: 'bold',
+                                    borderRadius: '4px', cursor: isLocked ? 'not-allowed' : 'pointer',
+                                    border: '1px solid rgba(0,0,0,0.1)',
+                                    background: pPerm.d ? 'var(--success)' : '#fff',
+                                    color: pPerm.d ? '#fff' : '#888'
+                                  }}
+                                >
+                                  D
+                                </span>
+                              </div>
+                            </td>
+                          );
+                        })}
                       </tr>
-                    </thead>
-                    <tbody>
-                      {pages.map(page => {
-                        const pPerm = perms[page.key] || { v: 0, a: 0, e: 0, d: 0 };
-                        const isLocked = Number(role.is_super) === 1;
-                        return (
-                          <tr key={page.key}>
-                            <td><strong>{page.label}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{page.group}</small></td>
-                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.v} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'v', value: !pPerm.v })} /></td>
-                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.a} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'a', value: !pPerm.a })} /></td>
-                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.e} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'e', value: !pPerm.e })} /></td>
-                            <td style={{ textAlign: 'center' }}><input type="checkbox" checked={!!pPerm.d} disabled={isLocked} onChange={() => onAction("toggleRbac", { roleKey: role.role_key, pageKey: page.key, permKey: 'd', value: !pPerm.d })} /></td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
     }
@@ -2354,20 +2521,26 @@
             </form>
           </div>
 
+          {/* Expanded 15-presets grid layout - matches Screenshot 4 */}
           <div className="card">
             <h3><i className="fas fa-palette"></i> रंग पैलेट (Theme Preset Gallery)</h3>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '5px 0 15px' }}>
               अपने पसंदीदा रंग पैलेट का चयन करें जो पूरे अनुप्रयोग में तुरंत लागू हो जाएगा।
             </p>
-            <div className="theme-preset-grid">
+            <div className="theme-preset-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
               {THEME_PRESETS.map(theme => (
                 <div 
                   key={theme.id} 
                   className={`theme-preset-card ${activeThemeId === theme.id ? 'active' : ''}`}
                   onClick={() => onChangeTheme(theme.id)}
+                  style={{ border: activeThemeId === theme.id ? '2px solid var(--navy-accent)' : '1px solid rgba(0,0,0,0.1)' }}
                 >
                   <div className="theme-preset-swatch" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}></div>
-                  <strong style={{ fontSize: '12px' }}>{theme.name}</strong>
+                  <strong style={{ fontSize: '12.5px' }}>{theme.name}</strong>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    <span style={{ background: theme.primary, width: '8px', height: '8px', display: 'inline-block', borderRadius: '50%', marginRight: '4px' }}></span>
+                    <span style={{ background: theme.accent, width: '8px', height: '8px', display: 'inline-block', borderRadius: '50%' }}></span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -2482,7 +2655,7 @@
                 {/* Live Preview Panel on the Right */}
                 <div style={{ background: 'rgba(0,0,0,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
                   <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice-dollar"></i> रसीद पूर्वावलोकन (Live Slip Preview)</h4>
-                  <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
+                  <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifycontent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
                     <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px' }}>
                       <strong style={{ fontSize: '13px' }}>गणेश उत्सव समिति</strong>
                       <p style={{ margin: '2px 0 0', fontSize: '9px' }}>चंदा प्राप्ति रसीद</p>
@@ -2604,7 +2777,7 @@
                 {/* Right Side Live Preview */}
                 <div style={{ background: 'rgba(0,0,0,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
                   <h4 style={{ marginBottom: '15px', color: 'var(--navy-primary)', fontSize: '13px', fontWeight: 'bold' }}><i className="fas fa-file-invoice"></i> व्यय पूर्वावलोकन (Voucher Preview)</h4>
-                  <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
+                  <div style={{ background: '#fff', padding: '20px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', minHeight: '280px', display: 'flex', flexDirection: 'column', justifycontent: 'space-between', fontFamily: 'monospace', fontSize: '11px', color: '#000' }}>
                     <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px' }}>
                       <strong style={{ fontSize: '13px' }}>गणेश उत्सव समिति</strong>
                       <p style={{ margin: '2px 0 0', fontSize: '9px' }}>व्यय भुगतान वाउचर</p>
@@ -2617,7 +2790,7 @@
                       <p><strong>माध्यम:</strong> {mode}</p>
                       <p><strong>स्थिति:</strong> {status}</p>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #000', paddingTop: '8px' }}>
+                    <div style={{ display: 'flex', justifycontent: 'space-between', borderTop: '1px dashed #000', paddingTop: '8px' }}>
                       <span>स्वीकृतकर्ता</span>
                       <span>प्राप्तकर्ता</span>
                     </div>
@@ -2628,6 +2801,94 @@
               <div className="slideover-footer">
                 <button type="submit" className="btn">सहेजें</button>
                 <button type="button" className="btn btn-secondary" onClick={onClose}>रद्द करें</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // Modernized UserFormModal Component matching Screenshot 3 side-by-side grid
+    function UserFormModal({ record, villages, onClose, onSave, t }) {
+      const [name, setName] = useState(record?.name || '');
+      const [mobile, setMobile] = useState(record?.mobile || '');
+      const [password, setPassword] = useState('');
+      const [role, setRole] = useState(record?.role || 'Collector');
+      const [village, setVillage] = useState(record?.village || '');
+      const [targetDonation, setTargetDonation] = useState(record?.target_donation || '');
+      const [status, setStatus] = useState(record?.status || 'active');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave({
+          id: record?.id,
+          name: name.trim(),
+          mobile: mobile.trim(),
+          password: password || (record?.id ? undefined : "123"),
+          role: role,
+          village: village,
+          target_donation: targetDonation ? parseFloat(targetDonation) : 0,
+          status: status,
+          allow_login: 1
+        });
+      };
+
+      return (
+        <div className="modal-slideover-overlay">
+          <div className="modal-slideover" style={{ width: '600px' }}>
+            <div className="slideover-header">
+              <h3><i className="fas fa-user-plus"></i> {record ? 'Edit User Details' : 'Add New User'}</h3>
+              <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
+            </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div className="slideover-body">
+                {/* Two Column Grid Layout (Screenshot 3 style!) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div className="form-group">
+                    <label>Username *</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" />
+                  </div>
+                  <div className="form-group">
+                    <label>Mobile (Login ID) *</label>
+                    <input type="text" value={mobile} onChange={e => setMobile(e.target.value)} required placeholder="10-digit number" />
+                  </div>
+                  <div className="form-group">
+                    <label>{record ? 'New Password' : 'Password (Default: 123)'}</label>
+                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Keep blank if unchanged" />
+                  </div>
+                  <div className="form-group">
+                    <label>Role</label>
+                    <select value={role} onChange={e => setRole(e.target.value)}>
+                      <option value="Collector">Collector</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Super Admin">Super Admin</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Status</label>
+                    <select value={status} onChange={e => setStatus(e.target.value)}>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Assigned Village</label>
+                    <select value={village} onChange={e => setVillage(e.target.value)}>
+                      <option value="">None (All Villages)</option>
+                      {villages.map(v => (
+                        <option key={v.id} value={v.name}>{v.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Target Collection (Optional)</label>
+                    <input type="number" placeholder="₹" value={targetDonation} onChange={e => setTargetDonation(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+              <div className="slideover-footer">
+                <button type="submit" className="btn">Save User</button>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
               </div>
             </form>
           </div>
