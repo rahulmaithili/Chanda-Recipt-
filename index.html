@@ -1753,6 +1753,25 @@
         return APP_TRANSLATIONS[language]?.[key] || APP_TRANSLATIONS['en']?.[key] || key;
       };
 
+      const hasPermission = (pageKey, permissionType) => {
+        if (!currentUser) return false;
+        if (currentUser.role === "Super Admin" || currentUser.role === "admin") {
+          return true;
+        }
+        const roles = systemData?.roles || [];
+        const userRole = roles.find(r => r.role_key === currentUser.role);
+        if (!userRole) return false;
+        try {
+          const perms = JSON.parse(userRole.permissions || '{}');
+          const pagePerm = perms[pageKey];
+          if (!pagePerm) return false;
+          return !!pagePerm[permissionType];
+        } catch(e) {
+          console.error("RBAC JSON parse error", e);
+          return false;
+        }
+      };
+
       if (!currentUser) {
         return <LoginScreen onLogin={handleLogin} loading={loading} />;
       }
@@ -1814,6 +1833,7 @@
                   onEdit={(rec) => { setCurrentRecord(rec); setInstallmentParent(null); setShowDonationForm(true); }}
                   onAdd={() => { setCurrentRecord(null); setInstallmentParent(null); setShowDonationForm(true); }}
                   onPrint={(rec) => { setPrintRecord(rec); setPrintType('receipt'); setTimeout(() => window.print(), 100); }}
+                  hasPermission={hasPermission}
                   t={translate}
                 />
               )}
@@ -1836,6 +1856,7 @@
                   onEdit={(rec) => { setCurrentRecord(rec); setShowExpenseForm(true); }}
                   onAdd={() => { setCurrentRecord(null); setShowExpenseForm(true); }}
                   onPrint={(rec) => { setPrintRecord(rec); setPrintType('voucher'); setTimeout(() => window.print(), 100); }}
+                  hasPermission={hasPermission}
                   t={translate}
                 />
               )}
@@ -1846,9 +1867,9 @@
                 />
               )}
               {activeTab === 'handovers' && <HandoversView systemData={systemData} user={currentUser} onAction={handleSaveRecord} t={translate} />}
-              {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
-              {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
-              {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              {activeTab === 'villages' && <VillagesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
+              {activeTab === 'categories' && <CategoriesView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
+              {activeTab === 'accounts' && <AccountsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
               
               {activeTab === 'users' && (
                 <UsersView 
@@ -1856,12 +1877,13 @@
                   onEdit={(rec) => { setCurrentRecord(rec); setShowUserForm(true); }}
                   onAdd={() => { setCurrentRecord(null); setShowUserForm(true); }}
                   onDelete={handleDeleteRecord} 
+                  hasPermission={hasPermission}
                   t={translate} 
                 />
               )}
               
               {activeTab === 'roles' && <RbacView systemData={systemData} onAction={handleSaveRecord} t={translate} />}
-              {activeTab === 'festivals' && <FestivalsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} t={translate} />}
+              {activeTab === 'festivals' && <FestivalsView systemData={systemData} onAction={handleSaveRecord} onDelete={handleDeleteRecord} hasPermission={hasPermission} t={translate} />}
               {activeTab === 'settings' && <SettingsView systemData={systemData} user={currentUser} onAction={handleSaveRecord} onRefresh={fetchInitData} t={translate} />}
               {activeTab === 'profile' && (
                 <ProfileView 
@@ -2450,7 +2472,7 @@
       );
     }
 
-    function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, t }) {
+    function DonationsView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, hasPermission, t }) {
       const [villageFilter, setVillageFilter] = useState('All');
       const [modeFilter, setModeFilter] = useState('All');
       const [searchLocal, setSearchLocal] = useState('');
@@ -2509,7 +2531,9 @@
               <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-hand-holding-usd"></i> {t('chanda')}</h2>
               <small style={{ color: 'var(--text-muted)' }}>Home / {t('chanda')}</small>
             </div>
-            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_donation')}</button>
+            {hasPermission('donations', 'a') && (
+              <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_donation')}</button>
+            )}
           </div>
 
           {/* Unified Filter Controls Panel - From Screenshot 3 Layout */}
@@ -2602,9 +2626,13 @@
                           <td style={{ color: remaining > 0 ? 'red' : 'inherit' }}>₹{remaining.toFixed(2)}</td>
                           <td>{d.mode}</td>
                           <td>
-                            <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
+                            {hasPermission('donations', 'e') && (
+                              <button className="action-icon edit-icon" onClick={() => onEdit(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy-accent)', marginRight: '10px' }}><i className="fas fa-edit"></i></button>
+                            )}
                             <button className="action-icon print-icon" onClick={() => onPrint(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', marginRight: '10px' }}><i className="fas fa-print"></i></button>
-                            <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
+                            {hasPermission('donations', 'd') && (
+                              <button className="action-icon delete-icon" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><i className="fas fa-trash-alt"></i></button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -2651,9 +2679,13 @@
                       )}
                     </div>
                     <div className="record-card-footer">
-                      <button className="btn btn-secondary btn-sm" onClick={() => onEdit(d)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
+                      {hasPermission('donations', 'e') && (
+                        <button className="btn btn-secondary btn-sm" onClick={() => onEdit(d)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
+                      )}
                       <button className="btn btn-success btn-sm" onClick={() => onPrint(d)}><i className="fas fa-print"></i> {t('print')}</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
+                      {hasPermission('donations', 'd') && (
+                        <button className="btn btn-danger btn-sm" onClick={() => onDelete("donations", "receipt_no", d.receipt_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
+                      )}
                     </div>
                   </div>
                 );
@@ -2728,7 +2760,7 @@
       );
     }
 
-    function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, t }) {
+    function ExpensesView({ systemData, onDelete, globalSearch, onEdit, onAdd, onPrint, hasPermission, t }) {
       const [categoryFilter, setCategoryFilter] = useState('All');
       const [searchLocal, setSearchLocal] = useState('');
       const [viewMode, setViewMode] = useState(localStorage.getItem('expenses_view_mode') || 'table');
@@ -2766,7 +2798,9 @@
               <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-tags"></i> {t('expenses')}</h2>
               <small style={{ color: 'var(--text-muted)' }}>Home / {t('expenses')}</small>
             </div>
-            <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_expense')}</button>
+            {hasPermission('expenses', 'a') && (
+              <button className="btn" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_expense')}</button>
+            )}
           </div>
 
           {/* Filters Row */}
@@ -2852,9 +2886,13 @@
                           </span>
                         </td>
                         <td>
-                          <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          {hasPermission('expenses', 'e') && (
+                            <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          )}
                           <button className="action-icon print-icon" onClick={() => onPrint(ex)} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-print"></i></button>
-                          <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                          {hasPermission('expenses', 'd') && (
+                            <button className="action-icon delete-icon" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -2904,9 +2942,13 @@
                     )}
                   </div>
                   <div className="record-card-footer">
-                    <button className="btn btn-secondary btn-sm" onClick={() => onEdit(ex)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
+                    {hasPermission('expenses', 'e') && (
+                      <button className="btn btn-secondary btn-sm" onClick={() => onEdit(ex)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
+                    )}
                     <button className="btn btn-success btn-sm" onClick={() => onPrint(ex)}><i className="fas fa-print"></i> {t('print')}</button>
-                    <button className="btn btn-danger btn-sm" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
+                    {hasPermission('expenses', 'd') && (
+                      <button className="btn btn-danger btn-sm" onClick={() => onDelete("expenses", "expense_no", ex.expense_no)}><i className="fas fa-trash-alt"></i> {t('delete')}</button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -3224,7 +3266,7 @@
       );
     }
 
-    function VillagesView({ systemData, onAction, onDelete, t }) {
+    function VillagesView({ systemData, onAction, onDelete, hasPermission, t }) {
       const [name, setName] = useState('');
       const [editId, setEditId] = useState(null);
       const [selectedVillage, setSelectedVillage] = useState(null);
@@ -3269,17 +3311,19 @@
       };
 
       return (
-        <div className="split-layout">
-          <div className="card">
-            <h3><i className="fas fa-map-marker-alt"></i> {editId ? t('edit_village') : t('add_village')}</h3>
-            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
-              <div className="form-group">
-                <label>{t('village')} *</label>
-                <input type="text" placeholder="..." value={name} onChange={e => setName(e.target.value)} required />
-              </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
-            </form>
-          </div>
+        <div className="split-layout" style={{ display: 'grid', gridTemplateColumns: hasPermission('villages', 'a') ? '1fr 2fr' : '1fr', gap: '20px' }}>
+          {hasPermission('villages', 'a') && (
+            <div className="card">
+              <h3><i className="fas fa-map-marker-alt"></i> {editId ? t('edit_village') : t('add_village')}</h3>
+              <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
+                <div className="form-group">
+                  <label>{t('village')} *</label>
+                  <input type="text" placeholder="..." value={name} onChange={e => setName(e.target.value)} required />
+                </div>
+                <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
+              </form>
+            </div>
+          )}
 
           <div className="card">
             <h3><i className="fas fa-map-marked-alt"></i> {t('villages')}</h3>
@@ -3306,8 +3350,12 @@
                         </td>
                         <td>
                           <button className="action-icon view-icon" onClick={() => setSelectedVillage({ name: v.name, slips, totalAmount })} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-eye"></i></button>
-                          <button className="action-icon edit-icon" onClick={() => { setEditId(v.id); setName(v.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                          <button className="action-icon delete-icon" onClick={() => onDelete("villages", "id", v.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                          {hasPermission('villages', 'e') && (
+                            <button className="action-icon edit-icon" onClick={() => { setEditId(v.id); setName(v.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          )}
+                          {hasPermission('villages', 'd') && (
+                            <button className="action-icon delete-icon" onClick={() => onDelete("villages", "id", v.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -3375,7 +3423,7 @@
       );
     }
 
-    function CategoriesView({ systemData, onAction, onDelete, t }) {
+    function CategoriesView({ systemData, onAction, onDelete, hasPermission, t }) {
       const [name, setName] = useState('');
       const [editId, setEditId] = useState(null);
       const [selectedCategory, setSelectedCategory] = useState(null);
@@ -3420,17 +3468,19 @@
       };
 
       return (
-        <div className="split-layout">
-          <div className="card">
-            <h3><i className="fas fa-list-ul"></i> {editId ? t('edit_category') : t('add_category')}</h3>
-            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
-              <div className="form-group">
-                <label>{t('category_name')} *</label>
-                <input type="text" placeholder="..." value={name} onChange={e => setName(e.target.value)} required />
-              </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
-            </form>
-          </div>
+        <div className="split-layout" style={{ display: 'grid', gridTemplateColumns: hasPermission('categories', 'a') ? '1fr 2fr' : '1fr', gap: '20px' }}>
+          {hasPermission('categories', 'a') && (
+            <div className="card">
+              <h3><i className="fas fa-list-ul"></i> {editId ? t('edit_category') : t('add_category')}</h3>
+              <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
+                <div className="form-group">
+                  <label>{t('category_name')} *</label>
+                  <input type="text" placeholder="..." value={name} onChange={e => setName(e.target.value)} required />
+                </div>
+                <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
+              </form>
+            </div>
+          )}
 
           <div className="card">
             <h3><i className="fas fa-folder-open"></i> {t('categories')}</h3>
@@ -3457,8 +3507,12 @@
                         </td>
                         <td>
                           <button className="action-icon view-icon" onClick={() => setSelectedCategory({ name: c.name, items, totalAmount })} style={{ background: 'none', border: 'none', color: 'var(--success)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-eye"></i></button>
-                          <button className="action-icon edit-icon" onClick={() => { setEditId(c.id); setName(c.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                          <button className="action-icon delete-icon" onClick={() => onDelete("categories", "id", c.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                          {hasPermission('categories', 'e') && (
+                            <button className="action-icon edit-icon" onClick={() => { setEditId(c.id); setName(c.name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                          )}
+                          {hasPermission('categories', 'd') && (
+                            <button className="action-icon delete-icon" onClick={() => onDelete("categories", "id", c.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -3533,7 +3587,7 @@
       );
     }
 
-    function AccountsView({ systemData, onAction, onDelete, t }) {
+    function AccountsView({ systemData, onAction, onDelete, hasPermission, t }) {
       const [name, setName] = useState('');
       const [balance, setBalance] = useState('');
       const [editId, setEditId] = useState(null);
@@ -3557,23 +3611,25 @@
       };
 
       return (
-        <div className="split-layout">
-          <div className="card">
-            <h3><i className="fas fa-piggy-bank"></i> {editId ? t('edit_account') : t('add_account')}</h3>
-            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
-              <div className="form-group">
-                <label>{t('account_source')} *</label>
-                <input type="text" placeholder="SBI Bank, Cash Box etc." value={name} onChange={e => setName(e.target.value)} required />
-              </div>
-              {!editId && (
+        <div className="split-layout" style={{ display: 'grid', gridTemplateColumns: hasPermission('accounts', 'a') ? '1fr 2fr' : '1fr', gap: '20px' }}>
+          {hasPermission('accounts', 'a') && (
+            <div className="card">
+              <h3><i className="fas fa-piggy-bank"></i> {editId ? t('edit_account') : t('add_account')}</h3>
+              <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
                 <div className="form-group">
-                  <label>{t('opening_balance')}</label>
-                  <input type="number" placeholder="₹" value={balance} onChange={e => setBalance(e.target.value)} />
+                  <label>{t('account_source')} *</label>
+                  <input type="text" placeholder="SBI Bank, Cash Box etc." value={name} onChange={e => setName(e.target.value)} required />
                 </div>
-              )}
-              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
-            </form>
-          </div>
+                {!editId && (
+                  <div className="form-group">
+                    <label>{t('opening_balance')}</label>
+                    <input type="number" placeholder="₹" value={balance} onChange={e => setBalance(e.target.value)} />
+                  </div>
+                )}
+                <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
+              </form>
+            </div>
+          )}
 
           <div className="card">
             <h3><i className="fas fa-university"></i> {t('accounts')}</h3>
@@ -3594,8 +3650,12 @@
                       <td><strong>{acc.account_name}</strong></td>
                       <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(acc.balance).toFixed(2)}</td>
                       <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(acc.id); setName(acc.account_name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("accounts", "id", acc.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        {hasPermission('accounts', 'e') && (
+                          <button className="action-icon edit-icon" onClick={() => { setEditId(acc.id); setName(acc.account_name); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        )}
+                        {hasPermission('accounts', 'd') && (
+                          <button className="action-icon delete-icon" onClick={() => onDelete("accounts", "id", acc.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -3608,7 +3668,7 @@
     }
 
     // Modernized UsersView Component matching Screenshot 2 table layout & filters
-    function UsersView({ systemData, onEdit, onAdd, onDelete, t }) {
+    function UsersView({ systemData, onEdit, onAdd, onDelete, hasPermission, t }) {
       const [search, setSearch] = useState('');
       const [roleFilter, setRoleFilter] = useState('All');
       const [statusFilter, setStatusFilter] = useState('All');
@@ -3649,7 +3709,9 @@
               <h2 style={{ fontSize: '18px', color: 'var(--navy-primary)' }}><i className="fas fa-users-cog"></i> {t('users')}</h2>
               <small style={{ color: 'var(--text-muted)' }}>Home / {t('users')}</small>
             </div>
-            <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_user')}</button>
+            {hasPermission('users', 'a') && (
+              <button className="btn btn-success" onClick={onAdd}><i className="fas fa-plus"></i> {t('add_user')}</button>
+            )}
           </div>
 
           {/* Filters Bar (Screenshot 2 style) */}
@@ -3737,8 +3799,12 @@
                       </td>
                       <td>{u.village || 'N/A'}</td>
                       <td>
-                        <button className="action-icon edit-icon" onClick={() => onEdit(u)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("users", "id", u.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        {hasPermission('users', 'e') && (
+                          <button className="action-icon edit-icon" onClick={() => onEdit(u)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        )}
+                        {hasPermission('users', 'd') && (
+                          <button className="action-icon delete-icon" onClick={() => onDelete("users", "id", u.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -3905,7 +3971,7 @@
       );
     }
 
-    function FestivalsView({ systemData, onAction, onDelete, t }) {
+    function FestivalsView({ systemData, onAction, onDelete, hasPermission, t }) {
       const [name, setName] = useState('');
       const [status, setStatus] = useState('archived');
       const [editId, setEditId] = useState(null);
@@ -3921,24 +3987,26 @@
       };
 
       return (
-        <div className="split-layout">
-          <div className="card">
-            <h3><i className="fas fa-calendar-plus"></i> {editId ? t('edit_session') : t('add_session')}</h3>
-            <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
-              <div className="form-group">
-                <label>{t('title')} *</label>
-                <input type="text" placeholder="Ganesh Utsav 2026" value={name} onChange={e => setName(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>{t('status')}</label>
-                <select value={status} onChange={e => setStatus(e.target.value)}>
-                  <option value="active">{t('active')}</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-              <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
-            </form>
-          </div>
+        <div className="split-layout" style={{ display: 'grid', gridTemplateColumns: hasPermission('festivals', 'a') ? '1fr 2fr' : '1fr', gap: '20px' }}>
+          {hasPermission('festivals', 'a') && (
+            <div className="card">
+              <h3><i className="fas fa-calendar-plus"></i> {editId ? t('edit_session') : t('add_session')}</h3>
+              <form onSubmit={handleSubmit} style={{ marginTop: '15px' }}>
+                <div className="form-group">
+                  <label>{t('title')} *</label>
+                  <input type="text" placeholder="Ganesh Utsav 2026" value={name} onChange={e => setName(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>{t('status')}</label>
+                  <select value={status} onChange={e => setStatus(e.target.value)}>
+                    <option value="active">{t('active')}</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+                <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
+              </form>
+            </div>
+          )}
 
           <div className="card">
             <h3><i className="fas fa-calendar-alt"></i> {t('festivals')}</h3>
@@ -3961,8 +4029,12 @@
                         </span>
                       </td>
                       <td>
-                        <button className="action-icon edit-icon" onClick={() => { setEditId(f.id); setName(f.name); setStatus(f.status); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
-                        <button className="action-icon delete-icon" onClick={() => onDelete("festivals", "id", f.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        {hasPermission('festivals', 'e') && (
+                          <button className="action-icon edit-icon" onClick={() => { setEditId(f.id); setName(f.name); setStatus(f.status); }} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
+                        )}
+                        {hasPermission('festivals', 'd') && (
+                          <button className="action-icon delete-icon" onClick={() => onDelete("festivals", "id", f.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><i className="fas fa-trash-alt"></i></button>
+                        )}
                       </td>
                     </tr>
                   ))}
