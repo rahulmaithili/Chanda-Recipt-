@@ -6701,7 +6701,7 @@
         e.preventDefault();
         const payload = {
           donor_name: donorName.trim(),
-          donor_mobile: donorMobile.trim(),
+          donor_mobile: String(donorMobile || '').trim(),
           village: village,
           amount: parseFloat(amount),
           mode: mode,
@@ -7258,7 +7258,7 @@
         const payload = {
           id: record?.id,
           name: name.trim(),
-          mobile: mobile.trim(),
+          mobile: String(mobile || '').trim(),
           password: password || (record?.id ? undefined : "123"),
           role: role,
           village: village,
