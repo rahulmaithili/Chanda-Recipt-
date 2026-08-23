@@ -1,6 +1,6 @@
 // Chanda & Expense Management System - Static Web Client Configuration
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwE1gQZKpelZF7acDVVAHRVQqL5vMFJ4CqqMMC5d10ePlhyQkzKqxDdAw4s9Mil6UPk/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxv1z0kuRqoGv0ClatmISdBwW3OThGN7ds6ir8rtDBspvtzNTwRkzYcl20rBEGhNPYY/exec";
 
 // Caching and API Fetching Helper
 const CACHE_KEY = "chanda_system_cache";
