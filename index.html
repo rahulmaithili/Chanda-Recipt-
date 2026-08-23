@@ -3399,6 +3399,12 @@
               </div>
             </div>
           )}
+          {viewingAttachment && (
+            <AttachmentViewerModal 
+              attachment={viewingAttachment} 
+              onClose={() => setViewingAttachment(null)} 
+            />
+          )}
         </div>
       );
     }
@@ -3622,6 +3628,12 @@
               )}
             </div>
           )}
+          {viewingAttachment && (
+            <AttachmentViewerModal 
+              attachment={viewingAttachment} 
+              onClose={() => setViewingAttachment(null)} 
+            />
+          )}
         </div>
       );
     }
@@ -3694,6 +3706,7 @@
       const [statusFilter, setStatusFilter] = useState('All');
       const [viewMode, setViewMode] = useState(localStorage.getItem('expenses_view_mode') || 'table');
       const [subTab, setSubTab] = useState('list'); // 'list' or 'dues'
+      const [viewingAttachment, setViewingAttachment] = useState(null);
       
       const expenses = systemData.expenses || [];
       const filtered = expenses.filter(e => {
@@ -3922,6 +3935,9 @@
                                 </span>
                               </td>
                               <td>
+                                {ex.bill_attachment && (
+                                  <button className="action-icon view-icon" onClick={() => setViewingAttachment(ex.bill_attachment)} style={{ background: 'none', border: 'none', color: 'var(--navy-primary)', marginRight: '10px', cursor: 'pointer' }} title="View Bill"><i className="fas fa-eye"></i></button>
+                                )}
                                 {hasPermission('expenses', 'e') && (
                                   <button className="action-icon edit-icon" onClick={() => onEdit(ex)} style={{ background: 'none', border: 'none', color: 'var(--navy-accent)', marginRight: '10px', cursor: 'pointer' }}><i className="fas fa-edit"></i></button>
                                 )}
@@ -3977,8 +3993,17 @@
                             <span>{ex.note}</span>
                           </div>
                         )}
+                        {ex.bill_attachment && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px', marginTop: '8px' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>Bill Attached</span>
+                            <span style={{ color: 'var(--success)', fontWeight: 'bold' }}><i className="fas fa-paperclip"></i> Yes</span>
+                          </div>
+                        )}
                       </div>
                       <div className="record-card-footer">
+                        {ex.bill_attachment && (
+                          <button className="btn btn-secondary btn-sm" onClick={() => setViewingAttachment(ex.bill_attachment)} style={{ background: 'var(--navy-primary)' }}><i className="fas fa-eye"></i> View Bill</button>
+                        )}
                         {hasPermission('expenses', 'e') && (
                           <button className="btn btn-secondary btn-sm" onClick={() => onEdit(ex)} style={{ background: 'var(--navy-accent)' }}><i className="fas fa-edit"></i> {t('edit')}</button>
                         )}
@@ -4048,6 +4073,12 @@
                 </table>
               </div>
             </div>
+          )}
+          {viewingAttachment && (
+            <AttachmentViewerModal 
+              attachment={viewingAttachment} 
+              onClose={() => setViewingAttachment(null)} 
+            />
           )}
         </div>
       );
@@ -4638,6 +4669,12 @@
                 </div>
               </div>
             </div>
+          )}
+          {viewingAttachment && (
+            <AttachmentViewerModal 
+              attachment={viewingAttachment} 
+              onClose={() => setViewingAttachment(null)} 
+            />
           )}
         </div>
       );
@@ -5267,6 +5304,12 @@
               </div>
             </div>
           )}
+          {viewingAttachment && (
+            <AttachmentViewerModal 
+              attachment={viewingAttachment} 
+              onClose={() => setViewingAttachment(null)} 
+            />
+          )}
         </div>
       );
     }
@@ -5504,6 +5547,12 @@
                 </div>
               </div>
             </div>
+          )}
+          {viewingAttachment && (
+            <AttachmentViewerModal 
+              attachment={viewingAttachment} 
+              onClose={() => setViewingAttachment(null)} 
+            />
           )}
         </div>
       );
@@ -6447,6 +6496,102 @@
       );
     }
 
+    function AttachmentViewerModal({ attachment, onClose }) {
+      const isPdf = attachment.startsWith('data:application/pdf') || attachment.toLowerCase().endsWith('.pdf');
+      
+      const handleDownload = () => {
+        const link = document.createElement('a');
+        link.href = attachment;
+        if (attachment.startsWith('data:')) {
+          const extension = isPdf ? 'pdf' : 'jpg';
+          link.download = `bill_attachment.${extension}`;
+        } else {
+          window.open(attachment, '_blank');
+          return;
+        }
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      const handlePrint = () => {
+        const printWindow = window.open('', '_blank');
+        if (isPdf) {
+          printWindow.document.write(`
+            <html>
+            <body style="margin:0; display:flex; justify-content:center; align-items:center;">
+              <iframe src="${attachment}" style="width:100vw; height:100vh; border:none;"></iframe>
+              <script>
+                setTimeout(() => {
+                  window.print();
+                }, 1000);
+              <\\/script>
+            </body>
+            </html>
+          `);
+        } else {
+          printWindow.document.write(`
+            <html>
+            <body style="margin:0; display:flex; justify-content:center; align-items:center;">
+              <img src="${attachment}" style="max-width:100%; max-height:100vh; object-fit:contain;" />
+              <script>
+                setTimeout(() => {
+                  window.print();
+                }, 500);
+              <\\/script>
+            </body>
+            </html>
+          `);
+        }
+        printWindow.document.close();
+      };
+
+      return (
+        <div className="modal-slideover-overlay" onClick={onClose} style={{ zIndex: 10000 }}>
+          <div className="modal-slideover" style={{ width: '600px', maxWidth: '95%' }} onClick={e => e.stopPropagation()}>
+            <div className="slideover-header">
+              <h3><i className="fas fa-file-alt"></i> Bill Attachment Viewer</h3>
+              <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
+            </div>
+            <div className="slideover-body" style={{ background: '#f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', minHeight: '350px' }}>
+              {attachment.startsWith('data:') ? (
+                isPdf ? (
+                  <iframe src={attachment} style={{ width: '100%', height: '500px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff' }}></iframe>
+                ) : (
+                  <img src={attachment} alt="Bill Attachment" style={{ maxWidth: '100%', maxHeight: '500px', borderRadius: '6px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', objectFit: 'contain' }} />
+                )
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', background: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', width: '100%' }}>
+                  <i className="fas fa-external-link-alt fa-3x" style={{ color: 'var(--navy-accent)', marginBottom: '15px' }}></i>
+                  <h4>External Document Link</h4>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 20px' }}>
+                    This bill is attached as an external link: <br/>
+                    <a href={attachment} target="_blank" rel="noopener noreferrer" style={{ wordBreak: 'break-all', color: 'var(--navy-accent)', fontWeight: 'bold' }}>
+                      ${attachment}
+                    </a>
+                  </p>
+                  <a href={attachment} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ background: 'var(--navy-accent)', display: 'inline-flex', padding: '8px 16px', fontSize: '13px' }}>
+                    Open Link in New Tab
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="slideover-footer" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-success" onClick={handlePrint} style={{ background: '#34495e' }}>
+                  <i className="fas fa-print"></i> Print
+                </button>
+                <button className="btn btn-primary" onClick={handleDownload} style={{ background: 'var(--navy-accent)' }}>
+                  <i className="fas fa-download"></i> Download
+                </button>
+              </div>
+              <button className="btn btn-secondary" onClick={onClose}>Close</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     function ExpenseFormModal({ record, parentRecord, expenses, categories, accounts, onClose, onSave, t }) {
       const [title, setTitle] = useState(record?.title || (parentRecord ? `Installment for ${parentRecord.title}` : ''));
       const [category, setCategory] = useState(record?.category || parentRecord?.category || (categories[0]?.name || ''));
@@ -6457,6 +6602,45 @@
       const [note, setNote] = useState(record?.note || '');
       const [isContract, setIsContract] = useState(!!(record?.total_contract_amount || parentRecord));
       const [totalContractAmount, setTotalContractAmount] = useState(record?.total_contract_amount || parentRecord?.total_contract_amount || '');
+      const [billAttachment, setBillAttachment] = useState(record?.bill_attachment || '');
+
+      const handleBillFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 1.5 * 1024 * 1024) {
+          alert("File size too large. Please select a file smaller than 1.5MB.");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (file.type.startsWith('image/')) {
+            const img = new Image();
+            img.onload = () => {
+              const MAX = 600;
+              let w = img.width, h = img.height;
+              if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+              else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+              const canvas = document.createElement('canvas');
+              canvas.width = w; canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              const compressed = canvas.toDataURL('image/jpeg', 0.5);
+              setBillAttachment(compressed);
+            };
+            img.src = reader.result;
+          } else if (file.type === 'application/pdf') {
+            if (file.size > 40 * 1024) {
+              alert("PDF size exceeds 40KB. For larger PDFs, please upload to Google Drive and paste the link instead.");
+              return;
+            }
+            setBillAttachment(reader.result);
+          } else {
+            alert("Only images (PNG, JPG) and PDF documents are supported.");
+          }
+        };
+        reader.readAsDataURL(file);
+      };
 
       let remainingBalance = 0;
       if (parentRecord) {
@@ -6491,7 +6675,8 @@
           date: record ? record.date : new Date().toISOString().slice(0, 10),
           expense_no: record?.expense_no,
           total_contract_amount: finalContractAmt,
-          parent_expense_no: parentRecord ? parentRecord.expense_no : record?.parent_expense_no
+          parent_expense_no: parentRecord ? parentRecord.expense_no : record?.parent_expense_no,
+          bill_attachment: billAttachment
         });
       };
 
@@ -6576,6 +6761,48 @@
                     <label>{t('notes')}</label>
                     <textarea rows="3" placeholder="..." value={note} onChange={e => setNote(e.target.value)}></textarea>
                   </div>
+
+                  <div className="form-group" style={{ marginTop: '15px', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '15px' }}>
+                    <label style={{ fontWeight: 'bold' }}><i className="fas fa-paperclip"></i> Bill Attachment / Bill Link</label>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Paste Google Drive or external URL link..." 
+                        value={billAttachment.startsWith('data:') ? 'Uploaded File (Image/PDF)' : billAttachment} 
+                        onChange={e => setBillAttachment(e.target.value)} 
+                        disabled={billAttachment.startsWith('data:')}
+                        style={{ flex: 1, padding: '8px', fontSize: '13px' }}
+                      />
+                      {billAttachment && (
+                        <button 
+                          type="button" 
+                          className="btn btn-secondary btn-sm" 
+                          onClick={() => setBillAttachment('')} 
+                          style={{ background: '#ff4136', padding: '4px 10px', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <label htmlFor="bill-upload-file" className="btn btn-secondary btn-sm" style={{ background: 'var(--navy-primary)', color: '#fff', cursor: 'pointer', margin: 0, padding: '6px 12px', fontSize: '12px', borderRadius: '4px' }}>
+                        <i className="fas fa-upload"></i> Upload Image / PDF
+                      </label>
+                      <input 
+                        id="bill-upload-file" 
+                        type="file" 
+                        accept="image/*,application/pdf" 
+                        onChange={handleBillFileChange} 
+                        style={{ display: 'none' }} 
+                      />
+                      {billAttachment.startsWith('data:') && (
+                        <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 'bold' }}>
+                          <i className="fas fa-check-circle"></i> File uploaded successfully!
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Right Side Live Preview */}
@@ -6588,6 +6815,11 @@
                     <div style={{ margin: '15px 0', flex: 1 }}>
                       <p><strong>{t('voucher_no')}:</strong> #{record?.expense_no || 'DRAFT'}</p>
                       <p><strong>{t('title')}:</strong> {title || '---'}</p>
+                      {billAttachment && (
+                        <p style={{ marginTop: '10px', borderTop: '1px dotted #ccc', paddingTop: '5px' }}>
+                          <strong>Attachment:</strong> Attached
+                        </p>
+                      )}
                       <p><strong>{t('category_name')}:</strong> {category}</p>
                       {isContract && (
                         <p><strong>Contract Deal:</strong> ₹{parseFloat(totalContractAmount || 0).toFixed(2)}</p>
