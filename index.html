@@ -3253,7 +3253,7 @@
 
           {/* Pending Handover Alert for Admin */}
           {isAdmin && pendingHandoversCount > 0 && (
-            <div onClick={() => setActiveTab('handovers')} style={{ cursor: 'pointer', background: 'linear-gradient(135deg, #fff8e1, #ffecb3)', border: '1.5px solid #ffe082', borderRadius: '10px', padding: '12px 18px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div onClick={() => setActiveTab('handovers')} style={{ cursor: 'pointer', background: 'linear-gradient(135deg, #fff8e1, #ffecb3)', border: '1.5px solid #ffe082', borderRadius: '10px', padding: '12px 18px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span style={{ fontWeight: 'bold', color: '#a46000', fontSize: '13px' }}>
                   <i className="fas fa-clock"></i> {pendingHandoversCount} Cash Handover{pendingHandoversCount > 1 ? 's' : ''} Awaiting Approval
@@ -3263,6 +3263,43 @@
               <span style={{ background: '#ff851b', color: '#fff', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>{pendingHandoversCount}</span>
             </div>
           )}
+
+          {/* 3-Level Expense Approval Alerts */}
+          {(() => {
+            const pendingReviewCount = expenses.filter(e => e.status === 'Pending').length;
+            const pendingApprovalCount = expenses.filter(e => e.status === 'Reviewed').length;
+            const userRoleLower = (user.role || '').toLowerCase();
+            const isPresident = userRoleLower === 'super admin';
+            const isTreasurer = userRoleLower === 'admin';
+
+            if (isTreasurer && pendingReviewCount > 0) {
+              return (
+                <div onClick={() => setActiveTab('expenses')} style={{ cursor: 'pointer', background: 'linear-gradient(135deg, #e3f2fd, #bbdefb)', border: '1.5px solid #90caf9', borderRadius: '10px', padding: '12px 18px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontWeight: 'bold', color: '#0d47a1', fontSize: '13px' }}>
+                      <i className="fas fa-search-dollar"></i> {pendingReviewCount} Expense Voucher{pendingReviewCount > 1 ? 's' : ''} Awaiting Treasurer Review
+                    </span>
+                    <div style={{ fontSize: '11px', color: '#0d47a1', marginTop: '2px' }}>Click to verify and review expense details.</div>
+                  </div>
+                  <span style={{ background: '#1e88e5', color: '#fff', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>{pendingReviewCount}</span>
+                </div>
+              );
+            }
+            if (isPresident && (pendingApprovalCount > 0 || pendingReviewCount > 0)) {
+              return (
+                <div onClick={() => setActiveTab('expenses')} style={{ cursor: 'pointer', background: 'linear-gradient(135deg, #e8f5e9, #c8e6c9)', border: '1.5px solid #a5d6a7', borderRadius: '10px', padding: '12px 18px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontWeight: 'bold', color: '#1b5e20', fontSize: '13px' }}>
+                      <i className="fas fa-check-double"></i> {pendingApprovalCount} Awaiting President Approval {pendingReviewCount > 0 && `(and ${pendingReviewCount} pending review)`}
+                    </span>
+                    <div style={{ fontSize: '11px', color: '#1b5e20', marginTop: '2px' }}>Click to review and authorize expense payouts.</div>
+                  </div>
+                  <span style={{ background: '#43a047', color: '#fff', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>{pendingApprovalCount + pendingReviewCount}</span>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           <div className="stats-grid">
             <div className="stat-widget bg-accent" onClick={() => setActiveTab('donations')}>
@@ -3869,6 +3906,7 @@
                     <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '8px', fontSize: '13px' }}>
                       <option value="All">All Statuses</option>
                       <option value="Pending">Pending</option>
+                      <option value="Reviewed">Reviewed</option>
                       <option value="Approved">Approved</option>
                     </select>
                   </div>
@@ -3930,9 +3968,11 @@
                               <td style={{ fontWeight: 'bold', color: 'var(--danger)' }}>₹{parseFloat(ex.amount).toFixed(2)}</td>
                               <td>{ex.mode}</td>
                               <td>
-                                <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                                  {ex.status === 'Approved' ? t('approved') : t('pending')}
-                                </span>
+                                {(() => {
+                                  if (ex.status === 'Approved') return <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: '#d2f4ea', color: '#0f766e' }}>Approved</span>;
+                                  if (ex.status === 'Reviewed') return <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: '#e3f2fd', color: '#0d47a1' }}>Reviewed</span>;
+                                  return <span style={{ padding: '3px 8px', borderRadius: '15px', fontSize: '11px', fontWeight: 'bold', background: '#fff0d3', color: '#a46000' }}>Pending</span>;
+                                })()}
                               </td>
                               <td>
                                 {ex.bill_attachment && (
@@ -3983,9 +4023,11 @@
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.03)', paddingBottom: '6px' }}>
                           <span style={{ color: 'var(--text-muted)' }}>{t('status')}</span>
-                          <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', background: ex.status === 'Approved' ? '#d2f4ea' : '#fff0d3', color: ex.status === 'Approved' ? '#0f766e' : '#a46000' }}>
-                            {ex.status === 'Approved' ? t('approved') : t('pending')}
-                          </span>
+                          {(() => {
+                            if (ex.status === 'Approved') return <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', background: '#d2f4ea', color: '#0f766e' }}>Approved</span>;
+                            if (ex.status === 'Reviewed') return <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', background: '#e3f2fd', color: '#0d47a1' }}>Reviewed</span>;
+                            return <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', background: '#fff0d3', color: '#a46000' }}>Pending</span>;
+                          })()}
                         </div>
                         {ex.note && (
                           <div style={{ marginTop: '8px', fontSize: '12px', background: 'rgba(0,0,0,0.01)', padding: '6px', borderRadius: '4px', borderLeft: '3px solid var(--navy-accent)' }}>
@@ -6750,13 +6792,31 @@
                       ))}
                     </select>
                   </div>
-                  <div className="form-group">
-                    <label>{t('status')}</label>
-                    <select value={status} onChange={e => setStatus(e.target.value)}>
-                      <option value="Pending">Pending</option>
-                      <option value="Approved">Approved</option>
-                    </select>
-                  </div>
+                  {(() => {
+                    const currUser = JSON.parse(localStorage.getItem("currentUser") || '{}');
+                    const r = (currUser.role || '').toLowerCase();
+                    const isPres = r === 'super admin';
+                    const isTreas = r === 'admin';
+                    
+                    if (!isPres && !isTreas) {
+                      return (
+                        <div className="form-group">
+                          <label>{t('status')}</label>
+                          <input type="text" value="Pending" disabled style={{ background: '#f8fafc', color: '#64748b' }} />
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="form-group">
+                        <label>{t('status')} *</label>
+                        <select value={status} onChange={e => setStatus(e.target.value)}>
+                          <option value="Pending">Pending</option>
+                          <option value="Reviewed">Reviewed</option>
+                          {isPres && <option value="Approved">Approved</option>}
+                        </select>
+                      </div>
+                    );
+                  })()}
                   <div className="form-group">
                     <label>{t('notes')}</label>
                     <textarea rows="3" placeholder="..." value={note} onChange={e => setNote(e.target.value)}></textarea>
