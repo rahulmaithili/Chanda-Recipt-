@@ -9,17 +9,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="/manifest.json">
   <title>Ganesh Utsav - Chanda ERP</title>
-
-  <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-      alert("ERROR: " + message + " at line " + lineno + ":" + colno + "\nStack: " + (error ? error.stack : 'N/A'));
-      return false;
-    };
-    window.addEventListener('unhandledrejection', function(event) {
-      alert("UNHANDLED REJECTION: " + event.reason);
-    });
-  </script>
-
   <!-- CDN Dependencies -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -3549,12 +3538,6 @@
               </div>
             </div>
           )}
-          {viewingAttachment && (
-            <AttachmentViewerModal 
-              attachment={viewingAttachment} 
-              onClose={() => setViewingAttachment(null)} 
-            />
-          )}
         </div>
       );
     }
@@ -3777,12 +3760,6 @@
                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: '#fff', borderRadius: '8px' }}>No records found.</div>
               )}
             </div>
-          )}
-          {viewingAttachment && (
-            <AttachmentViewerModal 
-              attachment={viewingAttachment} 
-              onClose={() => setViewingAttachment(null)} 
-            />
           )}
         </div>
       );
@@ -4825,12 +4802,6 @@
               </div>
             </div>
           )}
-          {viewingAttachment && (
-            <AttachmentViewerModal 
-              attachment={viewingAttachment} 
-              onClose={() => setViewingAttachment(null)} 
-            />
-          )}
         </div>
       );
     }
@@ -5594,12 +5565,6 @@
               </div>
             </div>
           )}
-          {viewingAttachment && (
-            <AttachmentViewerModal 
-              attachment={viewingAttachment} 
-              onClose={() => setViewingAttachment(null)} 
-            />
-          )}
         </div>
       );
     }
@@ -5837,12 +5802,6 @@
                 </div>
               </div>
             </div>
-          )}
-          {viewingAttachment && (
-            <AttachmentViewerModal 
-              attachment={viewingAttachment} 
-              onClose={() => setViewingAttachment(null)} 
-            />
           )}
         </div>
       );

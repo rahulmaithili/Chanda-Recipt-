@@ -6,19 +6,28 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyxgZHfLrtqi_9soPEnCxtE
 const CACHE_KEY = "chanda_system_cache";
 
 function getSystemDataImmediate() {
-  const cached = localStorage.getItem(CACHE_KEY);
-  return cached ? JSON.parse(cached) : null;
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch(e) {
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  }
 }
 
 async function getSystemData(forceSync = false) {
-  const cached = localStorage.getItem(CACHE_KEY);
-  const now = new Date().getTime();
-  
-  // Return cached instantly for ultra-fast loading
-  if (!forceSync && cached) {
-    // Fire background sync asynchronously to update cache and notify UI
-    setTimeout(() => backgroundSync(), 50);
-    return JSON.parse(cached);
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    const now = new Date().getTime();
+    
+    // Return cached instantly for ultra-fast loading
+    if (!forceSync && cached) {
+      // Fire background sync asynchronously to update cache and notify UI
+      setTimeout(() => backgroundSync(), 50);
+      return JSON.parse(cached);
+    }
+  } catch(e) {
+    localStorage.removeItem(CACHE_KEY);
   }
   
   // Force sync / No cache fallback
