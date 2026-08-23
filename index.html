@@ -17,6 +17,7 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
   <style>
     :root {
@@ -4823,6 +4824,93 @@
         </div>
       );
     }
+    function DonorQrCardModal({ profile, onClose, settings }) {
+      const qrData = JSON.stringify({
+        name: profile.donor_name,
+        mobile: profile.donor_mobile,
+        village: profile.village
+      });
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+
+      const handlePrint = () => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <html>
+          <head>
+            <title>Donor QR Card - ${profile.donor_name}</title>
+            <style>
+              body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background: #fff; }
+              .card { width: 320px; border: 3px double #e67e22; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fffdf9; position: relative; }
+              .header { color: #001f3f; font-weight: bold; font-size: 16px; border-bottom: 2px solid #e67e22; padding-bottom: 8px; margin-bottom: 12px; text-transform: uppercase; }
+              .ganesha { font-size: 24px; color: #ff851b; margin-bottom: 5px; }
+              .details { margin: 15px 0; text-align: left; font-size: 13px; color: #2c3e50; line-height: 1.6; background: #fef9e7; padding: 10px; border-radius: 6px; border-left: 3px solid #ff851b; }
+              .details strong { color: #001f3f; }
+              .qr-box { margin: 15px 0; display: inline-block; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+              .footer { font-size: 10px; color: #7f8c8d; margin-top: 10px; font-weight: bold; border-top: 1px dashed #ccc; padding-top: 8px; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="ganesha"><i class="fas fa-om"></i> ॐ </div>
+              <div class="header">${settings.committee_name || 'श्री गणेश उत्सव समिति'}</div>
+              <div class="qr-box">
+                <img src="${qrUrl}" width="180" height="180" />
+              </div>
+              <div class="details">
+                <strong>Name:</strong> ${profile.donor_name}<br/>
+                <strong>Mobile:</strong> ${profile.donor_mobile || 'N/A'}<br/>
+                <strong>Village:</strong> ${profile.village || 'N/A'}
+              </div>
+              <div class="footer">
+                Scan this QR Card to auto-fill donation receipt.
+              </div>
+            </div>
+            <script>
+              setTimeout(() => { window.print(); window.close(); }, 800);
+            </script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      };
+
+      return (
+        <div className="modal-slideover-overlay" onClick={onClose} style={{ zIndex: 10000 }}>
+          <div className="modal-slideover" style={{ width: '380px', maxWidth: '90%' }} onClick={e => e.stopPropagation()}>
+            <div className="slideover-header">
+              <h3><i className="fas fa-qrcode"></i> Donor QR Card</h3>
+              <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
+            </div>
+            <div className="slideover-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc', padding: '20px' }}>
+              <div id="donor-qr-card-container" style={{ width: '100%', background: '#fff', border: '3px double #e67e22', borderRadius: '12px', padding: '20px', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', boxSizing: 'border-box' }}>
+                <div style={{ fontSize: '24px', color: '#ff851b', marginBottom: '5px' }}>🕉️</div>
+                <div style={{ color: 'var(--navy-primary)', fontWeight: 'bold', fontSize: '15px', borderBottom: '2px solid #e67e22', paddingBottom: '8px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {settings.committee_name || 'श्री गणेश उत्सव समिति'}
+                </div>
+                <div style={{ background: '#fff', padding: '10px', display: 'inline-block', border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '15px' }}>
+                  <img src={qrUrl} alt="QR Code" style={{ width: '160px', height: '160px', display: 'block' }} />
+                </div>
+                <div style={{ textAlign: 'left', fontSize: '12.5px', color: '#334155', background: '#fffdf5', padding: '10px', borderRadius: '6px', borderLeft: '3px solid #ff851b', lineHeight: '1.6' }}>
+                  <strong>Name:</strong> {profile.donor_name}<br/>
+                  <strong>Mobile:</strong> {profile.donor_mobile || '—'}<br/>
+                  <strong>Village:</strong> {profile.village || '—'}
+                </div>
+                <div style={{ fontSize: '9px', color: '#64748b', marginTop: '12px', borderTop: '1px dashed #e2e8f0', paddingTop: '8px', fontWeight: 'bold' }}>
+                  Scan during donation to auto-fill details instantly!
+                </div>
+              </div>
+            </div>
+            <div className="slideover-footer" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <button className="btn btn-success" onClick={handlePrint} style={{ background: 'var(--navy-accent)', border: 'none', color: '#fff', cursor: 'pointer', padding: '8px 16px', borderRadius: '4px' }}>
+                <i className="fas fa-print"></i> Print Card
+              </button>
+              <button className="btn btn-secondary" onClick={onClose}>Close</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     function DonorsView({ systemData, user, t }) {
       const [donors, setDonors] = useState([]);
       const [loading, setLoading] = useState(false);
@@ -4830,6 +4918,7 @@
       const [selectedDonorKey, setSelectedDonorKey] = useState(null);
       const [selectedDonorHistory, setSelectedDonorHistory] = useState([]);
       const [loadingDetails, setLoadingDetails] = useState(false);
+      const [qrCardProfile, setQrCardProfile] = useState(null);
 
       const fetchDonors = async () => {
         setLoading(true);
@@ -5039,9 +5128,18 @@
                         <td style={{ fontWeight: 'bold', color: 'var(--success)' }}>₹{parseFloat(profile.total_donated).toFixed(2)}</td>
                         <td style={{ fontWeight: 'bold' }}>{profile.donation_count} slips</td>
                         <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => handleViewDonorLedger(profile.donor_mobile)} style={{ padding: '4px 10px', fontSize: '11px' }}>
-                            <i className="fas fa-eye"></i> Statement
-                          </button>
+                          <div style={{ display: 'flex', gap: '5px' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => handleViewDonorLedger(profile.donor_mobile)} style={{ padding: '4px 10px', fontSize: '11px' }}>
+                              <i className="fas fa-eye"></i> Statement
+                            </button>
+                            <button 
+                              className="btn btn-secondary btn-sm" 
+                              onClick={() => setQrCardProfile(profile)} 
+                              style={{ padding: '4px 10px', fontSize: '11px', background: 'var(--navy-accent)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
+                            >
+                              <i className="fas fa-qrcode"></i> QR Card
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -5053,6 +5151,13 @@
               </div>
             )}
           </div>
+          {qrCardProfile && (
+            <DonorQrCardModal 
+              profile={qrCardProfile} 
+              onClose={() => setQrCardProfile(null)} 
+              settings={systemData.settings || {}}
+            />
+          )}
         </div>
       );
     }
@@ -6295,6 +6400,9 @@
       const [smsSender, setSmsSender] = useState('');
       const [smsAuto, setSmsAuto] = useState(false);
       const [logoBase64, setLogoBase64] = useState(null);
+      const [tgToken, setTgToken] = useState('');
+      const [tgChatId, setTgChatId] = useState('');
+      const [tgMinAmt, setTgMinAmt] = useState('');
       const [logoPreview, setLogoPreview] = useState('');
 
       const settings = systemData.settings || {};
@@ -6306,6 +6414,9 @@
         setSmsSender(settings.sms_sender_id || '');
         setSmsAuto(settings.sms_auto_send === 'true');
         setLogoPreview(settings.lord_photo || '');
+        setTgToken(settings.telegram_bot_token || '');
+        setTgChatId(settings.telegram_chat_id || '');
+        setTgMinAmt(settings.telegram_min_amount || '5000');
       }, [settings]);
 
       const handleLogoFileChange = (e) => {
@@ -6326,7 +6437,10 @@
           committee_address: address.trim(),
           sms_api_key: smsKey.trim(),
           sms_sender_id: smsSender.trim(),
-          sms_auto_send: smsAuto ? 'true' : 'false'
+          sms_auto_send: smsAuto ? 'true' : 'false',
+          telegram_bot_token: tgToken.trim(),
+          telegram_chat_id: tgChatId.trim(),
+          telegram_min_amount: tgMinAmt.trim()
         };
         if (logoBase64) {
           payload.lord_photo_base64 = logoBase64;
@@ -6370,6 +6484,21 @@
               <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="sms_auto" checked={smsAuto} onChange={e => setSmsAuto(e.target.checked)} style={{ width: 'auto' }} />
                 <label htmlFor="sms_auto" style={{ margin: 0, cursor: 'pointer' }}>Auto Send WhatsApp receipt</label>
+              </div>
+              <div className="form-group" style={{ borderTop: '1px solid #eee', paddingTop: '15px', marginTop: '15px' }}>
+                <label style={{ fontWeight: 'bold' }}><i className="fab fa-telegram"></i> Telegram Group Alert Settings</label>
+              </div>
+              <div className="form-group">
+                <label>Telegram Bot Token</label>
+                <input type="text" placeholder="Bot token from @BotFather" value={tgToken} onChange={e => setTgToken(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Telegram Chat ID (Group ID)</label>
+                <input type="text" placeholder="-100xxxxxxxxx" value={tgChatId} onChange={e => setTgChatId(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Min Amount for Alert (₹)</label>
+                <input type="number" placeholder="5000" value={tgMinAmt} onChange={e => setTgMinAmt(e.target.value)} />
               </div>
               <button type="submit" className="btn" style={{ width: '100%' }}>{t('save')}</button>
             </form>
@@ -6526,6 +6655,55 @@
       const [mode, setMode] = useState(record?.mode || 'Cash');
       const [promisedAmount, setPromisedAmount] = useState(record?.promised_amount || parentRecord?.promised_amount || '');
       const [isPromised, setIsPromised] = useState(!!(record?.promised_amount || parentRecord));
+      const [isScanning, setIsScanning] = useState(false);
+
+      useEffect(() => {
+        let html5Qrcode;
+        if (isScanning) {
+          setTimeout(() => {
+            const el = document.getElementById('qr-reader');
+            if (!el) return;
+            html5Qrcode = new Html5Qrcode("qr-reader");
+            html5Qrcode.start(
+              { facingMode: "environment" },
+              { fps: 10, qrbox: { width: 250, height: 250 } },
+              (qrCodeMessage) => {
+                try {
+                  const data = JSON.parse(qrCodeMessage);
+                  if (data.name) setDonorName(data.name);
+                  if (data.mobile) setDonorMobile(data.mobile);
+                  if (data.village) setVillage(data.village);
+                  showToast("Donor QR Scanned Successfully!");
+                  setIsScanning(false);
+                } catch (e) {
+                  const parts = qrCodeMessage.split(',');
+                  if (parts.length >= 3) {
+                    setDonorName(parts[0].trim());
+                    setDonorMobile(parts[1].trim());
+                    setVillage(parts[2].trim());
+                    showToast("Donor QR Scanned!");
+                    setIsScanning(false);
+                  } else {
+                    alert("Invalid QR Code content. Try encoding as Name, Mobile, Village.");
+                  }
+                }
+              },
+              (errorMessage) => {}
+            ).catch(err => {
+              console.error("Camera start failed", err);
+              alert("Could not access camera. Please check permissions.");
+              setIsScanning(false);
+            });
+          }, 150);
+        }
+        return () => {
+          if (html5Qrcode) {
+            try {
+              html5Qrcode.stop().catch(err => console.error("Scanner stop error", err));
+            } catch(e) {}
+          }
+        };
+      }, [isScanning]);
 
       useEffect(() => {
         if (parentRecord) {
@@ -6571,6 +6749,21 @@
                 
                 {/* Form fields section */}
                 <div>
+                  {/* QR Scanner Trigger Section */}
+                  <div style={{ marginBottom: '15px' }}>
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary" 
+                      onClick={() => setIsScanning(!isScanning)}
+                      style={{ background: isScanning ? '#ff4136' : 'var(--navy-accent)', color: '#fff', width: '100%', padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      <i className="fas fa-qrcode"></i> {isScanning ? 'Stop Camera QR Scan' : 'Scan Donor QR Card'}
+                    </button>
+                    {isScanning && (
+                      <div id="qr-reader" style={{ width: '100%', marginTop: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}></div>
+                    )}
+                  </div>
+
                   <div className="form-group">
                     <label>{t('donor_name')} *</label>
                     <input type="text" value={donorName} onChange={e => setDonorName(e.target.value)} required disabled={!!parentRecord} />
