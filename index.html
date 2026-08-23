@@ -667,6 +667,19 @@
       flex: 1;
     }
 
+    .responsive-slideover-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .responsive-slideover-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+      }
+    }
+
     .slideover-footer {
       padding: 15px 20px;
       border-top: 1px solid rgba(0,0,0,0.06);
@@ -6713,8 +6726,7 @@
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              {/* Horizontal split form view (Matches Add Student Screenshot 4 style!) */}
-              <div className="slideover-body" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
+              <div className="slideover-body responsive-slideover-grid">
                 
                 {/* Form fields section */}
                 <div>
@@ -7025,7 +7037,7 @@
               <button className="hamburger-btn" onClick={onClose} style={{ fontSize: '24px' }}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="slideover-body" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
+              <div className="slideover-body responsive-slideover-grid">
                 
                 {/* Form Inputs */}
                 <div>
