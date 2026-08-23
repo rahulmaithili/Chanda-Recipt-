@@ -1806,6 +1806,26 @@
       const [loading, setLoading] = useState(false);
       const [sidebarCollapsed, setSidebarCollapsed] = useState(localStorage.getItem("sidebar_collapsed") === "true");
       const [darkMode, setDarkMode] = useState(localStorage.getItem("dark_mode") === "true");
+      const [autoDarkMode, setAutoDarkMode] = useState(localStorage.getItem("auto_dark_mode") !== "false");
+
+      useEffect(() => {
+        localStorage.setItem("auto_dark_mode", autoDarkMode ? "true" : "false");
+        if (autoDarkMode) {
+          const checkTime = () => {
+            const hr = new Date().getHours();
+            const shouldBeDark = hr >= 18 || hr < 6;
+            setDarkMode(shouldBeDark);
+          };
+          checkTime();
+          const timer = setInterval(checkTime, 60000);
+          return () => clearInterval(timer);
+        }
+      }, [autoDarkMode]);
+
+      const handleToggleDarkMode = (val) => {
+        setDarkMode(val);
+        setAutoDarkMode(false);
+      };
       const [language, setLanguage] = useState(localStorage.getItem("app_lang") || 'en');
       const [globalSearch, setGlobalSearch] = useState('');
 
@@ -2193,7 +2213,9 @@
               loading={loading} 
               onRefresh={fetchInitData} 
               darkMode={darkMode} 
-              setDarkMode={setDarkMode}
+              setDarkMode={handleToggleDarkMode}
+              autoDarkMode={autoDarkMode}
+              setAutoDarkMode={setAutoDarkMode}
               language={language}
               setLanguage={setLanguage}
               globalSearch={globalSearch}
@@ -2819,7 +2841,7 @@
       );
     }
 
-    function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, language, setLanguage, globalSearch, setGlobalSearch, systemData, changeThemePreset, t }) {
+    function Topbar({ user, loading, onRefresh, darkMode, setDarkMode, autoDarkMode, setAutoDarkMode, language, setLanguage, globalSearch, setGlobalSearch, systemData, changeThemePreset, t }) {
       const settings = systemData.settings || {};
       const [showThemePanel, setShowThemePanel] = React.useState(false);
       const [showNotifPanel, setShowNotifPanel] = React.useState(false);
@@ -2927,15 +2949,27 @@
                 <div className="theme-panel-card">
                   <div className="theme-panel-header">
                     <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Theme Manager</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }} htmlFor="darkToggle">Dark Mode</label>
-                      <input 
-                        type="checkbox" 
-                        id="darkToggle" 
-                        checked={darkMode} 
-                        onChange={e => setDarkMode(e.target.checked)} 
-                        style={{ cursor: 'pointer', width: '15px', height: '15px' }} 
-                      />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }} htmlFor="darkToggle">Dark</label>
+                        <input 
+                          type="checkbox" 
+                          id="darkToggle" 
+                          checked={darkMode} 
+                          onChange={e => setDarkMode(e.target.checked)} 
+                          style={{ cursor: 'pointer', width: '14px', height: '14px' }} 
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }} htmlFor="autoDarkToggle">Auto (Sunset)</label>
+                        <input 
+                          type="checkbox" 
+                          id="autoDarkToggle" 
+                          checked={autoDarkMode} 
+                          onChange={e => setAutoDarkMode(e.target.checked)} 
+                          style={{ cursor: 'pointer', width: '14px', height: '14px' }} 
+                        />
+                      </div>
                     </div>
                   </div>
                   
