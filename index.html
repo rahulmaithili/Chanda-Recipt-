@@ -1802,7 +1802,7 @@
     function ChandaApp() {
       const [currentUser, setCurrentUser] = useState(getCurrentUser());
       const [activeTab, setActiveTab] = useState('dashboard');
-      const [systemData, setSystemData] = useState(null);
+      const [systemData, setSystemData] = useState(getSystemDataImmediate());
       const [loading, setLoading] = useState(false);
       const [sidebarCollapsed, setSidebarCollapsed] = useState(localStorage.getItem("sidebar_collapsed") === "true");
       const [darkMode, setDarkMode] = useState(localStorage.getItem("dark_mode") === "true");
@@ -1829,7 +1829,7 @@
 
       useEffect(() => {
         if (currentUser) {
-          fetchInitData();
+          fetchInitData(!!systemData);
           applyActiveTheme();
         }
       }, [currentUser]);
