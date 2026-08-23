@@ -2232,6 +2232,8 @@
                   user={currentUser} 
                   setActiveTab={setActiveTab} 
                   globalSearch={globalSearch}
+                  onAction={handleSaveRecord}
+                  onDelete={handleDeleteRecord}
                   t={translate}
                 />
               )}
@@ -3074,7 +3076,7 @@
       );
     }
 
-    function DashboardView({ systemData, user, setActiveTab, globalSearch, t }) {
+    function DashboardView({ systemData, user, setActiveTab, globalSearch, onAction, onDelete, t }) {
       const donations = systemData.donations || [];
       const expenses = systemData.expenses || [];
       const handovers = systemData.handovers || [];
@@ -3295,6 +3297,106 @@
                     <div style={{ fontSize: '11px', color: '#1b5e20', marginTop: '2px' }}>Click to review and authorize expense payouts.</div>
                   </div>
                   <span style={{ background: '#43a047', color: '#fff', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>{pendingApprovalCount + pendingReviewCount}</span>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Notice Board Widget */}
+          <div className="card" style={{ marginBottom: '18px', padding: '15px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '15px', color: 'var(--navy-primary)', margin: 0 }}><i className="fas fa-bullhorn" style={{ color: '#ff851b' }}></i> {t('notice_board') || 'समिति सूचना पटल (Notice Board)'}</h3>
+              {isAdmin && (
+                <button 
+                  onClick={() => {
+                    Swal.fire({
+                      title: 'Post New Notice',
+                      input: 'textarea',
+                      inputPlaceholder: 'Type your message here...',
+                      showCancelButton: true,
+                      confirmButtonText: 'Post Notice',
+                      confirmButtonColor: 'var(--navy-accent)',
+                      preConfirm: (val) => {
+                        if (!val.trim()) {
+                          Swal.showValidationMessage('Message cannot be empty');
+                        }
+                        return val;
+                      }
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        const ok = await onAction('saveAnnouncement', { announcement: { message: result.value.trim() } });
+                        if (ok) {
+                          Swal.fire({ text: 'Notice posted successfully!', icon: 'success', timer: 1500, showConfirmButton: false });
+                        }
+                      }
+                    });
+                  }}
+                  className="btn btn-secondary btn-sm" 
+                  style={{ padding: '3px 8px', fontSize: '11px', background: 'var(--navy-accent)' }}
+                >
+                  <i className="fas fa-plus"></i> Post Notice
+                </button>
+              )}
+            </div>
+            
+            <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {(systemData.announcements || []).filter(a => a.status === 'active').map(a => (
+                <div key={a.id} style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', borderLeft: '4px solid #ff851b', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', color: '#1e293b', whiteSpace: 'pre-wrap' }}>{a.message}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Posted by <strong>{a.author_name}</strong> on {new Date(a.timestamp).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => onDelete('announcements', 'id', a.id)}
+                      style={{ background: 'none', border: 'none', color: '#ff4136', cursor: 'pointer', fontSize: '12px' }}
+                      title="Delete Notice"
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
+                  )}
+                </div>
+              ))}
+              {(systemData.announcements || []).filter(a => a.status === 'active').length === 0 && (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', padding: '15px 0' }}>
+                  No active notices. Announcements from admins will appear here.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Collector Target Progress Card */}
+          {(() => {
+            const myTarget = parseFloat(user.target_donation || 0);
+            if (myTarget > 0) {
+              return (
+                <div className="card" style={{ marginBottom: '18px', padding: '15px', background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1px solid #bbf7d0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#166534' }}>
+                      <i className="fas fa-bullseye"></i> My Collection Target Progress
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#166534' }}>
+                      ₹{myCollection.toLocaleString('en-IN')} / ₹{myTarget.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div style={{ height: '10px', borderRadius: '5px', background: 'rgba(22, 101, 52, 0.1)', overflow: 'hidden', position: 'relative' }}>
+                    <div 
+                      style={{ 
+                        height: '100%', 
+                        width: `${Math.min(100, Math.round((myCollection / myTarget) * 100))}%`, 
+                        background: '#22c55e', 
+                        borderRadius: '5px',
+                        transition: 'width 0.6s ease' 
+                      }}
+                    ></div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '11px', color: '#166534', fontWeight: '600' }}>
+                    <span>Achieved: {Math.min(100, Math.round((myCollection / myTarget) * 100))}%</span>
+                    <span>{myCollection >= myTarget ? '🎉 Target Achieved!' : `₹${(myTarget - myCollection).toLocaleString('en-IN')} remaining`}</span>
+                  </div>
                 </div>
               );
             }
@@ -5062,18 +5164,49 @@
                 <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--navy-accent)' }}><i className="fas fa-users"></i> Collector Cash Summary</h4>
                 <div className="table-responsive">
                   <table>
-                    <thead><tr><th>Collector</th><th>Total Collected</th><th>Handed Over</th><th style={{ color: '#e67e22' }}>Pending Cash</th></tr></thead>
+                    <thead><tr><th>Collector</th><th>Total Collected</th><th>Handed Over</th><th style={{ color: '#e67e22' }}>Pending Cash</th><th>Action</th></tr></thead>
                     <tbody>
-                      {collectorStats.map(s => (
-                        <tr key={s.mobile}>
-                          <td><strong>{s.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{s.mobile}</small></td>
-                          <td style={{ fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{s.collected.toFixed(2)}</td>
-                          <td style={{ color: '#2ecc71' }}>₹{s.handedOver.toFixed(2)}</td>
-                          <td style={{ fontWeight: 'bold', color: s.pendingCash > 0 ? '#e67e22' : '#2ecc71' }}>
-                            {s.pendingCash > 0 ? `₹${s.pendingCash.toFixed(2)}` : '✓ Settled'}
-                          </td>
-                        </tr>
-                      ))}
+                      {collectorStats.map(s => {
+                        const handleNudge = (collector) => {
+                          const settings = systemData.settings || {};
+                          const committeeName = settings.committee_name || "श्री गणेश उत्सव समिति";
+                          const year = new Date().getFullYear();
+                          let phone = String(collector.mobile || '').replace(/\D/g, '');
+                          if (phone.length === 10) phone = '91' + phone;
+                          
+                          const text = `*🚨 ${committeeName} - रिमाइंड/सूचना 🚨*\n` +
+                                       `-----------------------------\n` +
+                                       `प्रिय *${collector.name}*,\n\n` +
+                                       `आपके पास चंदा कलेक्शन का *₹${collector.pendingCash.toFixed(2)}* पेंडिंग कैश है जो अभी तक समिति में जमा नहीं हुआ है।\n\n` +
+                                       `कृपया इसे जल्द से जल्द समिति के कोषाध्यक्ष/अध्यक्ष के पास जमा कराकर हैंडओवर रसीद प्राप्त करें।\n\n` +
+                                       `*गणपति बाप्पा मोरया!*`;
+                                       
+                          const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+                          window.open(url, '_blank');
+                        };
+
+                        return (
+                          <tr key={s.mobile}>
+                            <td><strong>{s.name}</strong><br/><small style={{ color: 'var(--text-muted)' }}>{s.mobile}</small></td>
+                            <td style={{ fontWeight: 'bold', color: 'var(--navy-accent)' }}>₹{s.collected.toFixed(2)}</td>
+                            <td style={{ color: '#2ecc71' }}>₹{s.handedOver.toFixed(2)}</td>
+                            <td style={{ fontWeight: 'bold', color: s.pendingCash > 0 ? '#e67e22' : '#2ecc71' }}>
+                              {s.pendingCash > 0 ? `₹${s.pendingCash.toFixed(2)}` : '✓ Settled'}
+                            </td>
+                            <td>
+                              {s.pendingCash > 0 && (
+                                <button 
+                                  className="btn btn-secondary btn-sm" 
+                                  onClick={() => handleNudge(s)} 
+                                  style={{ background: '#25d366', color: '#fff', border: 'none', padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer', borderRadius: '4px' }}
+                                >
+                                  <i className="fab fa-whatsapp"></i> Nudge
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                       {collectorStats.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '15px', color: 'var(--text-muted)' }}>No collectors yet.</td></tr>}
                     </tbody>
                   </table>
