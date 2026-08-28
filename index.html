@@ -1870,7 +1870,9 @@
       const [showMobileFabMenu, setShowMobileFabMenu] = useState(false);
 
       useEffect(() => {
-        if (currentUser) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasPublicParams = urlParams.has('receipt_no') || urlParams.has('donor_mobile');
+        if (currentUser || hasPublicParams) {
           fetchInitData(!!systemData);
           applyActiveTheme();
         }
@@ -2200,7 +2202,11 @@
         }
       };
 
-      if (!currentUser) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const publicReceiptNo = urlParams.get('receipt_no');
+      const publicDonorMobile = urlParams.get('donor_mobile');
+
+      if (!currentUser && !publicReceiptNo && !publicDonorMobile) {
         return <LoginScreen onLogin={handleLogin} loading={loading} />;
       }
 
@@ -2213,6 +2219,14 @@
             </div>
           </div>
         );
+      }
+
+      if (publicReceiptNo) {
+        return <PublicReceiptView receiptNo={publicReceiptNo} systemData={systemData} t={translate} />;
+      }
+
+      if (publicDonorMobile) {
+        return <PublicLedgerView donorMobile={publicDonorMobile} systemData={systemData} t={translate} />;
       }
 
       return (
@@ -7403,6 +7417,294 @@
     }
 
     // ==========================================
+    // PUBLIC GUEST VIEW COMPONENTS
+    // ==========================================
+
+    function PublicReceiptView({ receiptNo, systemData, t }) {
+      const donations = systemData.donations || [];
+      const settings = systemData.settings || {};
+      
+      // Find the specific receipt
+      const slip = donations.find(d => String(d.receipt_no).trim() === String(receiptNo).trim());
+      
+      if (!slip) {
+        return (
+          <div style={{ padding: '40px 20px', textAlign: 'center', fontFamily: 'sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#f8fafc' }}>
+            <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', maxWidth: '400px', width: '100%' }}>
+              <i className="fas fa-exclamation-triangle fa-3x" style={{ color: '#ef4444', marginBottom: '15px' }}></i>
+              <h3 style={{ color: '#1e293b', marginBottom: '10px' }}>Receipt Not Found</h3>
+              <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.6' }}>
+                We couldn't find any donation receipt with number <strong>#{receiptNo}</strong>. Please double check the QR Code link.
+              </p>
+              <a href="/" className="btn btn-primary" style={{ marginTop: '20px', display: 'inline-block', background: 'var(--navy-accent)', color: '#fff', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>Go to Homepage</a>
+            </div>
+          </div>
+        );
+      }
+
+      // Calculate total paid by this donor across all slips for this donor mobile
+      const donorMobile = String(slip.donor_mobile || '').trim();
+      
+      // Get chronological list of all payments by this donor mobile
+      const donorHistory = donations
+        .filter(d => String(d.donor_mobile || '').trim() === donorMobile)
+        .sort((a, b) => new Date(a.date || a.timestamp) - new Date(b.date || b.timestamp));
+
+      // Calculate total promised and paid
+      // Find the original promise slip (it won't have a parent_receipt_no)
+      const rootSlip = donorHistory.find(d => !d.parent_receipt_no) || slip;
+      const totalPromised = parseFloat(rootSlip.promised_amount || rootSlip.amount || 0);
+      const totalPaid = donorHistory.reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
+      const remainingDues = Math.max(0, totalPromised - totalPaid);
+
+      return (
+        <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src={settings.lord_photo || "https://img.icons8.com/color/96/ganesh.png"} alt="Ganesha" style={{ width: '70px', height: '70px', objectFit: 'contain', marginBottom: '10px' }} />
+            <h2 style={{ fontSize: '20px', color: '#c0392b', fontWeight: 'bold', margin: '0 0 5px 0' }}>
+              {settings.committee_name || 'युवा गणेश उत्सव समिति'}
+            </h2>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{settings.committee_address || 'ग्राम-केशोपुर, जिला-मधुबनी (बिहार)'}</span>
+          </div>
+
+          {/* Main Card */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', maxWidth: '500px', width: '100%', padding: '20px', boxSizing: 'border-box', marginBottom: '20px' }}>
+            
+            {/* Status Badge */}
+            <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+              <span style={{ background: '#dcfce7', color: '#15803d', padding: '6px 16px', borderRadius: '20px', fontWeight: 'bold', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <i className="fas fa-check-circle"></i> Verification Successful (सत्यापित)
+              </span>
+            </div>
+
+            <h4 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', color: 'var(--navy-accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <i className="fas fa-file-invoice-dollar"></i> Donation Slip #{slip.receipt_no}
+            </h4>
+
+            {/* Slip Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 10px', fontSize: '13.5px', marginBottom: '20px' }}>
+              <div>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Donor Name (दाता)</span>
+                <strong style={{ color: '#1e293b' }}>{slip.donor_name}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Mobile (मोबाइल)</span>
+                <strong style={{ color: '#1e293b' }}>{slip.donor_mobile || '—'}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Village (ग्राम)</span>
+                <strong style={{ color: '#1e293b' }}>{slip.village}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Date (दिनांक)</span>
+                <strong style={{ color: '#1e293b' }}>{new Date(slip.date || slip.timestamp).toLocaleDateString('en-IN')}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Amount Paid (प्राप्त राशि)</span>
+                <strong style={{ color: '#15803d', fontSize: '16px' }}>₹{parseFloat(slip.amount).toFixed(2)}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Mode (माध्यम)</span>
+                <strong style={{ color: '#1e293b' }}>{slip.mode}</strong>
+              </div>
+            </div>
+
+            {/* Pledge Ledger Statement Section */}
+            {totalPromised > parseFloat(rootSlip.amount) && (
+              <div style={{ borderTop: '2px dashed #f1f5f9', paddingTop: '15px', marginTop: '15px' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: 'var(--navy-accent)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <i className="fas fa-history"></i> Payment History & Dues (भुगतान का इतिहास)
+                </h4>
+                
+                {/* Pledge Summary Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '15px', textAlign: 'center' }}>
+                  <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Promised</span>
+                    <strong style={{ fontSize: '12px', color: '#0f172a' }}>₹{totalPromised.toFixed(0)}</strong>
+                  </div>
+                  <div style={{ background: '#f0fdf4', padding: '8px', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                    <span style={{ fontSize: '10px', color: '#166534', display: 'block' }}>Total Paid</span>
+                    <strong style={{ fontSize: '12px', color: '#15803d' }}>₹{totalPaid.toFixed(0)}</strong>
+                  </div>
+                  <div style={{ background: remainingDues > 0 ? '#fef2f2' : '#f0fdf4', padding: '8px', borderRadius: '6px', border: remainingDues > 0 ? '1px solid #fecaca' : '1px solid #bbf7d0' }}>
+                    <span style={{ fontSize: '10px', color: remainingDues > 0 ? '#991b1b' : '#166534', display: 'block' }}>Remaining</span>
+                    <strong style={{ fontSize: '12px', color: remainingDues > 0 ? '#b91c1c' : '#15803d' }}>₹{remainingDues.toFixed(0)}</strong>
+                  </div>
+                </div>
+
+                {/* Ledger History List */}
+                <div style={{ background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '5px' }}>
+                  <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ color: '#64748b', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
+                        <th style={{ padding: '6px' }}>Receipt</th>
+                        <th style={{ padding: '6px' }}>Date</th>
+                        <th style={{ padding: '6px', textAlign: 'right' }}>Amount</th>
+                        <th style={{ padding: '6px' }}>Mode</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {donorHistory.map(d => (
+                        <tr key={d.receipt_no} style={{ borderBottom: '1px solid #f1f5f9', color: '#334155' }}>
+                          <td style={{ padding: '6px', fontWeight: 'bold' }}>#{d.receipt_no}</td>
+                          <td style={{ padding: '6px' }}>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
+                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 'bold', color: '#15803d' }}>₹{parseFloat(d.amount).toFixed(0)}</td>
+                          <td style={{ padding: '6px' }}>{d.mode}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Thank you Greeting card */}
+            <div style={{ background: 'linear-gradient(135deg, #fef9c3, #fef08a)', border: '1px solid #fde047', borderRadius: '8px', padding: '12px', textAlign: 'center', marginTop: '20px' }}>
+              <i className="fas fa-hands-helping" style={{ color: '#ca8a04', fontSize: '20px', marginBottom: '6px' }}></i>
+              <p style={{ margin: 0, fontSize: '12px', color: '#854d0e', fontWeight: 'bold', lineHeight: '1.5' }}>
+                गणपति बाप्पा मोरया! <br/>
+                श्री गणेश उत्सव महोत्सव में आपके श्रद्धा और बहुमूल्य सहयोग के लिए हार्दिक धन्यवाद।
+              </p>
+            </div>
+            
+            {/* View Statement Button if they want to view all receipts */}
+            {!rootSlip.parent_receipt_no && donorHistory.length > 1 && (
+              <div style={{ textAlign: 'center', marginTop: '15px' }}>
+                <a 
+                  href={`/?donor_mobile=${donorMobile}`}
+                  style={{ fontSize: '12.5px', color: 'var(--navy-accent)', fontWeight: 'bold', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
+                  <i className="fas fa-list-ul"></i> View My Full Statement (पूरा विवरण देखें)
+                </a>
+              </div>
+            )}
+          </div>
+          
+          <div style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '10px' }}>
+            Chanda Management ERP — Powered by Ganesh Utsav Committee
+          </div>
+        </div>
+      );
+    }
+
+    function PublicLedgerView({ donorMobile, systemData, t }) {
+      const donations = systemData.donations || [];
+      const settings = systemData.settings || {};
+
+      // Filter all donations for this mobile
+      const donorHistory = donations
+        .filter(d => String(d.donor_mobile || '').trim() === String(donorMobile).trim())
+        .sort((a, b) => new Date(a.date || a.timestamp) - new Date(b.date || b.timestamp));
+
+      if (donorHistory.length === 0) {
+        return (
+          <div style={{ padding: '40px 20px', textAlign: 'center', fontFamily: 'sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#f8fafc' }}>
+            <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', maxWidth: '400px', width: '100%' }}>
+              <i className="fas fa-exclamation-triangle fa-3x" style={{ color: '#ef4444', marginBottom: '15px' }}></i>
+              <h3 style={{ color: '#1e293b', marginBottom: '10px' }}>Statement Not Found</h3>
+              <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.6' }}>
+                We couldn't find any donation records associated with mobile number <strong>{donorMobile}</strong>.
+              </p>
+              <a href="/" className="btn btn-primary" style={{ marginTop: '20px', display: 'inline-block', background: 'var(--navy-accent)', color: '#fff', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>Go to Homepage</a>
+            </div>
+          </div>
+        );
+      }
+
+      // Calculate total promised and paid
+      const rootSlip = donorHistory.find(d => !d.parent_receipt_no) || donorHistory[0];
+      const totalPromised = parseFloat(rootSlip.promised_amount || rootSlip.amount || 0);
+      const totalPaid = donorHistory.reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
+      const remainingDues = Math.max(0, totalPromised - totalPaid);
+
+      return (
+        <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src={settings.lord_photo || "https://img.icons8.com/color/96/ganesh.png"} alt="Ganesha" style={{ width: '70px', height: '70px', objectFit: 'contain', marginBottom: '10px' }} />
+            <h2 style={{ fontSize: '20px', color: '#c0392b', fontWeight: 'bold', margin: '0 0 5px 0' }}>
+              {settings.committee_name || 'युवा गणेश उत्सव समिति'}
+            </h2>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{settings.committee_address || 'ग्राम-केशोपुर, जिला-मधुबनी (बिहार)'}</span>
+          </div>
+
+          {/* Main Card */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', maxWidth: '500px', width: '100%', padding: '20px', boxSizing: 'border-box', marginBottom: '20px' }}>
+            
+            <h4 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', color: 'var(--navy-accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <i className="fas fa-list-alt"></i> Donor Account Statement (विवरण)
+            </h4>
+
+            {/* Profile Info */}
+            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '20px', fontSize: '13px', lineHeight: '1.6' }}>
+              <strong>Donor Name:</strong> {rootSlip.donor_name}<br/>
+              <strong>Mobile Number:</strong> {donorMobile}<br/>
+              <strong>Village/Area:</strong> {rootSlip.village}
+            </div>
+
+            {/* Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '20px', textAlign: 'center' }}>
+              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', display: 'block', textTransform: 'uppercase' }}>Promised</span>
+                <strong style={{ fontSize: '14px', color: '#0f172a' }}>₹{totalPromised.toFixed(2)}</strong>
+              </div>
+              <div style={{ background: '#f0fdf4', padding: '10px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: '10px', color: '#166534', display: 'block', textTransform: 'uppercase' }}>Total Paid</span>
+                <strong style={{ fontSize: '14px', color: '#15803d' }}>₹{totalPaid.toFixed(2)}</strong>
+              </div>
+              <div style={{ background: remainingDues > 0 ? '#fef2f2' : '#f0fdf4', padding: '10px', borderRadius: '8px', border: remainingDues > 0 ? '1px solid #fecaca' : '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: '10px', color: remainingDues > 0 ? '#991b1b' : '#166534', display: 'block', textTransform: 'uppercase' }}>Remaining</span>
+                <strong style={{ fontSize: '14px', color: remainingDues > 0 ? '#b91c1c' : '#15803d' }}>₹{remainingDues.toFixed(2)}</strong>
+              </div>
+            </div>
+
+            {/* Ledger Table */}
+            <h5 style={{ margin: '0 0 10px 0', color: '#334155' }}>chronological Transaction History</h5>
+            <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
+                    <th style={{ padding: '10px' }}>Receipt No</th>
+                    <th style={{ padding: '10px' }}>Date</th>
+                    <th style={{ padding: '10px' }}>Collected By</th>
+                    <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {donorHistory.map(d => (
+                    <tr key={d.receipt_no} style={{ borderBottom: '1px solid #f1f5f9', color: '#334155' }}>
+                      <td style={{ padding: '10px', fontWeight: 'bold' }}>
+                        <a href={`/?receipt_no=${d.receipt_no}`} style={{ color: 'var(--navy-accent)', textDecoration: 'none' }}>
+                          #{d.receipt_no}
+                        </a>
+                      </td>
+                      <td style={{ padding: '10px' }}>{new Date(d.date || d.timestamp).toLocaleDateString('en-IN')}</td>
+                      <td style={{ padding: '10px' }}>{d.collected_by_name || 'N/A'}</td>
+                      <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold', color: '#15803d' }}>₹{parseFloat(d.amount).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Greeting */}
+            <div style={{ background: 'linear-gradient(135deg, #fef9c3, #fef08a)', border: '1px solid #fde047', borderRadius: '8px', padding: '12px', textAlign: 'center', marginTop: '20px' }}>
+              <i className="fas fa-om" style={{ color: '#ca8a04', fontSize: '18px', marginBottom: '6px' }}></i>
+              <p style={{ margin: 0, fontSize: '12px', color: '#854d0e', fontWeight: 'bold' }}>
+                गणपति बाप्पा मोरया!
+              </p>
+            </div>
+          </div>
+          
+          <div style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '10px' }}>
+            Chanda Management ERP — Powered by Ganesh Utsav Committee
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
     // THERMAL SLIP TEMPLATES FOR PRINT VIEW
     // ==========================================
 
@@ -7483,10 +7785,21 @@
           </div>
 
           {/* Bottom section */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '25px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
             <div style={{ background: '#c0392b', color: '#fff', padding: '8px 25px', borderRadius: '30px', fontSize: '18px', fontWeight: 'bold', boxShadow: '0 3px 6px rgba(0,0,0,0.1)' }}>
               ₹ {parseFloat(slip.amount).toFixed(2)}/-
             </div>
+            
+            {/* Public QR Code for donation verification */}
+            <div style={{ textAlign: 'center', fontSize: '10px', color: '#555', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(window.location.origin + '/?receipt_no=' + slip.receipt_no)}`} 
+                alt="Receipt QR" 
+                style={{ width: '70px', height: '70px', border: '1px solid #ddd', padding: '2px', borderRadius: '4px' }} 
+              />
+              <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#c0392b' }}>स्कैन कर इतिहास देखें</span>
+            </div>
+
             <div style={{ textAlign: 'center', fontSize: '12px', color: '#555' }}>
               <br /><br />
               <span style={{ borderTop: '1px solid #777', paddingTop: '5px', display: 'inline-block', width: '120px' }}>हस्ताक्षर प्राप्तकर्ता</span>
