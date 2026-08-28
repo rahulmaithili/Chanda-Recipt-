@@ -3788,17 +3788,36 @@
     }
 
     function DuesTrackerView({ systemData, onPayInstallment, t }) {
+      const [onlyMembers, setOnlyMembers] = useState(false);
       const donations = systemData.donations || [];
+      const userMobiles = new Set((systemData.users || []).map(u => String(u.mobile || '').trim()));
       
       const dueRecords = donations.filter(d => {
         const remaining = parseFloat(d.promised_amount || d.amount) - parseFloat(d.amount);
-        return remaining > 0 && !d.parent_receipt_no;
+        const isDue = remaining > 0 && !d.parent_receipt_no;
+        if (!isDue) return false;
+        if (onlyMembers) {
+          return userMobiles.has(String(d.donor_mobile || '').trim());
+        }
+        return true;
       });
 
       return (
         <div className="card">
-          <div className="card-header">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <h2><i className="fas fa-search-dollar"></i> {t('dues_tracker')} ({dueRecords.length})</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+              <input 
+                type="checkbox" 
+                id="only_members_checkbox" 
+                checked={onlyMembers} 
+                onChange={e => setOnlyMembers(e.target.checked)} 
+                style={{ width: 'auto', cursor: 'pointer' }}
+              />
+              <label htmlFor="only_members_checkbox" style={{ margin: 0, cursor: 'pointer', fontWeight: 'bold', color: 'var(--navy-accent)' }}>
+                Show Only Committee Members (केवल समिति सदस्य)
+              </label>
+            </div>
           </div>
           <div className="table-responsive">
             <table>
@@ -4922,6 +4941,7 @@
       const [selectedDonorHistory, setSelectedDonorHistory] = useState([]);
       const [loadingDetails, setLoadingDetails] = useState(false);
       const [qrCardProfile, setQrCardProfile] = useState(null);
+      const [onlyMembers, setOnlyMembers] = useState(false);
 
       const fetchDonors = async () => {
         setLoading(true);
@@ -4959,16 +4979,21 @@
         }
       };
 
+      const userMobiles = new Set((systemData.users || []).map(u => String(u.mobile || '').trim()));
+
       const filteredDonors = donors.filter(p => {
+        if (onlyMembers && !userMobiles.has(String(p.donor_mobile || '').trim())) {
+          return false;
+        }
         const query = searchQuery.toLowerCase();
         return (p.donor_name || '').toLowerCase().includes(query) || 
                (p.donor_mobile || '').includes(query) || 
                (p.village || '').toLowerCase().includes(query);
       }).sort((a, b) => (a.donor_name || '').localeCompare(b.donor_name || ''));
 
-      const totalUniqueDonors = donors.length;
-      const totalCollectedAmount = donors.reduce((s, p) => s + parseFloat(p.total_donated || 0), 0);
-      const totalReceiptsCount = donors.reduce((s, p) => s + parseInt(p.donation_count || 0), 0);
+      const totalUniqueDonors = filteredDonors.length;
+      const totalCollectedAmount = filteredDonors.reduce((s, p) => s + parseFloat(p.total_donated || 0), 0);
+      const totalReceiptsCount = filteredDonors.reduce((s, p) => s + parseInt(p.donation_count || 0), 0);
 
       const selectedProfile = donors.find(p => p.donor_mobile === selectedDonorKey);
 
@@ -5102,6 +5127,18 @@
                   onChange={e => setSearchQuery(e.target.value)}
                   style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #ddd', width: '100%' }}
                 />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+                <input 
+                  type="checkbox" 
+                  id="only_members_donors_checkbox" 
+                  checked={onlyMembers} 
+                  onChange={e => setOnlyMembers(e.target.checked)} 
+                  style={{ width: 'auto', cursor: 'pointer' }}
+                />
+                <label htmlFor="only_members_donors_checkbox" style={{ margin: 0, cursor: 'pointer', fontWeight: 'bold', color: 'var(--navy-accent)' }}>
+                  Show Only Committee Members (केवल समिति सदस्य)
+                </label>
               </div>
             </div>
             
