@@ -17,6 +17,7 @@
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
   <style>
     :root {
@@ -7713,6 +7714,19 @@
       const remainingDues = parseFloat(slip.promised_amount || slip.amount) - parseFloat(slip.amount);
       const amountInWords = numberToHindiWords(Math.round(parseFloat(slip.amount)));
 
+      // Generate local QR Code base64 URL using QRIous
+      let localQrUrl = '';
+      try {
+        const qr = new QRious({
+          value: window.location.origin + '/?receipt_no=' + slip.receipt_no,
+          size: 100
+        });
+        localQrUrl = qr.toDataURL();
+      } catch (e) {
+        console.error("Local QR generation failed", e);
+        localQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(window.location.origin + '/?receipt_no=' + slip.receipt_no)}`;
+      }
+
       return (
         <div style={{
           width: '650px',
@@ -7793,7 +7807,7 @@
             {/* Public QR Code for donation verification */}
             <div style={{ textAlign: 'center', fontSize: '10px', color: '#555', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(window.location.origin + '/?receipt_no=' + slip.receipt_no)}`} 
+                src={localQrUrl} 
                 alt="Receipt QR" 
                 style={{ width: '70px', height: '70px', border: '1px solid #ddd', padding: '2px', borderRadius: '4px' }} 
               />
