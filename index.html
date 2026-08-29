@@ -6541,14 +6541,14 @@
       const handleSubmit = async (e) => {
         e.preventDefault();
         const payload = {
-          committee_name: name.trim(),
-          committee_address: address.trim(),
-          sms_api_key: smsKey.trim(),
-          sms_sender_id: smsSender.trim(),
+          committee_name: String(name || '').trim(),
+          committee_address: String(address || '').trim(),
+          sms_api_key: String(smsKey || '').trim(),
+          sms_sender_id: String(smsSender || '').trim(),
           sms_auto_send: smsAuto ? 'true' : 'false',
-          telegram_bot_token: tgToken.trim(),
-          telegram_chat_id: tgChatId.trim(),
-          telegram_min_amount: tgMinAmt.trim()
+          telegram_bot_token: String(tgToken || '').trim(),
+          telegram_chat_id: String(tgChatId || '').trim(),
+          telegram_min_amount: String(tgMinAmt || '').trim()
         };
         if (logoBase64) {
           payload.lord_photo_base64 = logoBase64;
