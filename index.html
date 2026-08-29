@@ -6498,6 +6498,7 @@
       const [smsSender, setSmsSender] = useState('');
       const [smsAuto, setSmsAuto] = useState(false);
       const [logoBase64, setLogoBase64] = useState(null);
+      const [logoUrl, setLogoUrl] = useState('');
       const [tgToken, setTgToken] = useState('');
       const [tgChatId, setTgChatId] = useState('');
       const [tgMinAmt, setTgMinAmt] = useState('');
@@ -6512,6 +6513,7 @@
         setSmsSender(settings.sms_sender_id || '');
         setSmsAuto(settings.sms_auto_send === 'true');
         setLogoPreview(settings.lord_photo || '');
+        setLogoUrl(settings.lord_photo && !settings.lord_photo.startsWith('data:') ? settings.lord_photo : '');
         setTgToken(settings.telegram_bot_token || '');
         setTgChatId(settings.telegram_chat_id || '');
         setTgMinAmt(settings.telegram_min_amount || '5000');
@@ -6524,8 +6526,16 @@
         reader.onloadend = () => {
           setLogoBase64(reader.result);
           setLogoPreview(reader.result);
+          setLogoUrl(''); // Clear text URL if file uploaded
         };
         reader.readAsDataURL(file);
+      };
+
+      const handleLogoUrlChange = (e) => {
+        const val = e.target.value;
+        setLogoUrl(val);
+        setLogoPreview(val);
+        setLogoBase64(null); // Clear file base64 if URL is pasted
       };
 
       const handleSubmit = async (e) => {
@@ -6542,6 +6552,8 @@
         };
         if (logoBase64) {
           payload.lord_photo_base64 = logoBase64;
+        } else {
+          payload.lord_photo = logoUrl.trim();
         }
         const ok = await onAction("saveSettings", { settings: payload });
         if (ok) {
@@ -6563,11 +6575,22 @@
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>Slip Logo / Deity Photo</label>
-                <input type="file" accept="image/*" onChange={handleLogoFileChange} style={{ padding: '5px' }} />
+                <label>Slip Logo / Deity Photo (रसीद लोगो)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Paste Image URL (जैसे https://...)" 
+                    value={logoUrl} 
+                    onChange={handleLogoUrlChange} 
+                    className="form-control"
+                  />
+                  <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', margin: '2px 0' }}>— OR (या फ़ाइल चुनें) —</div>
+                  <input type="file" accept="image/*" onChange={handleLogoFileChange} style={{ padding: '5px' }} />
+                </div>
                 {logoPreview && (
-                  <div style={{ marginTop: '10px' }}>
-                    <img src={logoPreview} alt="Logo Preview" style={{ maxHeight: '60px', borderRadius: '4px', objectFit: 'contain' }} />
+                  <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <img src={logoPreview} alt="Logo Preview" style={{ maxHeight: '60px', borderRadius: '4px', objectFit: 'contain', border: '1px solid #ddd' }} />
+                    <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => { setLogoBase64(null); setLogoUrl(''); setLogoPreview(''); }}>Remove</button>
                   </div>
                 )}
               </div>
